@@ -9,6 +9,9 @@ use App\Http\Controllers\VendorAuthController; // <<< Import Controller Vendor
 use App\Http\Controllers\FasilitasController;
 use App\Http\Controllers\BookingsController;
 use App\Http\Controllers\AddonController;
+use App\Http\Controllers\ProvinceController;
+use App\Http\Controllers\CityController;
+use App\Http\Controllers\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +72,10 @@ Route::post('/kamars/store', [kamarController::class, 'store']); // Ini tumpang 
 
 Route::apiResource('category', Categorycontroller::class);
 Route::apiResource('/addons', AddonController::class);
+
+Route::apiResource('provinces', ProvinceController::class);
+Route::apiResource('cities', CityController::class);
+Route::apiResource('products', ProductController::class);
 
 Route::get('/bookings', [BookingsController::class, 'index']); // Sebaiknya di dalam middleware
 
