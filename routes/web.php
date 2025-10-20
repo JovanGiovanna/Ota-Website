@@ -13,6 +13,7 @@ use App\Http\Controllers\LegalController;
 
 
 
+
 // ================= LANDING =================
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/allrooms', [LandingController::class, 'allrooms'])->name('allrooms');
@@ -55,6 +56,8 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->name('admin.')->grou
     Route::resource('kamar', KamarController::class);
     Route::resource('fasilitas', FasilitasController::class);
     Route::resource('category', CategoryController::class);
+
+
 
     // Admin booking index
     Route::get('/booking', [BookingsController::class, 'adminIndex'])->name('booking.index');

@@ -8,6 +8,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FasilitasController;
 use App\Http\Controllers\BookingsController;
 use App\Http\Controllers\AddonController;
+use App\Http\Controllers\ProvinceController;
+use App\Http\Controllers\CityController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PackageController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -30,11 +34,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::apiResource('kamars', kamarController::class);
 Route::post('/kamars/store', [kamarController::class, 'store']);
-Route::apiResource('fasilitas', FasilitasController::class);   
-Route::post('/fasilitas/store', [FasilitasController::class, 'store']);    
+Route::apiResource('fasilitas', FasilitasController::class);
+Route::post('/fasilitas/store', [FasilitasController::class, 'store']);
 Route::apiResource('category', Categorycontroller::class);
 Route::apiResource('/addons', AddonController::class);
 Route::get('/bookings', [BookingsController::class, 'index']);
+
+// New API Routes for Province, City, Product, Package
+Route::apiResource('provinces', ProvinceController::class);
+Route::get('/provinces/search', [ProvinceController::class, 'searchApi']);
+Route::get('/provinces/welcome', [ProvinceController::class, 'welcome']);
+Route::apiResource('cities', CityController::class);
+Route::get('/cities/search', [CityController::class, 'searchApi']);
+Route::apiResource('products', ProductController::class);
+Route::get('/products/search', [ProductController::class, 'searchApi']);
+Route::apiResource('packages', PackageController::class);
+Route::get('/packages/search', [PackageController::class, 'searchApi']);
 
 route::post('/checkout/{id}', [BookingsController::class, 'checkout'])->name('booking.checkout');
 route::post('/checkin/{id}', [BookingsController::class, 'checkin'])->name('booking.checkin');
