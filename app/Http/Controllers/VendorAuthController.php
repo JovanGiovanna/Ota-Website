@@ -84,12 +84,27 @@ class VendorAuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('vendor')->logout(); 
+        Auth::guard('vendor')->logout();
 
-        $request->session()->invalidate(); 
-        $request->session()->regenerateToken(); 
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        return redirect()->route('vendor.login'); 
+        return redirect()->route('vendor.login');
+    }
+
+    // --- Logout Vendor (API/JSON) ---
+
+    public function logoutApi(Request $request)
+    {
+        // Hapus token yang sedang digunakan
+        /** @var \Laravel\Sanctum\PersonalAccessToken $token */
+        $token = $request->user()->currentAccessToken();
+        $token->delete();
+
+
+        return response()->json([
+            'message' => 'Logout berhasil.',
+        ]);
     }
 
 

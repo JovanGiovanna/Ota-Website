@@ -67,9 +67,13 @@ public function index(Request $request)
             'role' => UserRole::from($request->role),
         ]);
 
+        $token = $user->createToken('auth_token', [$user->role->value])->plainTextToken;
+
         return response()->json([
             'message' => 'User registered successfully',
             'user' => $user,
+            'access_token' => $token,
+            'token_type' => 'Bearer',
         ], 201);
     }
 
@@ -141,6 +145,21 @@ public function index(Request $request)
 
     return redirect()->route('login'); // langsung balik ke login
 }
+
+    // --- Logout User (API/JSON) ---
+
+    public function logoutApi(Request $request)
+    {
+        // Hapus token yang sedang digunakan
+        /** @var \Laravel\Sanctum\PersonalAccessToken $token */
+        $token = $request->user()->currentAccessToken();
+        $token->delete();
+
+
+        return response()->json([
+            'message' => 'Logout berhasil.',
+        ]);
+    }
 
 
    public function loginWeb(Request $request)

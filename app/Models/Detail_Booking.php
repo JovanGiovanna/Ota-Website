@@ -14,11 +14,11 @@ class Detail_Booking extends Model
 
     protected $fillable = [
         'booking_id',
-        'kamar_id',
-        'Nama_Tamu',
-        'dewasa',
-        'anak',
-        'Special_Request',
+        'product_id',
+        'booker_name',
+        'adults',
+        'children',
+        'special_request',
     ];
 
     public function booking(): BelongsTo 
@@ -26,8 +26,8 @@ class Detail_Booking extends Model
         return $this->belongsTo(Booking::class);
     }
     
-    public function kamar(): BelongsTo 
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Kamar::class);
+        return $this->belongsTo(Product::class, 'product_id');
     }
 }

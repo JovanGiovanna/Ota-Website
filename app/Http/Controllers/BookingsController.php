@@ -2,54 +2,87 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Booking;
-use App\Models\Kamar;
-use App\Models\Addon;
-use App\Models\Fasilitas;
-use App\Models\BookingFasilitas;
-use App\Models\Detail_Booking;
-use App\Models\detail_fasilitas;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Models\Addon;
+use App\Models\Kamar;
+use App\Models\Booking;
+use Illuminate\Http\Request;
+use App\Models\Detail_Booking;
+use App\Models\BookingFasilitas;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log; // Tambahkan ini di bagian atas file
 
 class BookingsController extends Controller
 {
     public function index()
-{
-    $bookings = \App\Models\Booking::with(['kamar','addons'])->get();
+    {
+        $bookings = Booking::with(['user', 'package', 'detailBookings.product', 'addons'])->get();
 
-    $result = $bookings->map(function ($booking) {
-        return [
-            'id'          => $booking->id,
-            'nama_tamu'   => $booking->Nama_Tamu,
-            'email'       => $booking->Email,
-            'kamar'       => $booking->kamar->name ?? null,
-            'check_in'    => $booking->check_in,
-            'check_out'   => $booking->check_out,
-            'durasi'      => $booking->durasi,
-            'dewasa'      => $booking->dewasa,
-            'anak'        => $booking->anak,
-            'total_harga' => $booking->total_harga,
-            'status'      => $booking->status,
-            'addons'      => $booking->addons->map(function ($addon) {
-                return [
-                    'id'       => $addon->id,
-                    'name'     => $addon->name,
-                    'harga'    => $addon->pivot->harga,
-                    'jumlah'   => $addon->pivot->jumlah,
-                    'subtotal' => $addon->pivot->subtotal,
-                ];
-            }),
-        ];
-    });
+        $result = $bookings->map(function ($booking) {
+            return [
+                'id' => $booking->id,
+                'id_user' => $booking->id_user,
+                'id_package' => $booking->id_package,
+                'booker_name' => $booking->booker_name,
+                'booker_email' => $booking->booker_email,
+                'booker_telp' => $booking->booker_telp,
+                'checkin_appointment_start' => $booking->checkin_appointment_start,
+                'checkout_appointment_end' => $booking->checkout_appointment_end,
+                'duration_days' => $booking->duration_days,
+                'amount' => $booking->amount,
+                'total_price' => $booking->total_price,
+                'status' => $booking->status,
+                'note' => $booking->note,
+                'created_at' => $booking->created_at,
+                'updated_at' => $booking->updated_at,
+                'user' => $booking->user ? [
+                    'id' => $booking->user->id,
+                    'name' => $booking->user->name,
+                    'email' => $booking->user->email,
+                ] : null,
+                'package' => $booking->package ? [
+                    'id' => $booking->package->id,
+                    'name_package' => $booking->package->name_package,
+                    'slug' => $booking->package->slug,
+                    'description' => $booking->package->description,
+                    'price_publish' => $booking->package->price_publish,
+                ] : null,
+                'detail_bookings' => $booking->detailBookings->map(function ($detail) {
+                    return [
+                        'id' => $detail->id,
+                        'booking_id' => $detail->booking_id,
+                        'product_id' => $detail->product_id,
+                        'booker_name' => $detail->booker_name,
+                        'adults' => $detail->adults,
+                        'children' => $detail->children,
+                        'special_request' => $detail->special_request,
+                        'product' => $detail->product ? [
+                            'id' => $detail->product->id,
+                            'name' => $detail->product->name,
+                            'price' => $detail->product->price,
+                            'max_adults' => $detail->product->max_adults,
+                            'max_children' => $detail->product->max_children,
+                        ] : null,
+                    ];
+                }),
+                'addons' => $booking->addons->map(function ($addon) {
+                    return [
+                        'id' => $addon->id,
+                        'addons' => $addon->addons,
+                        'desc' => $addon->desc,
+                        'price' => $addon->price,
+                        'quantity' => $addon->pivot->quantity,
+                    ];
+                }),
+            ];
+        });
 
-    return response()->json([
-        'success' => true,
-        'data'    => $result
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'data' => $result
+        ]);
+    }
 
     /**
      * Show booking form.
@@ -68,15 +101,14 @@ public function create(Request $request)
 public function createfasilitas(Request $request)
 {
     // Mengambil semua data Fasilitas utama
-    $facilities = Fasilitas::all();
+
     
     // Mengambil data Add-ons
     $addons = Addon::all();
     
     // Mengambil Fasilitas yang dipilih dari parameter URL 'facility_id'
     // PERBAIKAN: Menggunakan 'facility_id' sesuai URL
-    $selectedfasilitas = $request->query('facility_id') ? Fasilitas::find($request->query('facility_id')) : null;
-
+   
     // Mengirimkan data ke view 'user.booking_fasilitas'
     return view('user.booking_fasilitas', compact('facilities', 'selectedfasilitas', 'addons'));
 }
@@ -90,117 +122,84 @@ public function store(Request $request)
     // 1. Pengecekan Autentikasi
     if (!Auth::check()) {
         return $request->wantsJson()
-            ? response()->json(['success'=>false,'message'=>'Login dulu'], 401)
+            ? response()->json(['success' => false, 'message' => 'Login dulu'], 401)
             : redirect()->route('login');
     }
 
     // 2. Validasi Input
     try {
         $validated = $request->validate([
-            'kamar_ids'       => 'required|array|min:1',
-            'kamar_ids.*'     => 'exists:kamars,id',
-            'Nama_Tamu'       => 'required|string|max:255',
-            'arrival_time'    => 'required|date_format:H:i',
-            'check_in'        => 'required|date|after_or_equal:today',
-            'check_out'       => 'required|date|after:check_in',
-            'Phone'           => 'required|string',
-            'dewasa'          => 'required|int|min:1',
-            'anak'            => 'required|int|min:0',
-            'Special_Request' => 'nullable|string',
-            'addons'          => 'nullable|array',
-            'addons.*'        => 'exists:addons,id',
+            'id_package' => 'required|exists:packages,id',
+            'booker_name' => 'required|string|max:255',
+            'booker_email' => 'required|email',
+            'booker_telp' => 'required|string',
+            'checkin_appointment_start' => 'required|date',
+            'checkout_appointment_end' => 'required|date|after:checkin_appointment_start',
+            'duration_days' => 'required|integer|min:1',
+            'amount' => 'required|numeric|min:0',
+            'total_price' => 'required|numeric|min:0',
+            'status' => 'required|string|in:pending,confirmed,checked_in,completed,cancelled',
+            'note' => 'nullable|string',
+            'detail_bookings' => 'required|array|min:1',
+            'detail_bookings.*.product_id' => 'required|exists:products,id',
+            'detail_bookings.*.booker_name' => 'required|string|max:255',
+            'detail_bookings.*.adults' => 'required|integer|min:1',
+            'detail_bookings.*.children' => 'required|integer|min:0',
+            'detail_bookings.*.special_request' => 'nullable|string',
+            'addons' => 'nullable|array',
+            'addons.*' => 'exists:addons,id',
         ]);
     } catch (ValidationException $e) {
         return back()->withErrors($e->errors())->withInput();
     }
 
-    // Hitung Durasi
-    $durasi = Carbon::parse($validated['check_out'])->diffInDays(Carbon::parse($validated['check_in']));
-    $durasi = max(1, $durasi); // Minimal 1 hari
-    
-    $total_harga = 0;
-    $kamarDetailData = []; 
-    $addonsToAttach = []; 
-
-    // 3. Pengecekan Ketersediaan dan Perhitungan Harga Kamar
-    foreach (array_unique($validated['kamar_ids']) as $kamarId) {
-        
-        // Logika Pengecekan Overlap: Mencari kamar yang dipesan di Detail_Booking
-        $overlap = Detail_Booking::where('kamar_id', $kamarId)
-            ->whereHas('booking', function ($q) use ($validated) {
-                $q->whereIn('status', ['diproses','checkin'])
-                  ->where(function($q_inner) use ($validated) {
-                      // Logika standar cek tumpang tindih tanggal
-                      $q_inner->where('check_in', '<', $validated['check_out'])
-                              ->where('check_out', '>', $validated['check_in']);
-                  });
-            })
-            ->exists();
-
-
-        // Siapkan data untuk Detail_Booking
-        $kamar = Kamar::findOrFail($kamarId);
-        $hargaKamar = $kamar->price * $durasi;
-        $total_harga += $hargaKamar;
-        
-        // *** PERUBAHAN DI SINI ***
-        // Menambahkan data 'dewasa' dan 'anak' dari model Kamar
-        $kamarDetailData[] = [
-            'kamar_id'          => $kamarId,
-            'Nama_Tamu'         => $validated['Nama_Tamu'],
-            'durasi'            => $durasi,
-            'dewasa'            => $validated['dewasa'], // Ambil dari kamar
-            'anak'              => $validated['anak'],   // Ambil dari kamar
-        ];
-    }
-
-    // 4. Perhitungan Harga Add-ons dan persiapan Attach
-    if (!empty($validated['addons'])) {
-        foreach (array_unique($validated['addons']) as $addon_id) {
-            $addon = Addon::findOrFail($addon_id);
-            $total_harga += $addon->price; 
-            // Siapkan data untuk attach: key=addon_id, value=array pivot data (quantity)
-            $addonsToAttach[$addon->id] = ['quantity' => 1]; 
-        }
-    }
-    
-    // 5. Buat Entitas Booking Utama
+    // 3. Buat Entitas Booking Utama
     $booking = Booking::create([
-        'user_id'      => Auth::id(),
-        'Email'        => Auth::user()->email,
-        'Phone'        => $validated['Phone'],
-        'arrival_time' => $validated['arrival_time'],
-        'check_in'     => $validated['check_in'],
-        'check_out'    => $validated['check_out'],
-        'durasi'       => $durasi,
-        'total_harga'  => $total_harga, 
-        'status'       => 'diproses',
+        'id_user' => Auth::id(),
+        'id_package' => $validated['id_package'],
+        'booker_name' => $validated['booker_name'],
+        'booker_email' => $validated['booker_email'],
+        'booker_telp' => $validated['booker_telp'],
+        'checkin_appointment_start' => $validated['checkin_appointment_start'],
+        'checkout_appointment_end' => $validated['checkout_appointment_end'],
+        'duration_days' => $validated['duration_days'],
+        'amount' => $validated['amount'],
+        'total_price' => $validated['total_price'],
+        'status' => $validated['status'],
+        'note' => $validated['note'],
     ]);
 
-    // 6. Simpan Detail Booking (Kamar)
-    foreach ($kamarDetailData as $detailData) {
-        Detail_Booking::create(array_merge($detailData, [
-            'booking_id'        => $booking->id,
-            'Special_Request'   => $validated['Special_Request'],
-        ]));
+    // 4. Simpan Detail Booking
+    foreach ($validated['detail_bookings'] as $detailData) {
+        Detail_Booking::create([
+            'booking_id' => $booking->id,
+            'product_id' => $detailData['product_id'],
+            'booker_name' => $detailData['booker_name'],
+            'adults' => $detailData['adults'],
+            'children' => $detailData['children'],
+            'special_request' => $detailData['special_request'] ?? null,
+        ]);
     }
 
-    // 7. Attach Add-ons menggunakan Relasi Many-to-Many
-    if (!empty($addonsToAttach)) {
-        // Memanggil relasi addons() yang ada di Model Booking
+    // 5. Attach Add-ons menggunakan Relasi Many-to-Many
+    $addonsToAttach = [];
+    if (!empty($validated['addons'])) {
+        foreach (array_unique($validated['addons']) as $addon_id) {
+            $addonsToAttach[$addon_id] = ['quantity' => 1];
+        }
         $booking->addons()->attach($addonsToAttach);
     }
 
-    // 8. Pesan dan Respons
-    $msg = 'Booking berhasil dibuat! Durasi: '.$durasi.' hari. Total Rp. '. number_format($total_harga, 0, ',', '.');
+    // 6. Pesan dan Respons
+    $msg = 'Booking berhasil dibuat! Durasi: ' . $validated['duration_days'] . ' hari. Total Rp. ' . number_format($validated['total_price'], 0, ',', '.');
     if (!empty($addonsToAttach)) {
         $addonNames = Addon::whereIn('id', array_keys($addonsToAttach))->pluck('name')->toArray();
-        $msg .= ' (dengan addons: '.implode(', ', $addonNames).')';
+        $msg .= ' (dengan addons: ' . implode(', ', $addonNames) . ')';
     }
 
     return $request->wantsJson()
-        ? response()->json(['success'=>true,'message'=>$msg,'data'=>$booking], 201)
-        : redirect()->route('booking.history')->with('success',$msg);
+        ? response()->json(['success' => true, 'message' => $msg, 'data' => $booking], 201)
+        : redirect()->route('booking.history')->with('success', $msg);
 }
 
 
@@ -243,9 +242,9 @@ public function storefasilitas(Request $request)
     // 3. Pengecekan Ketersediaan dan Perhitungan Harga Kamar
     foreach (array_unique($validated['fasilitas_ids']) as $fasilitasId) {
         
-        $fasilitas = Fasilitas::findOrFail($fasilitasId);
-        $hargafasilitas = $fasilitas->price * $durasi;
-        $total_harga += $hargafasilitas;
+
+       
+     
         
         // Data untuk Detail Fasilitas
         $fasilitasDetailData[] = [

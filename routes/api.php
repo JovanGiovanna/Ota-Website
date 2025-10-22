@@ -14,6 +14,10 @@ use App\Http\Controllers\PackagesController;
 use App\Http\Controllers\TypesController;
 use App\Http\Controllers\PackageProductController;
 use App\Http\Controllers\PackageAddonController;
+use App\Http\Controllers\DetailBookingController;
+use App\Http\Controllers\BookingAddonController;
+use App\Http\Controllers\BookPackageAddonController;
+use App\Http\Controllers\VendorInfoController;
 
 
 /*
@@ -28,12 +32,12 @@ use App\Http\Controllers\PackageAddonController;
 */
 
 // --- PENGGUNA (USER) API AUTH ---
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/api/register', [AuthController::class, 'register']);
+Route::post('/api/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/profile', function (Request $request) {
+    Route::post('/api/logout', [AuthController::class, 'logoutApi']);
+    Route::get('/api/profile', function (Request $request) {
         // Hanya mengizinkan User (bukan Vendor) untuk mengakses profile ini
         if ($request->user() instanceof \App\Models\User) {
             return response()->json($request->user());
@@ -43,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // --- VENDOR API AUTH ---
-Route::prefix('vendor')->group(function () {
+Route::prefix('api/vendor')->group(function () {
     
     // Register dan Login Vendor (Untuk Postman)
     Route::post('/register', [VendorAuthController::class, 'register']);
@@ -61,8 +65,7 @@ Route::prefix('vendor')->group(function () {
         });
 
         // Logout API Vendor
-        Route::post('/logout', [VendorAuthController::class, 'logoutApi']); 
-        // Anda perlu menambahkan metode 'logoutApi' di VendorAuthController
+        Route::post('/logout', [VendorAuthController::class, 'logoutApi']);
     });
 });
 
@@ -84,9 +87,43 @@ Route::get('/bookings', [BookingsController::class, 'index']); // Sebaiknya di d
 // Route Booking yang memerlukan otentikasi
 Route::prefix('booking')->middleware('auth:sanctum')->group(function () {
     // Route ini sebaiknya menjadi PUT/PATCH jika melakukan perubahan status
-    route::post('/checkout/{id}', [BookingsController::class, 'checkout'])->name('booking.checkout'); 
+    route::post('/checkout/{id}', [BookingsController::class, 'checkout'])->name('booking.checkout');
     route::post('/checkin/{id}', [BookingsController::class, 'checkin'])->name('booking.checkin');
-    
+
     route::post('/store', [BookingsController::class, 'store'])->name('booking.store');
     Route::post('/{id}/cancel', [BookingsController::class, 'cancelBooking']);
+});
+
+// Routes untuk Detail Booking
+Route::apiResource('detail-bookings', DetailBookingController::class);
+
+// Routes untuk Booking Addons
+Route::prefix('booking-addons')->group(function () {
+    Route::get('/', [BookingAddonController::class, 'index']);
+    Route::post('/', [BookingAddonController::class, 'store']);
+    Route::get('/{bookingId}', [BookingAddonController::class, 'show']);
+    Route::put('/{bookingId}/{addonId}', [BookingAddonController::class, 'update']);
+    Route::delete('/{bookingId}/{addonId}', [BookingAddonController::class, 'destroy']);
+});
+
+// Routes untuk Book Package Addons
+Route::prefix('book-package-addons')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [BookPackageAddonController::class, 'index']);
+    Route::post('/', [BookPackageAddonController::class, 'store']);
+    Route::get('/{id}', [BookPackageAddonController::class, 'show']);
+    Route::put('/{id}', [BookPackageAddonController::class, 'update']);
+    Route::delete('/{id}', [BookPackageAddonController::class, 'destroy']);
+    Route::get('/booking/{bookingId}', [BookPackageAddonController::class, 'getByBooking']);
+    Route::get('/addon/{addonId}', [BookPackageAddonController::class, 'getByAddon']);
+});
+
+// Routes untuk Vendor Info
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/vendor-infos', [VendorInfoController::class, 'index']);
+    Route::post('/vendor-infos', [VendorInfoController::class, 'store']);
+    Route::get('/vendor-infos/{id}', [VendorInfoController::class, 'show']);
+    Route::put('/vendor-infos/{id}', [VendorInfoController::class, 'update']);
+    Route::delete('/vendor-infos/{id}', [VendorInfoController::class, 'destroy']);
+    Route::get('/vendor-infos/vendor/{vendorId}', [VendorInfoController::class, 'getByVendor']);
+    Route::get('/vendor-infos/city/{cityId}', [VendorInfoController::class, 'getByCity']);
 });

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 // 💡 Pastikan Anda mengimpor Model-model yang berelasi
 use App\Models\User;
-use App\Models\DetailBooking; // 💡 Perbaikan: Gunakan DetailBooking (tanpa underscore) jika Modelnya DetailBooking
+use App\Models\Detail_Booking; // 💡 Perbaikan: Gunakan Detail_Booking dengan underscore sesuai nama file
 use App\Models\Addon;
 
 class Booking extends Model
@@ -19,23 +19,25 @@ class Booking extends Model
 
     // --- CASTS ---
     protected $casts = [
-        // 'arrival_time' => 'datetime:H:i', // 💡 Lebih baik cast sebagai 'string' jika hanya menyimpan jam, atau 'datetime' tanpa format
-        'check_in'      => 'date',
-        'check_out'     => 'date',
+        'checkin_appointment_start' => 'datetime',
+        'checkout_appointment_end' => 'datetime',
+        'total_price' => 'decimal:2',
     ];
 
     // --- FILLABLE ---
     protected $fillable = [
-        'user_id',
-        'Email',
-        'Phone',
-        'pemesan',
-        'arrival_time',
-        'check_in',
-        'check_out',
-        'durasi',
-        'total_harga',
+        'id_user',
+        'id_package',
+        'booker_name',
+        'booker_email',
+        'booker_telp',
+        'checkin_appointment_start',
+        'checkout_appointment_end',
+        'duration_days',
+        'amount',
+        'total_price',
         'status',
+        'note',
     ];
     
     // --- RELATIONS ---
@@ -45,18 +47,16 @@ class Booking extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'id_user');
     }
 
     /**
-     * Relasi ke DetailBooking (menunjukkan kamar-kamar yang dipesan).
-     * @return HasMany
+     * Relasi ke Package (paket yang dipesan).
+     * @return BelongsTo
      */
-    public function detailBookings(): HasMany
+    public function package(): BelongsTo
     {
-        // 💡 Asumsi: Nama Model Detail Booking Anda adalah 'DetailBooking' (tanpa underscore)
-        // Jika nama tabel/model Anda menggunakan underscore (Detail_Booking), ganti DetailBooking::class
-        return $this->hasMany(Detail_Booking::class, 'booking_id');
+        return $this->belongsTo(Package::class, 'id_package');
     }
     
     /**
@@ -78,20 +78,24 @@ class Booking extends Model
      */
     public function calculateDuration(): int
     {
-        // Pastikan properti sudah di-cast sebagai objek Carbon jika menggunakan $this->check_in
-        // Namun, karena sudah di-cast di $casts, kita bisa langsung akses
-        if (!$this->check_in || !$this->check_out) {
+        if (!$this->checkin_appointment_start || !$this->checkout_appointment_end) {
             return 0;
         }
-        
-        // 💡 Memastikan bahwa date accessor bekerja, atau menggunakan Carbon::parse
-        // Jika check_in dan check_out di-cast sebagai 'date', mereka sudah menjadi instance Carbon.
-        if ($this->check_in instanceof Carbon && $this->check_out instanceof Carbon) {
-             return $this->check_out->diffInDays($this->check_in);
+
+        if ($this->checkin_appointment_start instanceof Carbon && $this->checkout_appointment_end instanceof Carbon) {
+             return $this->checkout_appointment_end->diffInDays($this->checkin_appointment_start);
         }
 
-        // Fallback jika casting gagal (tidak seharusnya terjadi)
-        return Carbon::parse($this->check_out)->diffInDays(Carbon::parse($this->check_in));
+        return Carbon::parse($this->checkout_appointment_end)->diffInDays(Carbon::parse($this->checkin_appointment_start));
+    }
+
+    /**
+     * Relasi ke Detail_Booking (HasMany).
+     * @return HasMany
+     */
+    public function detailBookings(): HasMany
+    {
+        return $this->hasMany(Detail_Booking::class);
     }
 
     /**
@@ -101,6 +105,6 @@ class Booking extends Model
      */
     public function scopeActive($query)
     {
-        return $query->whereIn('status', ['diproses', 'checkin']);
+        return $query->whereIn('status', ['pending', 'confirmed', 'checked_in']);
     }
 }
