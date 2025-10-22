@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
-class Category extends Model
+class Type extends Model
 {
     use HasFactory;
 
@@ -16,7 +15,7 @@ class Category extends Model
      *
      * @var string
      */
-    protected $table = 'categories';
+    protected $table = 'types';
 
     /**
      * Tipe kunci primer (UUID).
@@ -33,13 +32,12 @@ class Category extends Model
     public $incrementing = false;
 
     /**
-     * Kolom-kolom yang dapat diisi secara massal.
+     * Kolom-kolom yang dapat diisi secara massal (mass assignable).
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'id_type',
-        'categories', // Kolom nama kategori
+        'type',
         'status',
     ];
 
@@ -51,7 +49,7 @@ class Category extends Model
     protected $casts = [
         'status' => 'boolean',
     ];
-
+    
     /**
      * Event boot untuk membuat UUID saat model baru dibuat.
      */
@@ -64,15 +62,5 @@ class Category extends Model
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });
-    }
-
-    /**
-     * Dapatkan type yang memiliki kategori ini.
-     *
-     * @return BelongsTo
-     */
-    public function type(): BelongsTo
-    {
-        return $this->belongsTo(Type::class, 'id_type', 'id');
     }
 }

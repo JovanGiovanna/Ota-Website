@@ -4,10 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
-class Category extends Model
+class Package extends Model
 {
     use HasFactory;
 
@@ -16,7 +15,7 @@ class Category extends Model
      *
      * @var string
      */
-    protected $table = 'categories';
+    protected $table = 'packages';
 
     /**
      * Tipe kunci primer (UUID).
@@ -33,14 +32,19 @@ class Category extends Model
     public $incrementing = false;
 
     /**
-     * Kolom-kolom yang dapat diisi secara massal.
+     * Kolom-kolom yang dapat diisi secara massal (mass assignable).
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'id_type',
-        'categories', // Kolom nama kategori
-        'status',
+        'name_package',
+        'slug',
+        'description',
+        'image',
+        'price_publish',
+        'start_publish',
+        'end_publish',
+        'is_active',
     ];
 
     /**
@@ -49,9 +53,12 @@ class Category extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'status' => 'boolean',
+        'price_publish' => 'decimal:2',
+        'start_publish' => 'datetime',
+        'end_publish' => 'datetime',
+        'is_active' => 'boolean',
     ];
-
+    
     /**
      * Event boot untuk membuat UUID saat model baru dibuat.
      */
@@ -59,7 +66,6 @@ class Category extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            // Mengisi kunci primer (ID) dengan UUID jika belum diatur
             if (empty($model->{$model->getKeyName()})) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
@@ -67,12 +73,12 @@ class Category extends Model
     }
 
     /**
-     * Dapatkan type yang memiliki kategori ini.
+     * Menggunakan kolom 'slug' untuk binding rute model implisit.
      *
-     * @return BelongsTo
+     * @return string
      */
-    public function type(): BelongsTo
+    public function getRouteKeyName()
     {
-        return $this->belongsTo(Type::class, 'id_type', 'id');
+        return 'slug';
     }
 }

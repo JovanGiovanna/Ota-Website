@@ -4,22 +4,87 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany; // Impor yang baik
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class Addon extends Model
 {
-    // Pastikan fillable sudah benar
-    protected $fillable = ['name', 'price'];
+    use HasFactory, SoftDeletes;
 
     /**
-     * Relasi Many-to-Many ke Booking melalui tabel pivot 'booking_addon'.
+     * Nama tabel yang terkait dengan model.
+     *
+     * @var string
      */
-    public function bookings(): BelongsToMany
+    protected $table = 'addons';
+
+    /**
+     * Kunci utama adalah UUID, bukan integer auto-increment.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Nonaktifkan auto-incrementing untuk primary key.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * Atribut yang dapat diisi secara massal (mass assignable).
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'id_vendor',
+        'addons',
+        'desc',
+        'status',
+        'price',
+        'publish',
+        'image_url',
+    ];
+
+    /**
+     * Atribut yang harus di-casting.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'price' => 'decimal:2',
+        'publish' => 'boolean',
+        'deleted_at' => 'datetime',
+    ];
+
+    // --- Booting Model ---
+    
+    /**
+     * Metode boot model. Digunakan untuk membuat UUID sebelum model disimpan.
+     */
+    protected static function boot()
     {
-        // 1. Ganti 'booking_addons' menjadi 'booking_addon'
-        // 2. Ganti 'jumlah' menjadi 'quantity'
-        return $this->belongsToMany(Booking::class, 'booking_addon')
-                    ->withPivot('quantity')
-                    ->withTimestamps();
+        parent::boot();
+
+        static::creating(function ($model) {
+            // Pastikan ID diset sebagai UUID jika belum ada
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = Str::uuid();
+            }
+        });
+    }
+
+    // --- Relasi ---
+
+    /**
+     * Mendapatkan vendor yang memiliki addon ini.
+     * Relasi BelongsTo ke model 'Vendor' dengan foreign key 'id_vendor'.
+     */
+    public function vendor(): BelongsTo
+    {
+        // Asumsi model untuk tabel 'vendor' adalah 'Vendor'
+        return $this->belongsTo(Vendor::class, 'id_vendor');
     }
 }

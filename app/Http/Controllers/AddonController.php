@@ -1,90 +1,160 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Addon;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Exception;
 
 class AddonController extends Controller
 {
     /**
-     * Menampilkan daftar semua Addon (menggunakan Blade View).
+     * Menampilkan daftar semua addons.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        $addons = Addon::all();
-        // PERUBAHAN UTAMA: Menggunakan 'admin.addons.index'
-        return view('admin.addons.index', compact('addons'));
+        // 
+        $addons = Addon::with('vendor') // Memuat relasi vendor
+            ->paginate($request->get('per_page', 10));
+
+        return response()->json([
+            'message' => 'Daftar Addons berhasil diambil',
+            'data' => $addons,
+        ]);
     }
 
     /**
-     * Menampilkan form untuk membuat Addon baru (View).
+     * Menyimpan addon baru.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        // PERUBAHAN UTAMA: Menggunakan 'admin.addons.create'
-        return view('admin.addons.create');
-    }
-
-    /**
-     * Menyimpan Addon baru ke database (Action POST).
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name'        => 'required|string|max:255',
-            'price'       => 'required|numeric|min:0',
-            'description' => 'nullable|string|max:500', 
+        $validator = Validator::make($request->all(), [
+            'id_vendor' => 'nullable|uuid|exists:vendor,id',
+            'addons' => 'required|string|max:255',
+            'desc' => 'nullable|string|max:500',
+            'status' => 'sometimes|string|in:available,unavailable,draft',
+            'price' => 'required|numeric|min:0',
+            'publish' => 'sometimes|boolean',
+            'image_url' => 'nullable|url|max:2048',
         ]);
 
-        $addon = Addon::create($validated);
-        
-        return redirect()->route('addons.index')
-                         ->with('success', "Add-on '{$addon->name}' berhasil ditambahkan!");
+        if ($validator->fails()) {
+            // 
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $addon = Addon::create($request->all());
+
+            return response()->json([
+                'message' => 'Addon berhasil ditambahkan',
+                'data' => $addon
+            ], 201);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Gagal menyimpan Addon',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Menampilkan Addon tertentu (View).
+     * Menampilkan detail addon tertentu.
+     *
+     * @param string $id
+     * @return JsonResponse
      */
-    public function show(Addon $addon)
+    public function show(string $id): JsonResponse
     {
-        // PERUBAHAN UTAMA: Menggunakan 'admin.addons.show' (Jika Anda membuatnya)
-        return view('admin.addons.show', compact('addon'));
+        $addon = Addon::with('vendor')->find($id);
+
+        if (!$addon) {
+            return response()->json(['message' => 'Addon tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'message' => 'Detail Addon berhasil diambil',
+            'data' => $addon,
+        ]);
     }
 
     /**
-     * Menampilkan form untuk mengedit Addon yang ada (View).
+     * Memperbarui addon tertentu.
+     *
+     * @param Request $request
+     * @param string $id
+     * @return JsonResponse
      */
-    public function edit(Addon $addon)
+    public function update(Request $request, string $id): JsonResponse
     {
-        // PERUBAHAN UTAMA: Menggunakan 'admin.addons.edit'
-        return view('admin.addons.edit', compact('addon'));
-    }
+        $addon = Addon::find($id);
 
-    /**
-     * Memperbarui Addon yang ada di database (Action PUT/PATCH).
-     */
-    public function update(Request $request, Addon $addon)
-    {
-        $validated = $request->validate([
-            'name'        => 'sometimes|required|string|max:255',
-            'price'       => 'sometimes|required|numeric|min:0',
-            'description' => 'nullable|string|max:500', 
+        if (!$addon) {
+            return response()->json(['message' => 'Addon tidak ditemukan'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'id_vendor' => 'nullable|uuid|exists:vendor,id',
+            'addons' => 'sometimes|string|max:255',
+            'desc' => 'nullable|string|max:500',
+            'status' => 'sometimes|string|in:available,unavailable,draft',
+            'price' => 'sometimes|numeric|min:0',
+            'publish' => 'sometimes|boolean',
+            'image_url' => 'nullable|url|max:2048',
         ]);
 
-        $addon->update($validated);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
         
-        return redirect()->route('addons.index')
-                         ->with('success', "Add-on '{$addon->name}' berhasil diperbarui!");
+        try {
+            $addon->update($request->all());
+
+            return response()->json([
+                'message' => 'Addon berhasil diperbarui',
+                'data' => $addon
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Gagal memperbarui Addon',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Menghapus Addon dari database.
+     * Menghapus addon tertentu (Soft Delete).
+     *
+     * @param string $id
+     * @return JsonResponse
      */
-    public function destroy(Addon $addon)
+    public function destroy(string $id): JsonResponse
     {
-        $addon->delete();
-        
-        return redirect()->route('addons.index')
-                         ->with('success', 'Add-on berhasil dihapus!');
+        $addon = Addon::find($id);
+
+        if (!$addon) {
+            return response()->json(['message' => 'Addon tidak ditemukan'], 404);
+        }
+
+        try {
+            $addon->delete(); // Soft delete
+            // 
+            return response()->json(['message' => 'Addon berhasil dihapus (soft deleted)']);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Gagal menghapus Addon',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

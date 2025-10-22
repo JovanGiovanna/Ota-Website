@@ -3,15 +3,18 @@
 use App\Http\Controllers\Categorycontroller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\kamarController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\VendorAuthController; // <<< Import Controller Vendor
-use App\Http\Controllers\FasilitasController;
 use App\Http\Controllers\BookingsController;
 use App\Http\Controllers\AddonController;
 use App\Http\Controllers\ProvinceController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PackagesController;
+use App\Http\Controllers\TypesController;
+use App\Http\Controllers\PackageProductController;
+use App\Http\Controllers\PackageAddonController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -66,13 +69,12 @@ Route::prefix('vendor')->group(function () {
 
 // --- RESOURCE ROUTES (UMUM/ADMIN) ---
 // Note: Route di bawah ini perlu middleware 'auth:sanctum' dan pengecekan 'role' admin jika hanya admin yang boleh mengakses.
-
-Route::apiResource('kamars', kamarController::class);
-Route::post('/kamars/store', [kamarController::class, 'store']); // Ini tumpang tindih dengan apiResource, sebaiknya dihapus atau diganti
-
+Route::resource('packages', PackagesController::class);
+Route::resource('types', TypesController::class);
 Route::apiResource('category', Categorycontroller::class);
 Route::apiResource('/addons', AddonController::class);
-
+Route::resource('package-products', PackageProductController::class)->except(['create', 'edit', 'update']);
+Route::resource('package-addon', PackageAddonController::class)->except(['create', 'edit', 'update']);
 Route::apiResource('provinces', ProvinceController::class);
 Route::apiResource('cities', CityController::class);
 Route::apiResource('products', ProductController::class);
@@ -87,5 +89,4 @@ Route::prefix('booking')->middleware('auth:sanctum')->group(function () {
     
     route::post('/store', [BookingsController::class, 'store'])->name('booking.store');
     Route::post('/{id}/cancel', [BookingsController::class, 'cancelBooking']);
-    Route::post('/fasilitas', [BookingsController::class, 'storefasilitas']); // Nama yang ambigu, lebih baik '/add-fasilitas' atau semacamnya
 });

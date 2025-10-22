@@ -2,153 +2,181 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Models\Type;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
-    // ===================== API JSON =====================
-    public function indexApi()
+    /**
+     * Menampilkan daftar semua Category dalam format JSON.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index()
     {
-        $categories = Category::all();
+        // Muat relasi 'type' untuk menghindari N+1 problem
+        $categories = Category::with('type')->orderBy('created_at', 'desc')->paginate(10);
+        
         return response()->json([
             'success' => true,
+            'message' => 'Daftar kategori berhasil diambil.',
             'data' => $categories
-        ]);
+        ], 200);
     }
 
-    public function showApi($id)
+    /**
+     * Metode create dan edit biasanya dihilangkan untuk API.
+     * Saya akan menghapusnya atau membiarkannya saja jika Anda ingin menyimpannya untuk keperluan lain.
+     * Jika Anda hanya menggunakan ini sebagai API, metode ini tidak diperlukan.
+     */
+    public function create()
     {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
-        }
-        return response()->json(['success' => true, 'data' => $category]);
+        // Mengembalikan daftar types yang aktif untuk referensi (opsional)
+        $types = Type::where('status', true)->pluck('type', 'id');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Data pendukung untuk form buat kategori.',
+            'types' => $types
+        ], 200);
+    }
+    
+    public function edit(Category $category)
+    {
+        // Mengembalikan detail kategori dan daftar types (opsional)
+        $types = Type::where('status', true)->pluck('type', 'id');
+        $category->load('type'); // Muat data type
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data kategori untuk pengeditan.',
+            'category' => $category,
+            'types' => $types
+        ], 200);
     }
 
-    public function searchApi(Request $request)
-{
-    $name = $request->query('q');
-    $categories = Category::where('category', 'like', "%{$name}%")->get();
-    return $categories->isEmpty()
-        ? response()->json(['success' => false, 'message' => 'Category not found'], 404)
-        : response()->json(['success' => true, 'data' => $categories]);
-}
 
-    public function storeApi(Request $request)
+    /**
+     * Menyimpan Category yang baru dibuat di database.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(Request $request)
     {
-        $validator = Validator::make($request->only('category'), [
-            'category' => 'required|string|max:50',
+        $validator = Validator::make($request->all(), [
+            'id_type' => 'required|uuid|exists:types,id',
+            'categories' => 'required|string|max:255|unique:categories,categories',
+            'status' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'status' => 400,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal.',
                 'errors' => $validator->errors()
-            ], 400);
+            ], 422); // HTTP 422 Unprocessable Entity
         }
 
-        $category = Category::create(['category' => $request->category]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Category created successfully',
-            'data' => $category
-        ], 201);
+        try {
+            $category = Category::create($validator->validated());
+            $category->load('type'); // Muat relasi setelah dibuat
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Kategori berhasil ditambahkan.',
+                'data' => $category
+            ], 201); // HTTP 201 Created
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan kategori.',
+                'error_detail' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function updateApi(Request $request, $id)
+    /**
+     * Menampilkan Category tertentu.
+     *
+     * @param  \App\Models\Category  $category
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(Category $category)
     {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
-        }
+        // Muat relasi 'type'
+        $category->load('type');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail kategori berhasil diambil.',
+            'data' => $category
+        ], 200);
+    }
 
-        $validator = Validator::make($request->only('category'), [
-            'category' => 'required|string|max:50',
+    /**
+     * Memperbarui Category tertentu di database.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Category  $category
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, Category $category)
+    {
+        $validator = Validator::make($request->all(), [
+            'id_type' => 'required|uuid|exists:types,id',
+            'categories' => 'required|string|max:255|unique:categories,categories,' . $category->id,
+            'status' => 'required|boolean',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $category->update($validator->validated());
+        try {
+            $category->update($validator->validated());
+            $category->load('type'); // Muat relasi setelah diupdate
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Category updated successfully',
-            'data' => $category
-        ]);
-    }
-
-    public function destroyApi($id)
-    {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+            return response()->json([
+                'success' => true,
+                'message' => 'Kategori berhasil diperbarui!',
+                'data' => $category
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui kategori.',
+                'error_detail' => $e->getMessage()
+            ], 500);
         }
-
-        $category->delete();
-        return response()->json(['success' => true, 'message' => 'Category deleted successfully'], 200);
     }
 
-    // ===================== WEB BLADE =====================
-    public function index()
+    /**
+     * Menghapus Category tertentu dari database.
+     *
+     * @param  \App\Models\Category  $category
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(Category $category)
     {
-        $categories = Category::all();
-        return view('admin.category.index', compact('categories'));
-    }
-
-    public function create()
-    {
-        return view('admin.category.create');
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'category' => 'required|string|max:50',
-        ]);
-
-        Category::create(['category' => $request->category]);
-        return redirect()->route('admin.category.index')->with('success', 'Category created successfully');
-    }
-
-    public function edit($id)
-    {
-        $category = Category::find($id);
-        if (!$category) {
-            return redirect()->route('admin.category.index')->with('error', 'Category not found');
+        try {
+            $category->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Kategori berhasil dihapus!'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus kategori. Pastikan tidak ada data lain yang terkait.',
+                'error_detail' => $e->getMessage()
+            ], 409); // HTTP 409 Conflict (umumnya digunakan untuk foreign key constraint violations)
         }
-        return view('admin.category.edit', compact('category'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $category = Category::find($id);
-        if (!$category) {
-            return redirect()->route('admin.category.index')->with('error', 'Category not found');
-        }
-
-        $request->validate([
-            'category' => 'required|string|max:50',
-        ]);
-
-        $category->update(['category' => $request->category]);
-        return redirect()->route('admin.category.index')->with('success', 'Category updated successfully');
-    }
-
-    public function destroy($id)
-    {
-        $category = Category::find($id);
-        if (!$category) {
-            return redirect()->route('admin.category.index')->with('error', 'Category not found');
-        }
-
-        $category->delete();
-        return redirect()->route('admin.category.index')->with('success', 'Category deleted successfully');
     }
 }
