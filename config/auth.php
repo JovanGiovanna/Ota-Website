@@ -45,6 +45,24 @@ return [
             'driver' => 'session',
             'provider' => 'vendors',
         ],
+        'super_admin' => [ 
+            'driver' => 'session',
+            'provider' => 'super_admins', 
+        ],
+        'sanctum' => [
+            'driver' => 'sanctum',
+            'provider' => 'users',
+            'hash' => false,
+        ],'sanctum_vendor' => [
+            'driver' => 'sanctum',
+            'provider' => 'vendors',
+            'hash' => false,
+        ],
+        'sanctum_super_admin' => [
+            'driver' => 'sanctum',
+            'provider' => 'super_admins',
+            'hash' => false,
+        ],
     ],
 
     /*
@@ -74,6 +92,10 @@ return [
         'vendors' => [
             'driver' => 'eloquent',
             'model' => App\Models\Vendor::class, // Merujuk ke Model Vendor yang menggunakan UUID
+        ],
+        'super_admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\SuperAdmin::class, // Arahkan ke model SuperAdmin
         ],
     ],
 

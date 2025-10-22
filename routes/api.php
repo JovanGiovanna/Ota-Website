@@ -4,7 +4,8 @@ use App\Http\Controllers\Categorycontroller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\VendorAuthController; // <<< Import Controller Vendor
+use App\Http\Controllers\VendorAuthController;
+use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\BookingsController;
 use App\Http\Controllers\AddonController;
 use App\Http\Controllers\ProvinceController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\BookPackageAddonController;
 use App\Http\Controllers\VendorInfoController;
 
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -32,12 +34,12 @@ use App\Http\Controllers\VendorInfoController;
 */
 
 // --- PENGGUNA (USER) API AUTH ---
-Route::post('/api/register', [AuthController::class, 'register']);
-Route::post('/api/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/api/logout', [AuthController::class, 'logoutApi']);
-    Route::get('/api/profile', function (Request $request) {
+    Route::post('/logout', [AuthController::class, 'logoutApi']);
+    Route::get('/profile', function (Request $request) {
         // Hanya mengizinkan User (bukan Vendor) untuk mengakses profile ini
         if ($request->user() instanceof \App\Models\User) {
             return response()->json($request->user());
@@ -46,8 +48,24 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+// =======================================================
+// A. ROUTE AUTHENTIKASI (LOGIN & LOGOUT) - Tanpa Middleware
+// =======================================================
+
+Route::group(['prefix' => 'super-admin', 'as' => 'api.super_admin.'], function () {
+    // POST /api/super-admin/register (maps to SuperAdminController@registerApi)
+    // Used to create a new Super Admin account and generate an access token
+    Route::post('register', [SuperAdminController::class, 'registerApi'])->name('register');
+    
+    // POST /api/super-admin/login (maps to SuperAdminController@loginApi)
+    // Used to authenticate an existing Super Admin and generate an access token
+    Route::post('login', [SuperAdminController::class, 'loginApi'])->name('login');
+});
+
+
+
 // --- VENDOR API AUTH ---
-Route::prefix('api/vendor')->group(function () {
+Route::prefix('/vendor')->group(function () {
     
     // Register dan Login Vendor (Untuk Postman)
     Route::post('/register', [VendorAuthController::class, 'register']);
