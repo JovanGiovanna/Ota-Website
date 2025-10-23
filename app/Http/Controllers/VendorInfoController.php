@@ -8,6 +8,7 @@ use App\Models\City;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class VendorInfoController extends Controller
 {
@@ -258,5 +259,67 @@ class VendorInfoController extends Controller
             'success' => true,
             'data' => $result
         ]);
+    }
+
+    /**
+     * Show the vendor info form for web.
+     */
+    public function showInfoForm()
+    {
+        $vendor = Auth::guard('vendor')->user();
+
+        if (!$vendor) {
+            return redirect()->route('vendor.login');
+        }
+
+        // Check if vendor already has info
+        $vendorInfo = VendorInfo::where('id_vendor', $vendor->id)->first();
+
+        if ($vendorInfo) {
+            // If already has info, redirect to dashboard
+            return redirect()->route('vendor.dashboard');
+        }
+
+        return view('vendor.vendorinfo');
+    }
+
+    /**
+     * Store vendor info from web form.
+     */
+    public function storeInfo(Request $request)
+    {
+        $vendor = Auth::guard('vendor')->user();
+
+        if (!$vendor) {
+            return redirect()->route('vendor.login');
+        }
+
+        // Check if vendor already has info
+        $existing = VendorInfo::where('id_vendor', $vendor->id)->first();
+
+        if ($existing) {
+            return redirect()->route('vendor.dashboard')->with('info', 'Informasi vendor sudah lengkap.');
+        }
+
+        // Validate input
+        $validated = $request->validate([
+            'id_city' => 'required|exists:city,id',
+            'name_corporate' => 'required|string|max:255',
+            'desc' => 'required|string',
+            'coordinate_latitude' => 'required|numeric|between:-90,90',
+            'coordinate_longitude' => 'required|numeric|between:-180,180',
+            'landmark_description' => 'nullable|string|max:500',
+        ]);
+
+        $validated['id_vendor'] = $vendor->id;
+
+        try {
+            VendorInfo::create($validated);
+
+            return redirect()->route('vendor.dashboard')->with('success', 'Informasi vendor berhasil disimpan. Selamat datang di dashboard!');
+        } catch (\Exception $e) {
+            Log::error('Vendor Info Web Store Failed: ' . $e->getMessage());
+            return back()->withInput()->withErrors(['error' => 'Gagal menyimpan informasi vendor. Silakan coba lagi.']);
+        }
     }
 }

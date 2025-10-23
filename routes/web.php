@@ -120,6 +120,10 @@ Route::middleware(['super_admin_access:vendor'])->group(function () {
         return view('vendor.dashboard');
     })->name('vendor.dashboard');
 
+    // Vendor info routes
+    Route::get('/vendor/info', [VendorInfoController::class, 'showInfoForm'])->name('vendor.info');
+    Route::post('/vendor/info', [VendorInfoController::class, 'storeInfo'])->name('vendor.info.store');
+
     // Vendor profile routes
     Route::get('/vendor/profile', [VendorController::class, 'profile'])->name('vendor.profile');
     Route::post('/vendor/profile', [VendorController::class, 'updateProfile'])->name('vendor.profile.update');

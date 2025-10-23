@@ -43,5 +43,6 @@ class Vendor extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed', // Digunakan untuk hashing password secara otomatis (Laravel 10+)
     ];
 }

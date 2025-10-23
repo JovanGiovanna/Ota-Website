@@ -24,35 +24,6 @@ class AdminAuthController extends Controller
         return view('admin_auth.register');
     }
 
-    // --- Registrasi Admin (Web/Form) ---
-
-    public function registerWeb(Request $request)
-    {
-        // 1. Validasi Input Registrasi
-        $request->validate([
-            'name' => 'required|string|max:255',
-            // Pastikan email unik di tabel 'admins'
-            'email' => 'required|string|email|max:255|unique:admins,email',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-
-        try {
-            $admin = Admin::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
-
-            // Otomatis loginkan admin setelah registrasi
-            Auth::guard('admin')->login($admin);
-
-            return redirect()->route('admin.dashboard')->with('success', 'Registrasi Admin berhasil. Selamat datang!');
-        } catch (\Exception $e) {
-            Log::error('Admin Web Registration Failed: ' . $e->getMessage());
-            return back()->withInput()->withErrors(['gagal' => 'Gagal menyelesaikan registrasi karena masalah sistem. Silakan coba lagi.']);
-        }
-    }
-
     // --- Login Admin (Web/Form) ---
 
     public function loginWeb(Request $request)

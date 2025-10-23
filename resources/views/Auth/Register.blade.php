@@ -120,26 +120,6 @@
                     >
                 </div>
 
-                <!-- Hidden Role Field -->
-                <input type="hidden" name="role" value="User">
-
-                <!-- Terms and Conditions -->
-                <div class="flex items-start">
-                    <input 
-                        id="terms" 
-                        name="terms" 
-                        type="checkbox" 
-                        class="mt-1 h-4 w-4 text-gray-800 focus:ring-gray-800 border-gray-300 rounded"
-                        required
-                    >
-                    <label for="terms" class="ml-3 block text-sm text-gray-700 leading-5">
-                        Saya menyetujui 
-                        <a href="{{route('terms.of.service')}}" class="text-gray-800 hover:text-gray-600 font-medium">Terms of Service</a> 
-                        dan 
-                        <a href="{{route('privacy.policy')}}" class="text-gray-800 hover:text-gray-600 font-medium">Privacy Policy</a>
-                    </label>
-                </div>
-
                 <!-- Register Button -->
                 <button 
                     type="submit"

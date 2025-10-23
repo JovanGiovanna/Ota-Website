@@ -37,37 +37,6 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * Registrasi Super Admin (Berbasis Web/Form).
-     */
-    public function registerWeb(Request $request)
-    {
-        // 1. Validasi Input Registrasi
-        $request->validate([
-            'name' => 'required|string|max:255',
-            // Pastikan email unik di tabel 'super_admin'
-            'email' => 'required|string|email|max:255|unique:super_admin,email', 
-            'password' => 'required|string|min:8|confirmed', 
-        ]);
-
-        try {
-            $superAdmin = SuperAdmin::create([
-                // ID UUID akan dibuat otomatis oleh Model
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
-
-            // Otomatis loginkan Super Admin setelah registrasi
-            Auth::guard('super_admin')->login($superAdmin);
-
-            return redirect()->route('super_admin.dashboard')->with('success', 'Registrasi Super Admin berhasil. Selamat datang!');
-        } catch (\Exception $e) {
-            Log::error('Super Admin Web Registration Failed: ' . $e->getMessage());
-            return back()->withInput()->withErrors(['gagal' => 'Gagal menyelesaikan registrasi karena masalah sistem. Silakan coba lagi.']);
-        }
-    }
-
-    /**
      * Login Super Admin (Berbasis Web/Form).
      */
     public function loginWeb(Request $request)

@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Vendor;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Validator;
+use App\Models\VendorInfo;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log; // Import Log untuk error handling
 
 class VendorAuthController extends Controller
@@ -21,7 +22,7 @@ class VendorAuthController extends Controller
 
     public function showRegistrationForm()
     {
-        return view('vendor_auth.register');
+        return view('auth.registervendor');
     }
 
     // --- Registrasi Vendor (Web/Form) ---
@@ -46,7 +47,7 @@ class VendorAuthController extends Controller
             // Otomatis loginkan vendor setelah registrasi
             Auth::guard('vendor')->login($vendor);
 
-            return redirect()->route('vendor.dashboard')->with('success', 'Registrasi Vendor berhasil. Selamat datang!');
+            return redirect()->intended(route('vendor.dashboard'))->with('success', 'Registrasi Vendor berhasil. Selamat datang!');
         } catch (\Exception $e) {
             // Tangani kegagalan sistem saat penyimpanan data (misalnya error database)
             Log::error('Vendor Web Registration Failed: ' . $e->getMessage());
