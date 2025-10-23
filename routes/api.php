@@ -33,18 +33,32 @@ use App\Http\Controllers\VendorInfoController;
 |
 */
 
-// --- PENGGUNA (USER) API AUTH ---
+// --- USER API AUTH ---
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logoutApi']);
     Route::get('/profile', function (Request $request) {
-        // Hanya mengizinkan User (bukan Vendor) untuk mengakses profile ini
+        // Hanya mengizinkan User untuk mengakses profile ini
         if ($request->user() instanceof \App\Models\User) {
             return response()->json($request->user());
         }
         return response()->json(['message' => 'Unauthorized or invalid scope'], 401);
+    });
+    // User Dashboard API
+    Route::get('/dashboard', function (Request $request) {
+        if ($request->user() instanceof \App\Models\User) {
+            return response()->json([
+                'message' => 'Welcome to User Dashboard',
+                'user' => $request->user(),
+                'data' => [
+                    'bookings_count' => $request->user()->bookings()->count(),
+                    'recent_bookings' => $request->user()->bookings()->latest()->take(5)->get()
+                ]
+            ]);
+        }
+        return response()->json(['message' => 'Unauthorized'], 401);
     });
 });
 
@@ -56,24 +70,45 @@ Route::group(['prefix' => 'super-admin', 'as' => 'api.super_admin.'], function (
     // POST /api/super-admin/register (maps to SuperAdminController@registerApi)
     // Used to create a new Super Admin account and generate an access token
     Route::post('register', [SuperAdminController::class, 'registerApi'])->name('register');
-    
+
     // POST /api/super-admin/login (maps to SuperAdminController@loginApi)
     // Used to authenticate an existing Super Admin and generate an access token
     Route::post('login', [SuperAdminController::class, 'loginApi'])->name('login');
+});
+
+// Super Admin Protected Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/super-admin/logout', [SuperAdminController::class, 'logoutApi']);
+    Route::get('/super-admin/profile', [SuperAdminController::class, 'showProfileApi']);
+    Route::get('/super-admin/dashboard', function (Request $request) {
+        if ($request->user() instanceof \App\Models\SuperAdmin) {
+            return response()->json([
+                'message' => 'Welcome to Super Admin Dashboard',
+                'super_admin' => $request->user(),
+                'data' => [
+                    'total_users' => \App\Models\User::count(),
+                    'total_vendors' => \App\Models\Vendor::count(),
+                    'total_bookings' => \App\Models\Booking::count(),
+                    'total_packages' => \App\Models\Package::count()
+                ]
+            ]);
+        }
+        return response()->json(['message' => 'Unauthorized'], 401);
+    });
 });
 
 
 
 // --- VENDOR API AUTH ---
 Route::prefix('/vendor')->group(function () {
-    
+
     // Register dan Login Vendor (Untuk Postman)
     Route::post('/register', [VendorAuthController::class, 'register']);
     Route::post('/login', [VendorAuthController::class, 'login']);
 
     // Route yang dilindungi untuk Vendor
     Route::middleware('auth:sanctum')->group(function () {
-        
+
         Route::get('/profile', function (Request $request) {
             // Memastikan pengguna yang login adalah Vendor
             if ($request->user() instanceof \App\Models\Vendor) {
@@ -84,9 +119,52 @@ Route::prefix('/vendor')->group(function () {
 
         // Logout API Vendor
         Route::post('/logout', [VendorAuthController::class, 'logoutApi']);
+
+        // Vendor Dashboard API
+        Route::get('/dashboard', function (Request $request) {
+            if ($request->user() instanceof \App\Models\Vendor) {
+                return response()->json([
+                    'message' => 'Welcome to Vendor Dashboard',
+                    'vendor' => $request->user(),
+                    'data' => [
+                        'vendor_infos_count' => $request->user()->vendorInfos()->count(),
+                        'bookings_handled' => \App\Models\Booking::whereHas('detailBookings.package.vendorInfo', function($q) use ($request) {
+                            $q->where('vendor_id', $request->user()->id);
+                        })->count()
+                    ]
+                ]);
+            }
+            return response()->json(['message' => 'Unauthorized'], 401);
+        });
     });
 });
 
+
+// --- ADMIN API AUTH ---
+Route::prefix('/admin')->group(function () {
+    Route::post('/register', [\App\Http\Controllers\AdminAuthController::class, 'register']);
+    Route::post('/login', [\App\Http\Controllers\AdminAuthController::class, 'login']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/dashboard', function (Request $request) {
+        if ($request->user() instanceof \App\Models\Admin) {
+            return response()->json([
+                'message' => 'Welcome to Admin Dashboard',
+                'admin' => $request->user(),
+                'data' => [
+                    'total_users' => \App\Models\User::count(),
+                    'total_bookings' => \App\Models\Booking::count(),
+                    'total_packages' => \App\Models\Package::count(),
+                    'total_categories' => \App\Models\Category::count()
+                ]
+            ]);
+        }
+        return response()->json(['message' => 'Unauthorized'], 401);
+    });
+    Route::post('/admin/logout', [\App\Http\Controllers\AdminAuthController::class, 'logoutApi']);
+    Route::get('/admin/profile', [\App\Http\Controllers\AdminAuthController::class, 'showProfile']);
+});
 
 // --- RESOURCE ROUTES (UMUM/ADMIN) ---
 // Note: Route di bawah ini perlu middleware 'auth:sanctum' dan pengecekan 'role' admin jika hanya admin yang boleh mengakses.

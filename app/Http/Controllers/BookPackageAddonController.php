@@ -16,34 +16,9 @@ class BookPackageAddonController extends Controller
      */
     public function index()
     {
-        $bookPackageAddons = BookPackageAddon::with(['booking', 'addon'])->get();
+        $bookPackageAddons = BookPackageAddon::with(['booking', 'addon'])->paginate(10);
 
-        $result = $bookPackageAddons->map(function ($bookPackageAddon) {
-            return [
-                'id' => $bookPackageAddon->id,
-                'id_book' => $bookPackageAddon->id_book,
-                'id_addons' => $bookPackageAddon->id_addons,
-                'created_at' => $bookPackageAddon->created_at,
-                'updated_at' => $bookPackageAddon->updated_at,
-                'booking' => $bookPackageAddon->booking ? [
-                    'id' => $bookPackageAddon->booking->id,
-                    'booker_name' => $bookPackageAddon->booking->booker_name,
-                    'booker_email' => $bookPackageAddon->booking->booker_email,
-                    'status' => $bookPackageAddon->booking->status,
-                ] : null,
-                'addon' => $bookPackageAddon->addon ? [
-                    'id' => $bookPackageAddon->addon->id,
-                    'addons' => $bookPackageAddon->addon->addons,
-                    'desc' => $bookPackageAddon->addon->desc,
-                    'price' => $bookPackageAddon->addon->price,
-                ] : null,
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $result
-        ]);
+        return view('super_admin.transaction_addons', compact('bookPackageAddons'));
     }
 
     /**

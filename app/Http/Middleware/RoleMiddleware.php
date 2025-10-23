@@ -9,7 +9,7 @@ class RoleMiddleware
 {
     public function handle($request, Closure $next, $role)
     {
-        
+
         if (!Auth::check()) {
             return redirect()->route('login');
         }

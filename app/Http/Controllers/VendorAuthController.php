@@ -16,7 +16,7 @@ class VendorAuthController extends Controller
 
     public function showLoginForm()
     {
-        return view('vendor_auth.login');
+        return view('auth.login');
     }
 
     public function showRegistrationForm()

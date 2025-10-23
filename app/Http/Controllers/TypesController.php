@@ -10,18 +10,16 @@ use Illuminate\Support\Facades\Validator;
 class TypesController extends Controller
 {
     /**
-     * Menampilkan daftar semua Type dalam format JSON.
+     * Menampilkan daftar semua Type dan Categories dalam view.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View
      */
     public function index()
     {
-        $types = Type::orderBy('created_at', 'desc')->paginate(10);
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar semua jenis berhasil diambil.',
-            'data' => $types
-        ], 200);
+        $types = Type::where('status', true)->orderBy('created_at', 'desc')->get();
+        $categories = \App\Models\Category::with('type')->where('status', true)->orderBy('created_at', 'desc')->get();
+
+        return view('super_admin.types_categories', compact('types', 'categories'));
     }
 
     /**

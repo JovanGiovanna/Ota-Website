@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Enums\UserRole;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,28 +20,14 @@ public function index(Request $request)
         $query->where('name', 'like', '%' . $request->search . '%');
     }
 
-    // Filter berdasarkan role
-    if ($request->filled('role')) {
-        $query->where('role', $request->role);
-    }
-
     // Ambil data users
-    $users = $query->get(); // Jika banyak data, kamu bisa menggunakan paginate()
-
-    // Hitung jumlah user dan admin
-    $userCount = User::whereRaw('LOWER(role) = ?', ['user'])->count();
-    $adminCount = User::whereRaw('LOWER(role) = ?', ['admin'])->count();
-
-
     $users = $query->paginate(10);
 
-        // Hitung jumlah user dan admin
-        $userCount = User::whereRaw('LOWER(role) = ?', ['user'])->count();
-        $adminCount = User::whereRaw('LOWER(role) = ?', ['admin'])->count();
+    // Hitung jumlah user
+    $userCount = User::count();
 
-
-        // Kirim ke view
-        return view('Pages.ListUsers', compact('users', 'userCount', 'adminCount'));
+    // Kirim ke view
+    return view('super_admin.customers', compact('users', 'userCount'));
 }
 
     public function register(Request $request)
@@ -51,7 +36,6 @@ public function index(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'role' => 'required|string|in:' . implode(',', UserRole::getValues()),
         ]);
 
         if ($validator->fails()) {
@@ -64,10 +48,9 @@ public function index(Request $request)
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => UserRole::from($request->role),
         ]);
 
-        $token = $user->createToken('auth_token', [$user->role->value])->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully',
@@ -89,7 +72,6 @@ public function index(Request $request)
         'name' => $request->name,
         'email' => $request->email,
         'password' => Hash::make($request->password),
-        'role' => 'user', // fix: default user aja
     ]);
 
     Auth::login($user);
@@ -113,7 +95,7 @@ public function index(Request $request)
             ]);
         }
 
-        $token = $user->createToken('auth_token', [$user->role->value])->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
@@ -122,7 +104,6 @@ public function index(Request $request)
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role->value,
             ]
         ]);
     }
@@ -168,14 +149,11 @@ public function index(Request $request)
 
     if (Auth::attempt($credentials)) {
         $request->session()->regenerate();
-
+        
         $user = Auth::user();
 
-        if (strtolower($user->role->value) === 'admin') {
-        return redirect()->route('admin.admin.dashboard');
-}
-        // default untuk user
-        return redirect()->route('landing');
+        // User biasa ke dashboard
+        return redirect()->route('user.dashboard');
     }
 
     return back()->withErrors([

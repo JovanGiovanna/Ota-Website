@@ -41,19 +41,30 @@ return [
             'provider' => 'users',
         ],
 
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
+
         'vendor' => [
             'driver' => 'session',
             'provider' => 'vendors',
         ],
-        'super_admin' => [ 
+        'super_admin' => [
             'driver' => 'session',
-            'provider' => 'super_admins', 
+            'provider' => 'super_admins',
         ],
         'sanctum' => [
             'driver' => 'sanctum',
             'provider' => 'users',
             'hash' => false,
-        ],'sanctum_vendor' => [
+        ],
+        'sanctum_admin' => [
+            'driver' => 'sanctum',
+            'provider' => 'admins',
+            'hash' => false,
+        ],
+        'sanctum_vendor' => [
             'driver' => 'sanctum',
             'provider' => 'vendors',
             'hash' => false,
@@ -86,6 +97,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
+        ],
+
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Admin::class,
         ],
 
         // Tambahkan provider 'vendors' di sini:

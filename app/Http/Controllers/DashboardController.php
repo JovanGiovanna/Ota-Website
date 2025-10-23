@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Booking;
-use App\Models\BookingFasilitas;
-use App\Models\Kamar;
-use App\Models\Fasilitas;
 use App\Models\Category;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -17,10 +15,10 @@ class DashboardController extends Controller
         // -------------------------
         // Stats Cards
         // -------------------------
-        $totalKamar = Kamar::count();
-        $totalFasilitas = Fasilitas::count();
         $totalKategori = Category::count();
         $totalBooking = Booking::count();
+        $totalUsers = User::count();
+        $totalRevenue = Booking::sum('total_price');
 
         // -------------------------
         // 1️⃣ Booking Kamar per Bulan
@@ -45,7 +43,7 @@ class DashboardController extends Controller
         // -------------------------
         $pendapatan = Booking::select(
             DB::raw('MONTH(created_at) as month'),
-            DB::raw('SUM(total_harga) as total')
+            DB::raw('SUM(total_price) as total')
         )
         ->groupBy('month')
         ->orderBy('month')
@@ -66,31 +64,50 @@ class DashboardController extends Controller
         $statusLabels = $statusDataRaw->keys()->toArray();
         $statusData = $statusDataRaw->values()->toArray();
 
-        // -------------------------
-        // 4️⃣ Booking Fasilitas per Bulan
-        // -------------------------
-        $fasilitasBookings = BookingFasilitas::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('COUNT(*) as total')
-        )
-        ->groupBy('month')
-        ->orderBy('month')
-        ->pluck('total', 'month');
-
-        $fasilitasMonths = $months;
-        $fasilitasData = [];
-        foreach(range(1,12) as $m) {
-            $fasilitasData[] = $fasilitasBookings[$m] ?? 0;
-        }
 
         // -------------------------
         // Return ke view
         // -------------------------
         return view('admin.dashboard', compact(
-            'totalKamar','totalFasilitas','totalKategori','totalBooking',
+            'totalKategori','totalBooking','totalUsers','totalRevenue',
             'months','bookingData','pendapatanData',
             'statusLabels','statusData',
-            'fasilitasMonths','fasilitasData'
         ));
+    }
+
+    public function users()
+    {
+        $users = User::paginate(10);
+        return view('admin.users', compact('users'));
+    }
+
+    public function bookings()
+    {
+        $bookings = Booking::with('user')->paginate(10);
+        return view('admin.bookings', compact('bookings'));
+    }
+
+    public function categories()
+    {
+        $categories = Category::paginate(10);
+        return view('admin.categories', compact('categories'));
+    }
+
+    public function analytics()
+    {
+        // Analytics data
+        $analytics = [
+            'totalBookings' => Booking::count(),
+            'totalRevenue' => Booking::sum('total_price'),
+            'totalUsers' => User::count(),
+            'totalCategories' => Category::count(),
+        ];
+
+        return view('admin.analytics', compact('analytics'));
+    }
+
+    public function settings()
+    {
+        return view('admin.settings');
     }
 }

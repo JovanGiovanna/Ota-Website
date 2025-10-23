@@ -13,12 +13,9 @@ class DetailBookingController extends Controller
      */
     public function index()
     {
-        $detailBookings = Detail_Booking::with(['booking', 'kamar'])->get();
+        $detailBookings = Detail_Booking::with(['booking', 'product'])->paginate(10);
 
-        return response()->json([
-            'success' => true,
-            'data' => $detailBookings
-        ]);
+        return view('super_admin.transaction_products', compact('detailBookings'));
     }
 
     /**

@@ -16,11 +16,10 @@ class CityController extends Controller
             $query->where('id_province', $request->province_id);
         }
 
-        $cities = $query->get();
-        return response()->json([
-            'success' => true,
-            'data' => $cities
-        ]);
+        $cities = $query->orderBy('name')->get();
+        $provinces = \App\Models\Province::orderBy('name')->get();
+
+        return view('super_admin.cities', compact('cities', 'provinces'));
     }
 
     public function show($id)

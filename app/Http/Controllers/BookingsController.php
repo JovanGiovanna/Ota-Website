@@ -17,71 +17,9 @@ class BookingsController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::with(['user', 'package', 'detailBookings.product', 'addons'])->get();
+        $bookings = Booking::with(['user', 'package', 'detailBookings.product', 'addons'])->paginate(10);
 
-        $result = $bookings->map(function ($booking) {
-            return [
-                'id' => $booking->id,
-                'id_user' => $booking->id_user,
-                'id_package' => $booking->id_package,
-                'booker_name' => $booking->booker_name,
-                'booker_email' => $booking->booker_email,
-                'booker_telp' => $booking->booker_telp,
-                'checkin_appointment_start' => $booking->checkin_appointment_start,
-                'checkout_appointment_end' => $booking->checkout_appointment_end,
-                'duration_days' => $booking->duration_days,
-                'amount' => $booking->amount,
-                'total_price' => $booking->total_price,
-                'status' => $booking->status,
-                'note' => $booking->note,
-                'created_at' => $booking->created_at,
-                'updated_at' => $booking->updated_at,
-                'user' => $booking->user ? [
-                    'id' => $booking->user->id,
-                    'name' => $booking->user->name,
-                    'email' => $booking->user->email,
-                ] : null,
-                'package' => $booking->package ? [
-                    'id' => $booking->package->id,
-                    'name_package' => $booking->package->name_package,
-                    'slug' => $booking->package->slug,
-                    'description' => $booking->package->description,
-                    'price_publish' => $booking->package->price_publish,
-                ] : null,
-                'detail_bookings' => $booking->detailBookings->map(function ($detail) {
-                    return [
-                        'id' => $detail->id,
-                        'booking_id' => $detail->booking_id,
-                        'product_id' => $detail->product_id,
-                        'booker_name' => $detail->booker_name,
-                        'adults' => $detail->adults,
-                        'children' => $detail->children,
-                        'special_request' => $detail->special_request,
-                        'product' => $detail->product ? [
-                            'id' => $detail->product->id,
-                            'name' => $detail->product->name,
-                            'price' => $detail->product->price,
-                            'max_adults' => $detail->product->max_adults,
-                            'max_children' => $detail->product->max_children,
-                        ] : null,
-                    ];
-                }),
-                'addons' => $booking->addons->map(function ($addon) {
-                    return [
-                        'id' => $addon->id,
-                        'addons' => $addon->addons,
-                        'desc' => $addon->desc,
-                        'price' => $addon->price,
-                        'quantity' => $addon->pivot->quantity,
-                    ];
-                }),
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $result
-        ]);
+        return view('super_admin.transaction_packages', compact('bookings'));
     }
 
     /**

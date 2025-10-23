@@ -10,11 +10,8 @@ class ProvinceController extends Controller
 {
     public function index()
     {
-        $provinces = Province::all();
-        return response()->json([
-            'success' => true,
-            'data' => $provinces
-        ]);
+        $provinces = Province::orderBy('name')->get();
+        return view('super_admin.provinces', compact('provinces'));
     }
 
     public function show($id)

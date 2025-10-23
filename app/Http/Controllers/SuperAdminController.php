@@ -23,8 +23,8 @@ class SuperAdminController extends Controller
      */
     public function showLoginForm()
     {
-        // Ganti 'super_admin_auth.login' dengan view Blade yang sesuai
-        return view('super_admin_auth.login');
+        // Use the same login form as regular users
+        return view('auth.login');
     }
 
     /**
@@ -232,7 +232,7 @@ class SuperAdminController extends Controller
     public function showProfileApi(Request $request)
     {
         // Metode user() secara otomatis mengambil pengguna dari guard Sanctum yang terkonfigurasi.
-        $superAdmin = $request->user(); 
+        $superAdmin = $request->user();
 
         if (!$superAdmin) {
             return response()->json([
@@ -249,5 +249,51 @@ class SuperAdminController extends Controller
                 'created_at' => $superAdmin->created_at,
             ]
         ]);
+    }
+
+    /**
+     * Super Admin Dashboard
+     */
+    public function dashboard(Request $request)
+    {
+        // You can add dashboard logic here, similar to DashboardController
+        // For now, return the view
+        return view('super_admin.dashboard');
+    }
+
+    /**
+     * Index method for transaction packages
+     */
+    public function transactionPackages()
+    {
+        // Add logic to fetch transaction packages data
+        return view('super_admin.transaction_packages');
+    }
+
+    /**
+     * Index method for transaction products
+     */
+    public function transactionProducts()
+    {
+        // Add logic to fetch transaction products data
+        return view('super_admin.transaction_products');
+    }
+
+    /**
+     * Index method for transaction addons
+     */
+    public function transactionAddons()
+    {
+        // Add logic to fetch transaction addons data
+        return view('super_admin.transaction_addons');
+    }
+
+    /**
+     * Index method for rekon
+     */
+    public function rekon()
+    {
+        // Add logic to fetch rekon data
+        return view('super_admin.rekon');
     }
 }

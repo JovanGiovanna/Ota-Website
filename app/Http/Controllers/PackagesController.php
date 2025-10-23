@@ -11,19 +11,15 @@ use Illuminate\Support\Str;
 class PackagesController extends Controller
 {
     /**
-     * Menampilkan daftar semua Package dalam format JSON.
+     * Menampilkan daftar semua Package dalam view.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View
      */
     public function index()
     {
         $packages = Package::orderBy('created_at', 'desc')->paginate(10);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar paket berhasil diambil.',
-            'data' => $packages
-        ], 200);
+
+        return view('super_admin.packages', compact('packages'));
     }
     
     /**

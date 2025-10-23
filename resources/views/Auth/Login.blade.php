@@ -51,7 +51,7 @@
             </div>
 
             <!-- Login Form -->
-            <form method="POST" action="{{ route('login.web') }}" class="space-y-6">
+            <form method="POST" action="{{ request()->is('admin/login') ? route('admin.login.web') : (request()->is('vendor/login') ? route('vendor.login.web') : (request()->is('super-admin/login') ? route('super_admin.login.web') : route('login.web'))) }}" class="space-y-6">
                 @csrf
                 
                 <!-- Email Field -->
