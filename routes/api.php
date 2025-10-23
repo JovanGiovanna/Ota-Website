@@ -19,7 +19,7 @@ use App\Http\Controllers\DetailBookingController;
 use App\Http\Controllers\BookingAddonController;
 use App\Http\Controllers\BookPackageAddonController;
 use App\Http\Controllers\VendorInfoController;
-
+use App\Http\Controllers\BookProductController;
 
 
 /*
@@ -222,4 +222,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/vendor-infos/{id}', [VendorInfoController::class, 'destroy']);
     Route::get('/vendor-infos/vendor/{vendorId}', [VendorInfoController::class, 'getByVendor']);
     Route::get('/vendor-infos/city/{cityId}', [VendorInfoController::class, 'getByCity']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::resource('book-products', BookProductController::class)->only([
+        'index', 'store', 'show'
+    ]);
+
 });
