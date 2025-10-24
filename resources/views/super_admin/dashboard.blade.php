@@ -48,10 +48,10 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
     new Chart(bookingCtx, {
         type: 'line',
         data: {
-            labels: {!! json_encode(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) !!},
+            labels: {!! json_encode($months) !!},
             datasets: [{
                 label: 'Bookings',
-                data: {!! json_encode([12, 19, 15, 25, 22, 30]) !!},
+                data: {!! json_encode($bookingData) !!},
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 3,
@@ -99,10 +99,10 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
     new Chart(revenueCtx, {
         type: 'bar',
         data: {
-            labels: {!! json_encode(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) !!},
+            labels: {!! json_encode($months) !!},
             datasets: [{
                 label: 'Revenue',
-                data: {!! json_encode([1200000, 1900000, 1500000, 2500000, 2200000, 3000000]) !!},
+                data: {!! json_encode($revenueData) !!},
                 backgroundColor: 'rgba(34, 197, 94, 0.8)',
                 borderColor: 'rgb(34, 197, 94)',
                 borderWidth: 1,
@@ -147,7 +147,7 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
         data: {
             labels: {!! json_encode(['Confirmed', 'Pending', 'Cancelled', 'Completed']) !!},
             datasets: [{
-                data: {!! json_encode([45, 12, 8, 35]) !!},
+                data: {!! json_encode($statusData) !!},
                 backgroundColor: [
                     'rgba(59, 130, 246, 0.8)',
                     'rgba(34, 197, 94, 0.8)',
@@ -179,10 +179,10 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
     new Chart(facilitiesCtx, {
         type: 'line',
         data: {
-            labels: {!! json_encode(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) !!},
+            labels: {!! json_encode($months) !!},
             datasets: [{
                 label: 'Facility Bookings',
-                data: {!! json_encode([8, 15, 12, 20, 18, 25]) !!},
+                data: {!! json_encode($facilityData) !!},
                 borderColor: 'rgb(147, 51, 234)',
                 backgroundColor: 'rgba(147, 51, 234, 0.1)',
                 borderWidth: 3,

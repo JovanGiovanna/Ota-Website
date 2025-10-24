@@ -26,6 +26,7 @@ class Vendor extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
     ];
 
     /**
@@ -44,5 +45,14 @@ class Vendor extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed', // Digunakan untuk hashing password secara otomatis (Laravel 10+)
+        'is_active' => 'boolean',
     ];
+
+    /**
+     * Relasi ke VendorInfo.
+     */
+    public function vendorInfo()
+    {
+        return $this->hasOne(VendorInfo::class, 'id_vendor');
+    }
 }

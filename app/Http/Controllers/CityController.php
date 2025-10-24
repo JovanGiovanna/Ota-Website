@@ -16,10 +16,16 @@ class CityController extends Controller
             $query->where('id_province', $request->province_id);
         }
 
-        $cities = $query->orderBy('name')->get();
+        $cities = $query->orderBy('name')->paginate(10);
         $provinces = \App\Models\Province::orderBy('name')->get();
 
         return view('super_admin.cities', compact('cities', 'provinces'));
+    }
+
+    public function create()
+    {
+        $provinces = \App\Models\Province::orderBy('name')->get();
+        return view('super_admin.cities.create', compact('provinces'));
     }
 
     public function show($id)
@@ -33,62 +39,52 @@ class CityController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'id_province' => 'required|exists:province,id',
             'name' => 'required|string|max:100',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'status' => 400,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 400);
-        }
+        City::create($request->only(['id_province', 'name']));
 
-        $city = City::create($request->only(['id_province', 'name']));
-
-        return response()->json([
-            'success' => true,
-            'message' => 'City created successfully',
-            'data' => $city
-        ], 201);
+        return redirect()->route('super_admin.cities')->with('success', 'City created successfully');
     }
 
     public function update(Request $request, $id)
     {
         $city = City::find($id);
         if (!$city) {
-            return response()->json(['success' => false, 'message' => 'City not found'], 404);
+            return redirect()->route('super_admin.cities')->with('error', 'City not found');
         }
 
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'id_province' => 'required|exists:province,id',
             'name' => 'required|string|max:100',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-        }
-
         $city->update($request->only(['id_province', 'name']));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'City updated successfully',
-            'data' => $city
-        ]);
+        return redirect()->route('super_admin.cities')->with('success', 'City updated successfully');
+    }
+
+    public function edit($id)
+    {
+        $city = City::find($id);
+        if (!$city) {
+            return redirect()->route('super_admin.cities')->with('error', 'City not found');
+        }
+
+        $provinces = \App\Models\Province::orderBy('name')->get();
+        return view('super_admin.cities.edit', compact('city', 'provinces'));
     }
 
     public function destroy($id)
     {
         $city = City::find($id);
         if (!$city) {
-            return response()->json(['success' => false, 'message' => 'City not found'], 404);
+            return redirect()->route('super_admin.cities')->with('error', 'City not found');
         }
 
         $city->delete();
-        return response()->json(['success' => true, 'message' => 'City deleted successfully'], 200);
+        return redirect()->route('super_admin.cities')->with('success', 'City deleted successfully');
     }
 }

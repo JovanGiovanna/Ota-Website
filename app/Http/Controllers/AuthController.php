@@ -21,13 +21,13 @@ public function index(Request $request)
     }
 
     // Ambil data users
-    $users = $query->paginate(10);
+    $customers = $query->paginate(10);
 
     // Hitung jumlah user
     $userCount = User::count();
 
     // Kirim ke view
-    return view('super_admin.customers', compact('users', 'userCount'));
+    return view('super_admin.customers', compact('customers', 'userCount'));
 }
 
     public function register(Request $request)

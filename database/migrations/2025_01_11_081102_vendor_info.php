@@ -18,13 +18,16 @@ return new class extends Migration
             ->references('id')
             ->on('vendor')
             ->onDelete('cascade');            
-            $table->uuid('id_city');
+            $table->uuid('id_city')->nullable();
             $table->foreign('id_city')
             ->references('id')
             ->on('city')
-            ->onDelete('cascade');            
-            $table->string('name_corporate');
-            $table->string('desc');
+            ->onDelete('cascade');
+            $table->string('name_corporate')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('address')->nullable();
+            $table->string('description')->nullable();
+            $table->string('desc')->nullable();
             $table->integer('coordinate');
             $table->integer('landmark');
             $table->timestamps();

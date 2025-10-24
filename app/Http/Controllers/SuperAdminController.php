@@ -137,7 +137,7 @@ class SuperAdminController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string',
-        ]); 
+        ]);
 
         if ($validator->fails()) {
             return response()->json([
@@ -146,14 +146,11 @@ class SuperAdminController extends Controller
             ], 422);
         }
 
-        $credentials = $request->only('email', 'password');
-        
-        // Coba otentikasi menggunakan guard 'super_admin'
-        if (Auth::guard('super_admin')->attempt($credentials)) {
-            
-            /** @var \App\Models\SuperAdmin $superAdmin */
-            $superAdmin = Auth::guard('super_admin')->user();
-            
+        // Coba otentikasi langsung dari model SuperAdmin
+        $superAdmin = SuperAdmin::where('email', $request->email)->first();
+
+        if ($superAdmin && Hash::check($request->password, $superAdmin->password)) {
+
             // Hapus token lama yang mungkin masih ada, lalu buat token baru
             $superAdmin->tokens()->delete();
             $token = $superAdmin->createToken('super_admin_token', ['admin:access'])->plainTextToken;
@@ -225,9 +222,63 @@ class SuperAdminController extends Controller
      */
     public function dashboard(Request $request)
     {
-        // You can add dashboard logic here, similar to DashboardController
-        // For now, return the view
-        return view('super_admin.dashboard');
+        // Get monthly booking data for the last 6 months
+        $monthlyBookings = \App\Models\Booking::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('count', 'month')
+            ->toArray();
+
+        // Get monthly revenue data for the last 6 months
+        $monthlyRevenue = \App\Models\Booking::selectRaw('MONTH(created_at) as month, SUM(total_price) as revenue')
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('revenue', 'month')
+            ->toArray();
+
+        // Get booking status counts
+        $statusCounts = \App\Models\Booking::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        // Get monthly facility bookings (assuming products are facilities)
+        $monthlyFacilities = \App\Models\BookProduct::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->pluck('count', 'month')
+            ->toArray();
+
+        // Prepare data for charts
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        $bookingData = [];
+        $revenueData = [];
+        $facilityData = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $monthNum = now()->subMonths($i)->month;
+            $bookingData[] = $monthlyBookings[$monthNum] ?? 0;
+            $revenueData[] = $monthlyRevenue[$monthNum] ?? 0;
+            $facilityData[] = $monthlyFacilities[$monthNum] ?? 0;
+        }
+
+        $statusData = [
+            $statusCounts['completed'] ?? 0,
+            $statusCounts['pending'] ?? 0,
+            $statusCounts['cancelled'] ?? 0,
+            $statusCounts['confirmed'] ?? 0
+        ];
+
+        return view('super_admin.dashboard', compact(
+            'months',
+            'bookingData',
+            'revenueData',
+            'statusData',
+            'facilityData'
+        ));
     }
 
     /**
@@ -235,8 +286,12 @@ class SuperAdminController extends Controller
      */
     public function transactionPackages()
     {
-        // Add logic to fetch transaction packages data
-        return view('super_admin.transaction_packages');
+        // Fetch transaction packages data from bookings table with relations
+        $transactions = \App\Models\Booking::with(['user', 'package', 'addons'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('super_admin.transaction_packages', compact('transactions'));
     }
 
     /**
@@ -244,8 +299,12 @@ class SuperAdminController extends Controller
      */
     public function transactionProducts()
     {
-        // Add logic to fetch transaction products data
-        return view('super_admin.transaction_products');
+        // Fetch transaction products data from book_products table with relations
+        $transactions = \App\Models\BookProduct::with(['user', 'product.vendor'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('super_admin.transaction_products', compact('transactions'));
     }
 
     /**
@@ -253,8 +312,60 @@ class SuperAdminController extends Controller
      */
     public function transactionAddons()
     {
-        // Add logic to fetch transaction addons data
-        return view('super_admin.transaction_addons');
+        // Fetch transaction addons data from book_addons table with relations
+        $transactions = \App\Models\BookAddon::with(['user', 'addon.vendor'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('super_admin.transaction_addons', compact('transactions'));
+    }
+
+    /**
+     * Index method for customers
+     */
+    public function customers()
+    {
+        // Fetch customers data from users table with booking counts
+        $customers = \App\Models\User::withCount('bookings')
+        ->with(['bookings' => function ($query) {
+            $query->latest()->take(1);
+        }])
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+
+        return view('super_admin.customers', compact('customers'));
+    }
+
+    /**
+     * Ban a customer
+     */
+    public function banCustomer(Request $request, $id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+        $user->update(['status' => 'banned']);
+
+        return redirect()->back()->with('success', 'Customer has been banned successfully.');
+    }
+
+    /**
+     * Unban a customer
+     */
+    public function unbanCustomer(Request $request, $id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+        $user->update(['status' => 'active']);
+
+        return redirect()->back()->with('success', 'Customer has been unbanned successfully.');
+    }
+
+    /**
+     * View customer details
+     */
+    public function viewCustomer($id)
+    {
+        $customer = \App\Models\User::with(['bookings.package', 'bookings.addons'])->findOrFail($id);
+
+        return view('super_admin.customers.view', compact('customer'));
     }
 
     /**
@@ -262,7 +373,31 @@ class SuperAdminController extends Controller
      */
     public function rekon()
     {
-        // Add logic to fetch rekon data
-        return view('super_admin.rekon');
+        // Fetch reconciliation data - assuming reconciliation is based on bookings
+        // For now, we'll simulate reconciliation by comparing system records
+        $rekons = \App\Models\Booking::selectRaw('
+            id,
+            created_at,
+            total_price as system_amount,
+            CASE WHEN status = "completed" THEN total_price ELSE 0 END as bank_amount,
+            CASE WHEN status = "completed" THEN 0 ELSE total_price END as difference,
+            status
+        ')
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+
+        // Calculate summary stats
+        $totalRevenue = \App\Models\Booking::where('status', 'completed')->sum('total_price');
+        $completedTransactions = \App\Models\Booking::where('status', 'completed')->count();
+        $pendingReconciliation = \App\Models\Booking::where('status', '!=', 'completed')->count();
+        $discrepancies = \App\Models\Booking::where('status', 'cancelled')->count();
+
+        return view('super_admin.rekon', compact(
+            'rekons',
+            'totalRevenue',
+            'completedTransactions',
+            'pendingReconciliation',
+            'discrepancies'
+        ));
     }
 }

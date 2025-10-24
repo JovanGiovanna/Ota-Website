@@ -85,41 +85,49 @@ Transaction Addons Management
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <!-- Sample transaction rows -->
+                    @forelse($transactions as $transaction)
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-ADD-2024-001</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $transaction->booking_code ?? '#' . strtoupper(substr($transaction->id, 0, 8)) }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-8 w-8">
                                     <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <span class="text-white text-xs font-medium">SA</span>
+                                        <span class="text-white text-xs font-medium">{{ substr($transaction->user->name ?? 'N/A', 0, 2) }}</span>
                                     </div>
                                 </div>
                                 <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900">Sarah Anderson</div>
-                                    <div class="text-sm text-gray-500">sarah.anderson@email.com</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ $transaction->user->name ?? $transaction->booker_name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $transaction->user->email ?? $transaction->booker_email }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">Extra Photo Session</div>
-                            <div class="text-sm text-gray-500">Additional 2 hours shooting</div>
+                            <div class="text-sm text-gray-900">{{ $transaction->addon->addons ?? 'N/A' }}</div>
+                            <div class="text-sm text-gray-500">{{ $transaction->addon->desc ?? 'N/A' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">John Studio</div>
-                            <div class="text-sm text-gray-500">Photography</div>
+                            <div class="text-sm text-gray-900">{{ $transaction->addon->vendor->name ?? 'N/A' }}</div>
+                            <div class="text-sm text-gray-500">{{ $transaction->addon->vendor->vendorInfo->business_type ?? 'N/A' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">1</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $transaction->amount }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp 200,000</div>
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                            @if($transaction->status == 'completed')
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                            @elseif($transaction->status == 'pending')
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                            @elseif($transaction->status == 'cancelled')
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
+                            @else
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($transaction->status) }}</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Dec 15, 2024
+                            {{ $transaction->created_at->format('M d, Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
@@ -127,124 +135,20 @@ Transaction Addons Management
                             <button class="text-red-600 hover:text-red-900">Refund</button>
                         </td>
                     </tr>
-
+                    @empty
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-ADD-2024-002</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-8 w-8">
-                                    <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                                        <span class="text-white text-xs font-medium">MR</span>
-                                    </div>
-                                </div>
-                                <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900">Michael Rodriguez</div>
-                                    <div class="text-sm text-gray-500">michael.rodriguez@email.com</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">Video Highlight</div>
-                            <div class="text-sm text-gray-500">3-minute wedding highlight</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">Maya Videos</div>
-                            <div class="text-sm text-gray-500">Videography</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">1</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp 150,000</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Dec 18, 2024
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Refund</button>
+                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                            No transactions found.
                         </td>
                     </tr>
-
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-ADD-2024-003</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-8 w-8">
-                                    <div class="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center">
-                                        <span class="text-white text-xs font-medium">EJ</span>
-                                    </div>
-                                </div>
-                                <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900">Emma Johnson</div>
-                                    <div class="text-sm text-gray-500">emma.johnson@email.com</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">Photo Retouching</div>
-                            <div class="text-sm text-gray-500">Professional photo editing</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">Wedding Studio</div>
-                            <div class="text-sm text-gray-500">Photography</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">1</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp 100,000</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Dec 20, 2024
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Refund</button>
-                        </td>
-                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
 
         <!-- Pagination -->
         <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div class="flex-1 flex justify-between sm:hidden">
-                <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Previous</a>
-                <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Next</a>
-            </div>
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700">
-                        Showing <span class="font-medium">1</span> to <span class="font-medium">3</span> of <span class="font-medium">3</span> results
-                    </p>
-                </div>
-                <div>
-                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                            <span class="sr-only">Previous</span>
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </a>
-                        <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
-                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                            <span class="sr-only">Next</span>
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    </nav>
-                </div>
-            </div>
+            {{ $transactions->links() }}
         </div>
     </div>
 </div>

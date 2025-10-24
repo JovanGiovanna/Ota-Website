@@ -14,6 +14,11 @@ class ProvinceController extends Controller
         return view('super_admin.provinces', compact('provinces'));
     }
 
+    public function create()
+    {
+        return view('super_admin.provinces.create');
+    }
+
     public function show($id)
     {
         $province = Province::find($id);
@@ -25,60 +30,49 @@ class ProvinceController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->only('name'), [
+        $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'status' => 400,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 400);
+        Province::create(['name' => $request->name]);
+
+        return redirect()->route('super_admin.provinces')->with('success', 'Province created successfully');
+    }
+
+    public function edit($id)
+    {
+        $province = Province::find($id);
+        if (!$province) {
+            return redirect()->route('super_admin.provinces')->with('error', 'Province not found');
         }
 
-        $province = Province::create(['name' => $request->name]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Province created successfully',
-            'data' => $province
-        ], 201);
+        return view('super_admin.provinces.edit', compact('province'));
     }
 
     public function update(Request $request, $id)
     {
         $province = Province::find($id);
         if (!$province) {
-            return response()->json(['success' => false, 'message' => 'Province not found'], 404);
+            return redirect()->route('super_admin.provinces')->with('error', 'Province not found');
         }
 
-        $validator = Validator::make($request->only('name'), [
+        $request->validate([
             'name' => 'required|string|max:255',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
-        }
+        $province->update($request->only('name'));
 
-        $province->update($validator->validated());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Province updated successfully',
-            'data' => $province
-        ]);
+        return redirect()->route('super_admin.provinces')->with('success', 'Province updated successfully');
     }
 
     public function destroy($id)
     {
         $province = Province::find($id);
         if (!$province) {
-            return response()->json(['success' => false, 'message' => 'Province not found'], 404);
+            return redirect()->route('super_admin.provinces')->with('error', 'Province not found');
         }
 
         $province->delete();
-        return response()->json(['success' => true, 'message' => 'Province deleted successfully'], 200);
+        return redirect()->route('super_admin.provinces')->with('success', 'Province deleted successfully');
     }
 }

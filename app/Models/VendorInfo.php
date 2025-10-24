@@ -26,10 +26,20 @@ class VendorInfo extends Model
         'id_vendor',
         'id_city',
         'name_corporate',
+        'phone',
+        'address',
+        'description',
         'desc',
         'coordinate_latitude',
         'coordinate_longitude',
         'landmark_description',
+        'latitude',
+        'longitude',
+        'landmark',
+        'business_type',
+        'license_number',
+        'tax_id',
+        'is_verified',
     ];
 
     /**
@@ -49,5 +59,14 @@ class VendorInfo extends Model
     public function city(): BelongsTo
     {
         return $this->belongsTo(City::class, 'id_city');
+    }
+
+    /**
+     * Relasi ke Model Province melalui City.
+     * @return BelongsTo
+     */
+    public function province()
+    {
+        return $this->city->belongsTo(Province::class, 'id_province');
     }
 }

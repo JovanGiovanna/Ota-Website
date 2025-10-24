@@ -26,7 +26,7 @@ Rekon Management
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                                <dd class="text-lg font-medium text-gray-900">Rp 45,230,000</dd>
+                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -46,7 +46,7 @@ Rekon Management
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Completed Transactions</dt>
-                                <dd class="text-lg font-medium text-gray-900">1,247</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ number_format($completedTransactions) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -66,7 +66,7 @@ Rekon Management
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Pending Reconciliation</dt>
-                                <dd class="text-lg font-medium text-gray-900">23</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ number_format($pendingReconciliation) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -86,7 +86,7 @@ Rekon Management
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Discrepancies</dt>
-                                <dd class="text-lg font-medium text-gray-900">5</dd>
+                                <dd class="text-lg font-medium text-gray-900">{{ number_format($discrepancies) }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -167,63 +167,49 @@ Rekon Management
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <!-- Sample reconciliation rows -->
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-2024-001</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dec 15, 2024</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 1,500,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 1,500,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">Rp 0</td>
+                        @forelse($rekons as $rekon)
+                        <tr class="{{ $rekon->status === 'cancelled' ? 'bg-red-50' : '' }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $rekon->id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $rekon->created_at->format('M d, Y') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($rekon->system_amount, 0, ',', '.') }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                @if($rekon->status === 'completed')
+                                    Rp {{ number_format($rekon->bank_amount, 0, ',', '.') }}
+                                @else
+                                    -
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm {{ $rekon->difference == 0 ? 'text-green-600' : 'text-red-600' }}">
+                                @if($rekon->difference == 0)
+                                    Rp 0
+                                @else
+                                    Rp {{ number_format($rekon->difference, 0, ',', '.') }}
+                                @endif
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Matched</span>
+                                @if($rekon->status === 'completed')
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Matched</span>
+                                @elseif($rekon->status === 'cancelled')
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Unmatched</span>
+                                @else
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <button class="text-blue-600 hover:text-blue-900 mr-3">View Details</button>
+                                @if($rekon->status === 'cancelled')
+                                    <button class="text-blue-600 hover:text-blue-900 mr-3">Investigate</button>
+                                    <button class="text-green-600 hover:text-green-900">Resolve</button>
+                                @endif
                             </td>
                         </tr>
-
+                        @empty
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-2024-002</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dec 16, 2024</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 500,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 500,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">Rp 0</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Matched</span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button class="text-blue-600 hover:text-blue-900 mr-3">View Details</button>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                No reconciliation records found.
                             </td>
                         </tr>
-
-                        <tr class="bg-red-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-2024-003</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dec 17, 2024</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 2,000,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 1,950,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">-Rp 50,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Unmatched</span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button class="text-blue-600 hover:text-blue-900 mr-3">Investigate</button>
-                                <button class="text-green-600 hover:text-green-900">Resolve</button>
-                            </td>
-                        </tr>
-
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#TRX-2024-004</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dec 18, 2024</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp 750,000</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">-</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">Pending</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button class="text-blue-600 hover:text-blue-900 mr-3">View Details</button>
-                            </td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
@@ -231,31 +217,16 @@ Rekon Management
             <!-- Pagination -->
             <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div class="flex-1 flex justify-between sm:hidden">
-                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Previous</a>
-                    <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Next</a>
+                    {{ $rekons->links() }}
                 </div>
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                         <p class="text-sm text-gray-700">
-                            Showing <span class="font-medium">1</span> to <span class="font-medium">4</span> of <span class="font-medium">4</span> results
+                            Showing <span class="font-medium">{{ $rekons->firstItem() }}</span> to <span class="font-medium">{{ $rekons->lastItem() }}</span> of <span class="font-medium">{{ $rekons->total() }}</span> results
                         </p>
                     </div>
                     <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                <span class="sr-only">Previous</span>
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </a>
-                            <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
-                            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                <span class="sr-only">Next</span>
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </a>
-                        </nav>
+                        {{ $rekons->links() }}
                     </div>
                 </div>
             </div>

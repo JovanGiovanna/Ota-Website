@@ -23,12 +23,6 @@ Customers Management
                     </svg>
                     Export
                 </button>
-                <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Customer
-                </button>
             </div>
         </div>
 
@@ -81,111 +75,69 @@ Customers Management
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <!-- Sample customer rows -->
+                    @forelse($customers as $customer)
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-10 w-10">
                                     <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <span class="text-white font-medium">SA</span>
+                                        <span class="text-white font-medium">{{ strtoupper(substr($customer->name, 0, 2)) }}</span>
                                     </div>
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">Sarah Anderson</div>
-                                    <div class="text-sm text-gray-500">sarah.anderson@email.com</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ $customer->name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $customer->email }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">+62 812-3456-7890</div>
-                            <div class="text-sm text-gray-500">Jakarta, Indonesia</div>
+                            <div class="text-sm text-gray-900">-</div>
+                            <div class="text-sm text-gray-500">-</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Jan 15, 2024
+                            {{ $customer->created_at->format('M d, Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">5 bookings</div>
-                            <div class="text-sm text-gray-500">Last: Dec 20, 2024</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $customer->bookings_count }} bookings</div>
+                            <div class="text-sm text-gray-500">
+                                @if($customer->bookings->isNotEmpty())
+                                    Last: {{ $customer->bookings->first()->created_at->format('M d, Y') }}
+                                @else
+                                    No bookings yet
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            @if($customer->status === 'active')
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            @elseif($customer->status === 'inactive')
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Inactive</span>
+                            @elseif($customer->status === 'banned')
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Banned</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Ban</button>
+                            <a href="{{ route('super_admin.customers.view', $customer->id) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
+                            @if($customer->status !== 'banned')
+                                <form method="POST" action="{{ route('super_admin.customers.ban', $customer->id) }}" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to ban this customer?')">Ban</button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('super_admin.customers.unban', $customer->id) }}" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-green-600 hover:text-green-900" onclick="return confirm('Are you sure you want to unban this customer?')">Unban</button>
+                                </form>
+                            @endif
                         </td>
                     </tr>
-
+                    @empty
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <div class="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
-                                        <span class="text-white font-medium">MR</span>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">Michael Rodriguez</div>
-                                    <div class="text-sm text-gray-500">michael.rodriguez@email.com</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">+62 811-2345-6789</div>
-                            <div class="text-sm text-gray-500">Bandung, Indonesia</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Feb 3, 2024
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">3 bookings</div>
-                            <div class="text-sm text-gray-500">Last: Nov 15, 2024</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Ban</button>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            No customers found.
                         </td>
                     </tr>
-
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <div class="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center">
-                                        <span class="text-white font-medium">EJ</span>
-                                    </div>
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">Emma Johnson</div>
-                                    <div class="text-sm text-gray-500">emma.johnson@email.com</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">+62 813-4567-8901</div>
-                            <div class="text-sm text-gray-500">Surabaya, Indonesia</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Mar 12, 2024
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">8 bookings</div>
-                            <div class="text-sm text-gray-500">Last: Dec 28, 2024</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Inactive</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Ban</button>
-                        </td>
-                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -193,31 +145,16 @@ Customers Management
         <!-- Pagination -->
         <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div class="flex-1 flex justify-between sm:hidden">
-                <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Previous</a>
-                <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Next</a>
+                {{ $customers->links() }}
             </div>
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                     <p class="text-sm text-gray-700">
-                        Showing <span class="font-medium">1</span> to <span class="font-medium">3</span> of <span class="font-medium">3</span> results
+                        Showing <span class="font-medium">{{ $customers->firstItem() }}</span> to <span class="font-medium">{{ $customers->lastItem() }}</span> of <span class="font-medium">{{ $customers->total() }}</span> results
                     </p>
                 </div>
                 <div>
-                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                            <span class="sr-only">Previous</span>
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </a>
-                        <a href="#" aria-current="page" class="z-10 bg-blue-50 border-blue-500 text-blue-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">1</a>
-                        <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                            <span class="sr-only">Next</span>
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    </nav>
+                    {{ $customers->links() }}
                 </div>
             </div>
         </div>

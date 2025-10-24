@@ -53,6 +53,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'status',
     ];
 
     /**
@@ -74,7 +75,11 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-
-
-    
+    /**
+     * Get the bookings for the user.
+     */
+    public function bookings()
+    {
+        return $this->hasMany(\App\Models\Booking::class, 'id_user');
+    }
 }

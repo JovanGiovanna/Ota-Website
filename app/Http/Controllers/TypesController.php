@@ -23,10 +23,31 @@ class TypesController extends Controller
     }
 
     /**
+     * Menampilkan form untuk membuat Type baru.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function create()
+    {
+        return view('super_admin.types.create');
+    }
+
+    /**
+     * Menampilkan form untuk mengedit Type tertentu.
+     *
+     * @param  \App\Models\Type  $type
+     * @return \Illuminate\View\View
+     */
+    public function edit(Type $type)
+    {
+        return view('super_admin.types.edit', compact('type'));
+    }
+
+    /**
      * Menyimpan Type baru.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -36,25 +57,14 @@ class TypesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
-            ], 422); // HTTP 422 Unprocessable Entity
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         try {
-            $type = Type::create($validator->validated());
-            return response()->json([
-                'success' => true,
-                'message' => 'Jenis berhasil ditambahkan.',
-                'data' => $type
-            ], 201); // HTTP 201 Created
+            Type::create($validator->validated());
+            return redirect()->route('super_admin.types_categories')->with('success', 'Jenis berhasil ditambahkan.');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan jenis: ' . $e->getMessage(),
-            ], 500);
+            return redirect()->back()->with('error', 'Gagal menyimpan jenis: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -78,7 +88,7 @@ class TypesController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Type  $type
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, Type $type)
     {
@@ -88,25 +98,14 @@ class TypesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
-            ], 422);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         try {
             $type->update($validator->validated());
-            return response()->json([
-                'success' => true,
-                'message' => 'Jenis berhasil diperbarui.',
-                'data' => $type
-            ], 200);
+            return redirect()->route('super_admin.types_categories')->with('success', 'Jenis berhasil diperbarui.');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui jenis.',
-            ], 500);
+            return redirect()->back()->with('error', 'Gagal memperbarui jenis: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -114,21 +113,15 @@ class TypesController extends Controller
      * Menghapus Type tertentu.
      *
      * @param  \App\Models\Type  $type
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Type $type)
     {
         try {
             $type->delete();
-            return response()->json([
-                'success' => true,
-                'message' => 'Jenis berhasil dihapus.'
-            ], 200);
+            return redirect()->route('super_admin.types_categories')->with('success', 'Jenis berhasil dihapus.');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus jenis: ' . $e->getMessage(),
-            ], 500);
+            return redirect()->back()->with('error', 'Gagal menghapus jenis: ' . $e->getMessage());
         }
     }
 }

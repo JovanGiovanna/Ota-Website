@@ -23,16 +23,13 @@ class PackagesController extends Controller
     }
     
     /**
-     * Metode create hanya mengembalikan status sukses (tidak ada form view).
+     * Menampilkan form untuk membuat Package baru.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View
      */
     public function create()
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Endpoint siap untuk menerima data POST.',
-        ], 200);
+        return view('super_admin.packages.create');
     }
     
     /**
@@ -51,18 +48,14 @@ class PackagesController extends Controller
     }
     
     /**
-     * Metode edit hanya mengembalikan data paket untuk diubah.
+     * Menampilkan form untuk mengedit Package tertentu.
      *
      * @param  \App\Models\Package  $package
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View
      */
     public function edit(Package $package)
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Data paket siap untuk diedit.',
-            'data' => $package
-        ], 200);
+        return view('super_admin.packages.edit', compact('package'));
     }
     
     // ------------------------------------------------------------------
@@ -71,7 +64,7 @@ class PackagesController extends Controller
      * Menyimpan Package yang baru dibuat di database.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -87,26 +80,18 @@ class PackagesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
-            ], 422);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $data = $validator->validated();
-        
+
         // 2. Tangani Pengunggahan Gambar
         if ($request->hasFile('image')) {
             try {
                 $path = $request->file('image')->store('packages', 'public');
                 $data['image'] = $path;
             } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal mengunggah gambar.',
-                    'error_detail' => $e->getMessage()
-                ], 500);
+                return redirect()->back()->with('error', 'Gagal mengunggah gambar: ' . $e->getMessage())->withInput();
             }
         }
 
@@ -121,22 +106,14 @@ class PackagesController extends Controller
 
         try {
             // 4. Simpan ke Database
-            $package = Package::create($data);
-            return response()->json([
-                'success' => true,
-                'message' => 'Paket berhasil ditambahkan!',
-                'data' => $package
-            ], 201); // HTTP 201 Created
+            Package::create($data);
+            return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil ditambahkan!');
         } catch (\Exception $e) {
             // Jika penyimpanan gagal, hapus gambar yang sudah terunggah
             if (isset($data['image'])) {
                 Storage::disk('public')->delete($data['image']);
             }
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan paket.',
-                'error_detail' => $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Gagal menyimpan paket: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -147,7 +124,7 @@ class PackagesController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Package  $package
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(Request $request, Package $package)
     {
@@ -155,7 +132,7 @@ class PackagesController extends Controller
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|sometimes|image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'image' => 'nullable|sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
@@ -163,11 +140,7 @@ class PackagesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors()
-            ], 422);
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $data = $validator->validated();
@@ -184,15 +157,11 @@ class PackagesController extends Controller
                 $path = $request->file('image')->store('packages', 'public');
                 $data['image'] = $path;
             } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal mengunggah gambar baru.',
-                    'error_detail' => $e->getMessage()
-                ], 500);
+                return redirect()->back()->with('error', 'Gagal mengunggah gambar baru: ' . $e->getMessage())->withInput();
             }
-        } 
+        }
         // Logika untuk menghapus gambar tanpa mengganti (jika ada input 'clear_image')
-        elseif ($request->input('clear_image') && $oldImage) { 
+        elseif ($request->input('clear_image') && $oldImage) {
             Storage::disk('public')->delete($oldImage);
             $data['image'] = null;
         }
@@ -211,21 +180,13 @@ class PackagesController extends Controller
         try {
             // 4. Perbarui Database
             $package->update($data);
-            return response()->json([
-                'success' => true,
-                'message' => 'Paket berhasil diperbarui!',
-                'data' => $package
-            ], 200);
+            return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil diperbarui!');
         } catch (\Exception $e) {
             // Logika fallback: jika update DB gagal, hapus gambar baru yang mungkin terunggah
             if (isset($data['image']) && $data['image'] !== $oldImage) {
                 Storage::disk('public')->delete($data['image']);
             }
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui paket.',
-                'error_detail' => $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Gagal memperbarui paket: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -235,7 +196,7 @@ class PackagesController extends Controller
      * Menghapus Package tertentu dari database.
      *
      * @param  \App\Models\Package  $package
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Package $package)
     {
@@ -244,18 +205,11 @@ class PackagesController extends Controller
             if ($package->image) {
                 Storage::disk('public')->delete($package->image);
             }
-            
+
             $package->delete();
-            return response()->json([
-                'success' => true,
-                'message' => 'Paket berhasil dihapus!'
-            ], 200);
+            return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil dihapus!');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus paket.',
-                'error_detail' => $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Gagal menghapus paket: ' . $e->getMessage());
         }
     }
 }
