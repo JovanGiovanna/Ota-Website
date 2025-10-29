@@ -148,13 +148,20 @@ Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::get('/admin/bookings', [DashboardController::class, 'bookings'])->name('admin.bookings');
 
     // Admin categories routes
-    Route::get('/admin/categories', [DashboardController::class, 'categories'])->name('admin.categories');
-
+    Route::get('/admin/packages', [DashboardController::class, 'packages'])->name('admin.packages');
+    Route::post('/admin/packages/store', [DashboardController::class, 'store'])->name('admin.packages.store');
+    Route::get('/admin/packages/create', [DashboardController::class, 'packagesCreate'])->name('admin.packages.create');
     // Admin analytics routes
     Route::get('/admin/analytics', [DashboardController::class, 'analytics'])->name('admin.analytics');
 
     // Admin settings routes
     Route::get('/admin/settings', [DashboardController::class, 'settings'])->name('admin.settings');
+
+    Route::get('/profile', [AdminAuthController::class, 'showProfilePage'])->name('admin.profile');
+    Route::get('/profile/edit', [AdminController::class, 'editProfile'])->name('admin.profile.edit');
+    Route::put('/profile/update', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+    // Logout
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
 Route::middleware(['super_admin_access'])->group(function () {

@@ -35,8 +35,9 @@ class AddonController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function store(Request $request): JsonResponse
+      public function store(Request $request): JsonResponse
     {
+        // 1. Aturan Validasi Diperbarui untuk File Gambar
         $validator = Validator::make($request->all(), [
             'id_vendor' => 'nullable|uuid|exists:vendor,id',
             'addons' => 'required|string|max:255',
@@ -44,16 +45,26 @@ class AddonController extends Controller
             'status' => 'sometimes|string|in:available,unavailable,draft',
             'price' => 'required|numeric|min:0',
             'publish' => 'sometimes|boolean',
-            'image_url' => 'nullable|url|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', 
         ]);
 
         if ($validator->fails()) {
-            // 
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
         try {
-            $addon = Addon::create($request->all());
+            $data = $request->except('image');
+            $imagePath = null;
+
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('addons', 'public');
+                
+                // Tambahkan path gambar ke data yang akan disimpan di database
+                $data['image'] = $imagePath;
+            }
+
+            // Simpan data (termasuk path gambar jika ada)
+            $addon = Addon::create($data);
 
             return response()->json([
                 'message' => 'Addon berhasil ditambahkan',
@@ -61,13 +72,17 @@ class AddonController extends Controller
             ], 201);
 
         } catch (Exception $e) {
+            // Jika terjadi error, dan file sempat terunggah, hapus file tersebut
+            if (isset($imagePath)) {
+                 Storage::disk('public')->delete($imagePath);
+            }
+            
             return response()->json([
                 'message' => 'Gagal menyimpan Addon',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
-
     /**
      * Menampilkan detail addon tertentu.
      *
