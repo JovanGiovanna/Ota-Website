@@ -107,4 +107,12 @@ class Booking extends Model
     {
         return $query->whereIn('status', ['pending', 'confirmed', 'checked_in']);
     }
+
+    /**
+     * Get the reviews for the booking.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }

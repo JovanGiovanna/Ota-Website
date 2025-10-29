@@ -19,6 +19,7 @@ use App\Http\Controllers\VendorInfoController;
 use App\Http\Controllers\DetailBookingController;
 use App\Http\Controllers\BookPackageAddonController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,7 +80,7 @@ Route::middleware(['super_admin_access'])->group(function () {
     Route::put('/super-admin/cities/{city}', [CityController::class, 'update'])->name('super_admin.cities.update');
     Route::delete('/super-admin/cities/{city}', [CityController::class, 'destroy'])->name('super_admin.cities.destroy');
 
-    // Category & Type Management
+    // Category & Type Management   
     Route::get('/super-admin/types-categories', [TypesController::class, 'index'])->name('super_admin.types_categories');
     Route::get('/super-admin/types/create', [TypesController::class, 'create'])->name('super_admin.types.create');
     Route::post('/super-admin/types', [TypesController::class, 'store'])->name('super_admin.types.store');
@@ -157,11 +158,41 @@ Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::get('/admin/settings', [DashboardController::class, 'settings'])->name('admin.settings');
 });
 
-Route::middleware(['super_admin_access'])->group(function () {
-    // User dashboard - accessible by user or super_admin
+Route::middleware(['auth'])->group(function () {
+    // User pages
+    Route::get('/home', function () {
+        return view('user.home');
+    })->name('user.home');
+
+    Route::get('/search', function () {
+        return view('user.search');
+    })->name('user.search');
+
+    Route::get('/book', function () {
+        return view('user.form_booker');
+    })->name('user.form_booker');
+
+    Route::get('/profile', function () {
+        return view('user.profil');
+    })->name('user.profil');
+
+    Route::get('/history', function () {
+        return view('user.history');
+    })->name('user.history');
+
+    Route::get('/history/{id}', function ($id) {
+        return view('user.detail_history', compact('id'));
+    })->name('user.detail_history');
+
+    // User dashboard - accessible by user
     Route::get('/dashboard', function () {
-        return view('landing');
+        return view('user.home');
     })->name('user.dashboard');
+
+    // Review routes
+    Route::post('/reviews/{bookingId}', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
 });
 
 Route::middleware(['super_admin_access:vendor'])->group(function () {

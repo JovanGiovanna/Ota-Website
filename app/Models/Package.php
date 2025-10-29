@@ -81,4 +81,20 @@ class Package extends Model
     {
         return 'slug';
     }
+
+    /**
+     * Get the reviews for the package.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Get the average rating for the package.
+     */
+    public function averageRating()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
 }

@@ -13,6 +13,6 @@ class LandingController extends Controller
      */
     public function index() // <--- Ensure this method exists and is spelled correctly
     {
-        return view('landing'); // Replace 'landing' with your actual view name
+        return view('user.landing'); // Replace 'landing' with your actual view name
     }
 }

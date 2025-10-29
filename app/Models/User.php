@@ -82,4 +82,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Booking::class, 'id_user');
     }
+
+    /**
+     * Get the reviews for the user.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Review::class);
+    }
 }
