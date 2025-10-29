@@ -11,9 +11,9 @@
 </head>
 <body class="h-full bg-gradient-to-br from-indigo-50 to-blue-50">
     <div class="flex h-full">
-        <!-- Sidebar -->
         <div class="hidden md:flex md:w-72 md:flex-col">
             <div class="flex flex-col flex-grow bg-gradient-to-b from-indigo-900 via-blue-900 to-indigo-900 pt-6 pb-4 overflow-y-auto shadow-2xl">
+                
                 <div class="flex items-center flex-shrink-0 px-6 mb-8">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -25,11 +25,58 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="mt-2 flex-grow flex flex-col">
                     <nav class="flex-1 px-4 space-y-2">
+                        
+                        <a href="{{ route('admin.dashboard') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-tachometer-alt text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Dashboard
+                        </a>
+
+                        <a href="{{ route('admin.packages') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-cube text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Packages
+                        </a>
+                        
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-calendar-check text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Booking Approval
+                        </a>
+
+                        <a href="{{ route('admin.profile') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-user text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Profile
+                        </a>
+                        
+                        <div class="mt-4 pt-4 border-t border-indigo-700">
+                             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-indigo-300">Transaksi</p>
+                        </div>
+                        
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-receipt text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Transaction Packages
+                        </a>
+                        
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-shopping-bag text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Transaction Product
+                        </a>
+
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-money-check-alt text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Transaction Addons
+                        </a>
+
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
+                            <i class="fas fa-fw fa-id-card text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                            Profile Vendor
+                        </a>
+                        
                         @yield('sidebar')
                     </nav>
                 </div>
+                
                 <div class="px-4 py-4 border-t border-indigo-700">
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 bg-gradient-to-r from-indigo-400 to-blue-500 rounded-full flex items-center justify-center">
@@ -43,18 +90,20 @@
                 </div>
             </div>
         </div>
-
-        <!-- Main content -->
+        
         <div class="flex flex-col w-0 flex-1 overflow-hidden">
-            <!-- Top navigation -->
+            
             <div class="relative z-10 flex-shrink-0 flex h-20 bg-white shadow-lg border-b border-indigo-200">
+                
                 <button class="px-4 border-r border-indigo-200 text-indigo-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 md:hidden">
                     <span class="sr-only">Open sidebar</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
                 </button>
+                
                 <div class="flex-1 px-6 flex justify-between items-center">
+                    
                     <div class="flex-1 flex max-w-lg">
                         <div class="w-full">
                             <label for="search-field" class="sr-only">Search</label>
@@ -68,16 +117,13 @@
                             </div>
                         </div>
                     </div>
+                    
                     <div class="ml-4 flex items-center md:ml-6 space-x-4">
-                        <!-- Notifications -->
-                        <button class="p-2 text-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
+                        <button class="p-2 text-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg transition duration-150 ease-in-out">
                             <span class="sr-only">View notifications</span>
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM15 7v5h5l-5-5zM4 12h8m-8 4h6" />
-                            </svg>
+                            <i class="fas fa-bell h-6 w-6"></i>
                         </button>
 
-                        <!-- Profile dropdown -->
                         <div class="ml-3 relative">
                             <div class="flex items-center space-x-4">
                                 <div class="flex items-center space-x-2">
@@ -86,6 +132,7 @@
                                     </div>
                                     <span class="text-indigo-700 font-medium hidden sm:block">@yield('welcome')</span>
                                 </div>
+                                
                                 <form method="POST" action="@yield('logout_route')" class="inline">
                                     @csrf
                                     <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm">

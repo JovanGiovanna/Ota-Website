@@ -12,6 +12,33 @@ use Illuminate\Support\Facades\Log;
 
 class AdminAuthController extends Controller
 {
+    public function showProfilePage()
+{
+    return view('admin.profile');
+}
+
+public function editProfile()
+{
+    $admin = Auth::guard('admin')->user();
+    return view('admin.profile-edit', compact('admin'));
+}
+
+public function updateProfile(Request $request)
+{
+    $admin = Auth::guard('admin')->user();
+    
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:admins,email,' . $admin->id,
+    ]);
+    
+    $admin->update([
+        'name' => $request->name,
+        'email' => $request->email,
+    ]);
+    
+    return redirect()->route('admin.profile')->with('success', 'Profil berhasil diperbarui!');
+}
     // --- Tampilan Form ---
 
     public function showLoginForm()

@@ -30,7 +30,7 @@ return new class extends Migration
             $table->boolean('publish')->default(false); // Status publikasi
             
             // Kolom tambahan
-            $table->string('image_url')->nullable(); 
+            $table->string('image')->nullable(); 
 
             // Kolom timestamps
             $table->timestamps();

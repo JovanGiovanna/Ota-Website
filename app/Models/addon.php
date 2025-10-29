@@ -45,7 +45,7 @@ class Addon extends Model
         'status',
         'price',
         'publish',
-        'image_url',
+        'image',
     ];
 
     /**
