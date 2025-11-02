@@ -63,7 +63,7 @@ Book Your Package with Products and Add-ons!
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-phone text-gray-400"></i>
                         </div>
-                        <input type="tel" name="booker_telp" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+62">
+                        <input type="tel" name="booker_telp" value="{{ old('booker_telp', auth()->user()->phone ?? '') }}" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+62">
                     </div>
                 </div>
                 <!-- Guests -->
@@ -213,6 +213,7 @@ Book Your Package with Products and Add-ons!
                             <span class="text-gray-500 text-sm">per unit</span>
                         </div>
                         <input type="checkbox" name="product_id[]" value="{{ $product->id }}" class="hidden product-radio">
+                        <input type="number" name="quantity[{{ $product->id }}]" value="1" min="1" class="mt-2 w-full px-2 py-1 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
                 @empty
                     <div class="col-span-full text-center py-8">
@@ -346,8 +347,10 @@ function updateSummary() {
     document.querySelectorAll('.product-option.selected').forEach(option => {
         const name = option.querySelector('h4').textContent;
         const price = parseInt(option.dataset.price) || 0;
-        products.push(`${name} - Rp ${price.toLocaleString('id-ID')}/unit`);
-        total += price;
+        const qtyInput = option.querySelector('input[type="number"]');
+        const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+        products.push(`${name} x${qty} - Rp ${(price*qty).toLocaleString('id-ID')}`);
+        total += price*qty;
     });
     document.querySelectorAll('.addon-option.selected').forEach(option => {
         const name = option.querySelector('h4').textContent;
@@ -416,7 +419,7 @@ document.querySelectorAll('.booking-type-option').forEach(option => {
 });
 
 // Quantity update
-document.querySelectorAll('.addon-option input[type="number"]').forEach(input=>{
+document.querySelectorAll('.product-option input[type="number"], .addon-option input[type="number"]').forEach(input=>{
     input.addEventListener('input', updateSummary);
 });
 

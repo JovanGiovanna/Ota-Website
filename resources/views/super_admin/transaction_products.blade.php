@@ -87,17 +87,17 @@ Transaction Products Management
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($transactions as $transaction)
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $transaction->booking_code ?? '#' . strtoupper(substr($transaction->id, 0, 8)) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $transaction->booking->id ? '#' . strtoupper(substr($transaction->booking->id, 0, 8)) : 'N/A' }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-8 w-8">
                                     <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <span class="text-white text-xs font-medium">{{ substr($transaction->user->name ?? 'N/A', 0, 2) }}</span>
+                                        <span class="text-white text-xs font-medium">{{ substr($transaction->booking->user->name ?? $transaction->booker_name, 0, 2) }}</span>
                                     </div>
                                 </div>
                                 <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900">{{ $transaction->user->name ?? $transaction->booker_name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $transaction->user->email ?? $transaction->booker_email }}</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ $transaction->booking->user->name ?? $transaction->booker_name }}</div>
+                                    <div class="text-sm text-gray-500">{{ $transaction->booking->user->email ?? $transaction->booking->booker_email }}</div>
                                 </div>
                             </div>
                         </td>
@@ -110,20 +110,20 @@ Transaction Products Management
                             <div class="text-sm text-gray-500">{{ $transaction->product->vendor->vendorInfo->business_type ?? 'N/A' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">{{ $transaction->quantity }}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ $transaction->adults + $transaction->children }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->total_price, 0, ',', '.') }}</div>
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->booking->total_price ?? 0, 0, ',', '.') }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            @if($transaction->status == 'completed')
+                            @if($transaction->booking->status == 'completed')
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                            @elseif($transaction->status == 'pending')
+                            @elseif($transaction->booking->status == 'pending')
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                            @elseif($transaction->status == 'cancelled')
+                            @elseif($transaction->booking->status == 'cancelled')
                                 <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
                             @else
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($transaction->status) }}</span>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($transaction->booking->status ?? 'Unknown') }}</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -131,8 +131,6 @@ Transaction Products Management
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Refund</button>
                         </td>
                     </tr>
                     @empty

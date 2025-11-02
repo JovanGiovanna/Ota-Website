@@ -41,6 +41,7 @@ class BookPackageAddon extends Model
         'id_book',
         'id_package',
         'id_addons',
+        'quantity',
     ];
 
     /**
@@ -53,6 +54,7 @@ class BookPackageAddon extends Model
         'id_book' => 'string',
         'id_package' => 'string',
         'id_addons' => 'string',
+        'quantity' => 'integer',
     ];
 
     // --- Booting Model ---

@@ -287,7 +287,8 @@ class SuperAdminController extends Controller
     public function transactionPackages()
     {
         // Fetch transaction packages data from bookings table with relations
-        $transactions = \App\Models\Booking::with(['user', 'package', 'addons'])
+        // Show all bookings, even those without packages (id_package can be null)
+        $transactions = \App\Models\Booking::with(['user', 'packages', 'addons'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -299,8 +300,8 @@ class SuperAdminController extends Controller
      */
     public function transactionProducts()
     {
-        // Fetch transaction products data from book_products table with relations
-        $transactions = \App\Models\BookProduct::with(['user', 'product.vendor'])
+        // Fetch transaction products data from detail_booking table with relations
+        $transactions = \App\Models\Detail_Booking::with(['booking.user', 'product.vendor.vendorInfo'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -313,7 +314,7 @@ class SuperAdminController extends Controller
     public function transactionAddons()
     {
         // Fetch transaction addons data from book_addons table with relations
-        $transactions = \App\Models\BookAddon::with(['user', 'addon.vendor'])
+        $transactions = \App\Models\BookAddon::with(['user', 'addon.vendor.vendorInfo'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -379,8 +380,8 @@ class SuperAdminController extends Controller
             id,
             created_at,
             total_price as system_amount,
-            CASE WHEN status = "completed" THEN total_price ELSE 0 END as bank_amount,
-            CASE WHEN status = "completed" THEN 0 ELSE total_price END as difference,
+            CASE WHEN status = \'completed\' THEN total_price ELSE 0 END as bank_amount,
+            CASE WHEN status = \'completed\' THEN 0 ELSE total_price END as difference,
             status
         ')
         ->orderBy('created_at', 'desc')

@@ -41,7 +41,7 @@
                                 <p>Products: {{ $booking->products->pluck('name')->join(', ') }}</p>
                             @endif
                             @if($booking->addons->count() > 0)
-                                <p>Add-ons: {{ $booking->addons->pluck('name')->join(', ') }}</p>
+                                <p>Add-ons: {{ $booking->addons->pluck('addons')->join(', ') }}</p>
                             @endif
                         </div>
                     </div>

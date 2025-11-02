@@ -39,7 +39,7 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
             </div>
         </div>
         <div class="mt-4 flex items-center">
-            <span class="text-green-500 text-sm font-medium">+12%</span>
+            <span class="text-green-500 text-sm font-medium">+{{ rand(5, 25) }}%</span>
             <span class="text-gray-500 text-sm ml-2">from last month</span>
         </div>
     </div>
@@ -55,7 +55,7 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
             </div>
         </div>
         <div class="mt-4 flex items-center">
-            <span class="text-green-500 text-sm font-medium">+8%</span>
+            <span class="text-green-500 text-sm font-medium">+{{ rand(5, 25) }}%</span>
             <span class="text-gray-500 text-sm ml-2">from last month</span>
         </div>
     </div>
@@ -71,7 +71,7 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
             </div>
         </div>
         <div class="mt-4 flex items-center">
-            <span class="text-green-500 text-sm font-medium">+5%</span>
+            <span class="text-green-500 text-sm font-medium">+{{ rand(5, 25) }}%</span>
             <span class="text-gray-500 text-sm ml-2">from last month</span>
         </div>
     </div>
@@ -87,7 +87,7 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
             </div>
         </div>
         <div class="mt-4 flex items-center">
-            <span class="text-green-500 text-sm font-medium">+15%</span>
+            <span class="text-green-500 text-sm font-medium">+{{ rand(5, 25) }}%</span>
             <span class="text-gray-500 text-sm ml-2">from last month</span>
         </div>
     </div>
@@ -98,7 +98,7 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
     <!-- Hotel Packages -->
     <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
         <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-bold text-gray-800">Hotel Packages</h3>
+            <h3 class="text-xl font-bold text-gray-800">Packages</h3>
             <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                 <i class="fas fa-hotel text-blue-600"></i>
             </div>

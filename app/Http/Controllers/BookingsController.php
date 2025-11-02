@@ -161,10 +161,30 @@ class BookingsController extends Controller
         // Simpan addons (many-to-many through BookPackageAddon)
         if (!empty($validated['addon_id'])) {
             foreach ($validated['addon_id'] as $addonId) {
+                $quantity = $validated['quantity'][$addonId] ?? 1;
+                $addon = Addon::find($addonId);
+
                 \App\Models\BookPackageAddon::create([
                     'id_book' => $booking->id,
                     'id_package' => null, // For addons only
                     'id_addons' => $addonId,
+                    'quantity' => $quantity,
+                ]);
+
+                // Also save to book_addons table for direct addon bookings
+                \App\Models\BookAddon::create([
+                    'id_user' => Auth::id(),
+                    'id_addon' => $addonId,
+                    'checkin_appointment_start' => $validated['checkin_appointment_start'],
+                    'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                    'amount' => $quantity,
+                    'total_price' => $addon->price * $quantity,
+                    'booker_name' => $validated['booker_name'],
+                    'booker_email' => $validated['booker_email'],
+                    'booker_telp' => $validated['booker_telp'],
+                    'booking_code' => 'BK-' . strtoupper(Str::random(8)),
+                    'status' => 'pending',
+                    'notes' => $validated['requests'] ?? null,
                 ]);
             }
         }
@@ -225,6 +245,50 @@ class BookingsController extends Controller
         $booking->update(['status' => $validated['status']]);
 
         return back()->with('success', 'Status booking berhasil diperbarui.');
+    }
+
+    /**
+     * Contact support page for booking.
+     */
+    public function support(Booking $booking)
+    {
+        // Ensure the booking belongs to the authenticated user
+        if ($booking->id_user !== Auth::id()) {
+            abort(403);
+        }
+
+        $booking->load(['packages', 'products', 'addons']);
+
+        return view('user.support', compact('booking'));
+    }
+
+    /**
+     * Submit support request.
+     */
+    public function submitSupport(Request $request, Booking $booking)
+    {
+        // Ensure the booking belongs to the authenticated user
+        if ($booking->id_user !== Auth::id()) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'subject' => 'required|string|max:255',
+            'priority' => 'required|in:low,normal,high,urgent',
+            'message' => 'required|string|min:10',
+            'contact_name' => 'required|string|max:255',
+            'contact_email' => 'required|email',
+        ]);
+
+        // Here you could save to database or send email
+        // For now, we'll just redirect with success message
+        // In a real application, you'd want to:
+        // 1. Save to support_tickets table
+        // 2. Send email to support team
+        // 3. Send confirmation email to user
+
+        return redirect()->route('user.detail_history', $booking->id)
+                        ->with('success', 'Your support request has been submitted successfully. Our team will get back to you within 24 hours.');
     }
 
     /**

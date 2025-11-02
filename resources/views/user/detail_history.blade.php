@@ -94,7 +94,7 @@
                                     <h3 class="text-lg font-semibold mb-2">{{ $product->name }}</h3>
                                     <p class="text-gray-600 mb-2">{{ $product->description }}</p>
                                     <div class="flex justify-between items-center">
-                                        <span class="text-sm text-gray-500">Quantity: {{ $product->pivot->amount }}</span>
+                                        <span class="text-sm text-gray-500">price per product </span>
                                         <span class="font-semibold">Rp {{ number_format($product->pivot->total_price, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
@@ -107,17 +107,17 @@
                 @if($booking->addons->count() > 0)
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-2xl font-semibold mb-4">Additional Services</h2>
-                        <div class="space-y-2">
+                        <div class="space-y-4">
                             @foreach($booking->addons as $addon)
-                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                                    <span>{{ $addon->name }}</span>
-                                    <span class="font-semibold">Rp {{ number_format($addon->price, 0, ',', '.') }}</span>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold mb-2">{{ $addon->addons}}</h3>
+                                    <p class="text-gray-600 mb-2">{{ $addon->desc }}</p>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm text-gray-500">Price per service (Qty: {{ $addon->pivot->quantity ?? 1 }})</span>
+                                        <span class="font-semibold">Rp {{ number_format($addon->price * ($addon->pivot->quantity ?? 1), 0, ',', '.') }}</span>
+                                    </div>
                                 </div>
                             @endforeach
-                            <div class="flex justify-between items-center py-2">
-                                <span class="font-semibold">Total Add-ons</span>
-                                <span class="font-semibold">Rp {{ number_format($booking->addons->sum('price'), 0, ',', '.') }}</span>
-                            </div>
                         </div>
                     </div>
                 @endif
@@ -169,7 +169,7 @@
                         @if($booking->addons->count() > 0)
                             <div class="flex justify-between">
                                 <span>Add-ons</span>
-                                <span>Rp {{ number_format($booking->addons->sum('price'), 0, ',', '.') }}</span>
+                                <span>Rp {{ number_format($booking->addons->sum(function($addon) { return $addon->price * ($addon->pivot->quantity ?? 1); }), 0, ',', '.') }}</span>
                             </div>
                         @endif
                         <hr class="my-2">
@@ -191,8 +191,21 @@
                                 <button type="submit" class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">Cancel Booking</button>
                             </form>
                         @endif
-                        <button class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">Download Invoice</button>
-                        <button class="w-full bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition">Contact Support</button>
+                        <a href="{{ route('invoice.download', $booking->id) }}" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition inline-block text-center">Download Invoice</a>
+
+                        <!-- Contact Support Options -->
+                        <div class="space-y-2">
+                            <p class="text-sm text-gray-600 font-medium">Contact Support:</p>
+                            <div class="grid grid-cols-1 gap-2">
+                                <a href="mailto:support@otawebsite.com?subject=Support Request - Booking #{{ $booking->id }}&body=Dear Support Team,%0A%0AI need assistance with my booking #%{{ $booking->id }}.%0A%0ABooking Details:%0A- Status: {{ ucfirst(str_replace('_', ' ', $booking->status)) }}%0A- Check-in: {{ $booking->checkin_appointment_start->format('d M Y') }}%0A- Check-out: {{ $booking->checkout_appointment_end->format('d M Y') }}%0A- Total: Rp {{ number_format($booking->total_price, 0, ',', '.') }}%0A%0APlease describe your issue or question below:%0A%0A[Your message here]%0A%0ABest regards,%0A{{ $booking->booker_name }}%0A{{ $booking->booker_email }}"
+                                   class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition text-center text-sm">
+                                    📧 Email Support
+                                </a>
+                                <a href="{{ route('user.support', $booking->id) }}" class="w-full bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition text-center text-sm">
+                                    📝 Contact Form
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

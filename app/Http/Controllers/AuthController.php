@@ -149,7 +149,7 @@ public function index(Request $request)
 
     if (Auth::attempt($credentials)) {
         $request->session()->regenerate();
-        
+
         $user = Auth::user();
 
         // User biasa ke dashboard
@@ -160,6 +160,48 @@ public function index(Request $request)
         'email' => 'Email atau password salah.',
     ])->withInput();
 }
+
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . Auth::id(),
+            'phone' => 'nullable|string|max:20',
+            'dob' => 'nullable|date',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        $user = Auth::user();
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'dob' => $request->dob,
+            'address' => $request->address,
+        ]);
+
+        return redirect()->back()->with('success', 'Profile updated successfully.');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return redirect()->back()->with('success', 'Password changed successfully.');
+    }
 
 
 }

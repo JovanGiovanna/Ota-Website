@@ -250,13 +250,4 @@ Find your perfect packages, products, and add-ons!
         @endforelse
     @endif
 </div>
-
-<!-- Load More Button -->
-@if((count($packages ?? []) > 0 && $packages->count() >= 9) || (!request()->has('destination') && !request()->has('checkin')))
-    <div class="text-center mt-12">
-        <button class="bg-white border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-blue-600 hover:text-white transition-all duration-200 shadow-lg">
-            Load More Packages
-        </button>
-    </div>
-@endif
 @endsection

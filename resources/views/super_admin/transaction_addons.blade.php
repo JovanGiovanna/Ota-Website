@@ -103,11 +103,11 @@ Transaction Addons Management
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">{{ $transaction->addon->addons ?? 'N/A' }}</div>
-                            <div class="text-sm text-gray-500">{{ $transaction->addon->desc ?? 'N/A' }}</div>
+                            <div class="text-sm text-gray-500">{{ \Illuminate\Support\Str::limit($transaction->addon->desc ?? 'N/A',25) }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">{{ $transaction->addon->vendor->name ?? 'N/A' }}</div>
-                            <div class="text-sm text-gray-500">{{ $transaction->addon->vendor->vendorInfo->business_type ?? 'N/A' }}</div>
+                            <div class="text-sm text-gray-500">{{ $transaction->addon->vendor->vendorInfo->name_corporate ?? 'N/A' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             <div class="text-sm font-medium text-gray-900">{{ $transaction->amount }}</div>
@@ -130,9 +130,7 @@ Transaction Addons Management
                             {{ $transaction->created_at->format('M d, Y') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                            <button class="text-red-600 hover:text-red-900">Refund</button>
+                            <a href="#" class="text-blue-600 hover:text-blue-900">View</a>
                         </td>
                     </tr>
                     @empty

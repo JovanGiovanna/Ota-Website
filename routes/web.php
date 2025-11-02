@@ -20,6 +20,7 @@ use App\Http\Controllers\DetailBookingController;
 use App\Http\Controllers\BookPackageAddonController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\InvoiceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -224,9 +225,14 @@ Route::middleware(['auth'])->group(function () {
         return view('user.profil');
     })->name('user.profil');
 
+    Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('user.profile.update');
+    Route::put('/profile/change-password', [AuthController::class, 'changePassword'])->name('user.profile.change_password');
+
     Route::get('/history', [BookingsController::class, 'history'])->name('user.history');
 
     Route::get('/history/{booking}', [BookingsController::class, 'showDetail'])->name('user.detail_history');
+    Route::get('/support/{booking}', [BookingsController::class, 'support'])->name('user.support');
+    Route::post('/support/{booking}', [BookingsController::class, 'submitSupport'])->name('user.support.submit');
     Route::delete('/booking/cancel/{booking}', [BookingsController::class, 'cancel'])->name('booking.cancel');
 
     // Product and Addon detail routes
@@ -303,3 +309,5 @@ Route::middleware(['auth:super_admin'])->group(function () {
     // Super Admin dashboard - accessible by super_admin
     Route::get('/super-admin/dashboard', [SuperAdminController::class, 'dashboard'])->name('super_admin.dashboard');
 });
+
+Route::get('/invoice/download/{bookingId}', [InvoiceController::class, 'download'])->name('invoice.download')->middleware('auth');

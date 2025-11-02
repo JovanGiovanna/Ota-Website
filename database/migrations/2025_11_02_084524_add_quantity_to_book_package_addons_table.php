@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('book_package_addons', function (Blueprint $table) {
-            $table->uuid('id_package')->nullable()->after('id_book');
-            $table->foreign('id_package')->references('id')->on('packages')->onDelete('set null');
+            $table->integer('quantity')->default(1)->after('id_addons');
         });
     }
 
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('book_package_addons', function (Blueprint $table) {
-            $table->dropForeign(['id_package']);
-            $table->dropColumn('id_package');
+            $table->dropColumn('quantity');
         });
     }
 };
