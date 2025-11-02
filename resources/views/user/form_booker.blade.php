@@ -3,7 +3,7 @@
 @section('title', 'Book Your Stay')
 
 @section('welcome')
-Complete your booking details!
+Book Your Package with Products and Add-ons!
 @endsection
 
 @section('content')
@@ -11,8 +11,8 @@ Complete your booking details!
 <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-800 rounded-2xl p-8 mb-8 text-white shadow-2xl">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold mb-2">Complete Your Booking</h1>
-            <p class="text-blue-100">Fill in your details and confirm your perfect stay</p>
+            <h1 class="text-3xl font-bold mb-2">Book Your Package</h1>
+            <p class="text-blue-100">Select your package and add-ons for a perfect experience</p>
         </div>
         <div class="hidden md:block">
             <div class="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center">
@@ -24,7 +24,7 @@ Complete your booking details!
 
 <!-- Booking Form -->
 <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-    <form method="POST" action="{{ route('user.book') }}" class="space-y-8">
+    <form method="POST" action="{{ route('user.book') }}" id="booking-form" class="space-y-8">
         @csrf
 
         <!-- Personal Information -->
@@ -36,40 +36,44 @@ Complete your booking details!
                 Personal Information
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Full Name -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-user text-gray-400"></i>
                         </div>
-                        <input type="text" name="name" value="{{ old('name', auth()->user()->name ?? '') }}" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="text" name="booker_name" value="{{ old('booker_name', auth()->user()->name ?? '') }}" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
                 </div>
+                <!-- Email -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-envelope text-gray-400"></i>
                         </div>
-                        <input type="email" name="email" value="{{ old('email', auth()->user()->email ?? '') }}" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <input type="email" name="booker_email" value="{{ old('booker_email', auth()->user()->email ?? '') }}" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
                 </div>
+                <!-- Phone -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-phone text-gray-400"></i>
                         </div>
-                        <input type="tel" name="phone" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+62">
+                        <input type="tel" name="booker_telp" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+62">
                     </div>
                 </div>
+                <!-- Guests -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Number of Guests</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-users text-gray-400"></i>
                         </div>
-                        <input type="number" name="guests" min="1" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="1">
+                        <input type="number" name="amount" min="1" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="1">
                     </div>
                 </div>
             </div>
@@ -83,30 +87,70 @@ Complete your booking details!
                 </div>
                 Booking Details
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Check-in -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Check-in Date</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-calendar-check text-gray-400"></i>
                         </div>
-                        <input type="date" name="checkin" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <input type="date" name="checkin_appointment_start" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
                 </div>
+                <!-- Check-out -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Check-out Date</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-calendar-times text-gray-400"></i>
                         </div>
-                        <input type="date" name="checkout" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <input type="date" name="checkout_appointment_end" required class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                </div>
+                <!-- Duration -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Duration (Days)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-clock text-gray-400"></i>
+                        </div>
+                        <input type="number" name="duration_days" min="1" required value="1" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="1">
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Package Selection -->
+        <!-- Booking Type Selection -->
         <div>
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-list text-purple-600"></i>
+                </div>
+                Select What You Want to Book
+            </h3>
+            <p class="text-gray-600 mb-6">You can select any combination of packages, products, and add-ons</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                @php
+                    $types = ['package'=>'blue','product'=>'green','addon'=>'orange'];
+                @endphp
+                @foreach($types as $type => $color)
+                <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-{{ $color }}-500 transition-all duration-200 cursor-pointer booking-type-option" data-type="{{ $type }}">
+                    <div class="text-center mb-4">
+                        <div class="w-12 h-12 bg-{{ $color }}-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <i class="fas fa-{{ $type=='package'?'box':($type=='product'?'shopping-cart':'plus-circle') }} text-{{ $color }}-600"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800">{{ ucfirst($type) }}s</h4>
+                        <p class="text-gray-600 text-sm">{{ $type=='package'?'Complete packages with accommodations':($type=='product'?'Individual products/services':'Additional services & extras') }}</p>
+                    </div>
+                    <input type="checkbox" name="booking_types[]" value="{{ $type }}" class="hidden booking-type-checkbox">
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Package Selection -->
+        <div id="package-selection" class="hidden">
             <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
                 <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
                     <i class="fas fa-hotel text-purple-600"></i>
@@ -114,112 +158,106 @@ Complete your booking details!
                 Select Your Package
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Standard Room -->
-                <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-500 transition-all duration-200 cursor-pointer package-option" data-package="1">
-                    <div class="text-center mb-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-bed text-blue-600"></i>
+                @forelse($packages ?? [] as $package)
+                    <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-blue-500 transition-all duration-200 cursor-pointer package-option" data-package="{{ $package->id }}" data-price="{{ $package->price_publish }}">
+                        <div class="text-center mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                @if($package->image)
+                                    <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name_package }}" class="w-12 h-12 rounded-full object-cover">
+                                @else
+                                    <i class="fas fa-bed text-blue-600"></i>
+                                @endif
+                            </div>
+                            <h4 class="font-bold text-gray-800">{{ $package->name_package }}</h4>
+                            <p class="text-gray-600 text-sm">{{ Str::limit($package->description, 50) }}</p>
                         </div>
-                        <h4 class="font-bold text-gray-800">Standard Room</h4>
-                        <p class="text-gray-600 text-sm">Comfortable room with basic amenities</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600 mb-2">Rp 450.000</div>
-                        <span class="text-gray-500 text-sm">per night</span>
-                    </div>
-                    <input type="radio" name="package_id" value="1" class="hidden package-radio">
-                </div>
-
-                <!-- Deluxe Room -->
-                <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-green-500 transition-all duration-200 cursor-pointer package-option" data-package="2">
-                    <div class="text-center mb-4">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-concierge-bell text-green-600"></i>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600 mb-2">Rp {{ number_format($package->price_publish, 0, ',', '.') }}</div>
+                            <span class="text-gray-500 text-sm">per night</span>
                         </div>
-                        <h4 class="font-bold text-gray-800">Deluxe Room</h4>
-                        <p class="text-gray-600 text-sm">Enhanced comfort with premium amenities</p>
+                        <input type="checkbox" name="id_package[]" value="{{ $package->id }}" class="hidden package-radio">
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600 mb-2">Rp 750.000</div>
-                        <span class="text-gray-500 text-sm">per night</span>
+                @empty
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-box text-gray-300 text-4xl mb-4"></i>
+                        <p class="text-gray-500">No packages available</p>
                     </div>
-                    <input type="radio" name="package_id" value="2" class="hidden package-radio">
-                </div>
-
-                <!-- Suite -->
-                <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-purple-500 transition-all duration-200 cursor-pointer package-option" data-package="3">
-                    <div class="text-center mb-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <i class="fas fa-crown text-purple-600"></i>
-                        </div>
-                        <h4 class="font-bold text-gray-800">Suite</h4>
-                        <p class="text-gray-600 text-sm">Luxury suite with panoramic views</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-purple-600 mb-2">Rp 1.250.000</div>
-                        <span class="text-gray-500 text-sm">per night</span>
-                    </div>
-                    <input type="radio" name="package_id" value="3" class="hidden package-radio">
-                </div>
+                @endforelse
             </div>
         </div>
 
-        <!-- Add-ons -->
-        <div>
+        <!-- Product Selection -->
+        <div id="product-selection" class="hidden">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-shopping-cart text-green-600"></i>
+                </div>
+                Select Your Product
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @forelse($products ?? [] as $product)
+                    <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-green-500 transition-all duration-200 cursor-pointer product-option" data-product="{{ $product->id }}" data-price="{{ $product->price }}">
+                        <div class="text-center mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                @if($product->image)
+                                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-12 h-12 rounded-full object-cover">
+                                @else
+                                    <i class="fas fa-shopping-cart text-green-600"></i>
+                                @endif
+                            </div>
+                            <h4 class="font-bold text-gray-800">{{ $product->name }}</h4>
+                            <p class="text-gray-600 text-sm">{{ Str::limit($product->description, 50) }}</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600 mb-2">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
+                            <span class="text-gray-500 text-sm">per unit</span>
+                        </div>
+                        <input type="checkbox" name="product_id[]" value="{{ $product->id }}" class="hidden product-radio">
+                    </div>
+                @empty
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-shopping-cart text-gray-300 text-4xl mb-4"></i>
+                        <p class="text-gray-500">No products available</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- Addon Selection -->
+        <div id="addon-selection" class="hidden">
             <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
                 <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
                     <i class="fas fa-plus-circle text-orange-600"></i>
                 </div>
-                Additional Services
+                Select Your Addon
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:border-orange-300 transition-all duration-200 cursor-pointer">
-                    <input type="checkbox" name="addons[]" value="breakfast" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500">
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-800">Daily Breakfast</div>
-                        <div class="text-sm text-gray-600">Rp 75.000 per day</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @forelse($addons ?? [] as $addon)
+                    <div class="border-2 border-gray-200 rounded-xl p-6 hover:border-orange-500 transition-all duration-200 cursor-pointer addon-option" data-addon="{{ $addon->id }}" data-price="{{ $addon->price }}">
+                        <div class="text-center mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                @if($addon->image)
+                                    <img src="{{ asset('storage/' . $addon->image) }}" alt="{{ $addon->name }}" class="w-12 h-12 rounded-full object-cover">
+                                @else
+                                    <i class="fas fa-plus-circle text-orange-600"></i>
+                                @endif
+                            </div>
+                            <h4 class="font-bold text-gray-800">{{ $addon->name }}</h4>
+                            <p class="text-gray-600 text-sm">{{ Str::limit($addon->description, 50) }}</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-orange-600 mb-2">Rp {{ number_format($addon->price, 0, ',', '.') }}</div>
+                            <span class="text-gray-500 text-sm">per unit</span>
+                        </div>
+                        <input type="checkbox" name="addon_id[]" value="{{ $addon->id }}" class="hidden addon-radio">
+                        <input type="number" name="quantity[{{ $addon->id }}]" value="1" min="1" class="mt-2 w-full px-2 py-1 border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     </div>
-                </label>
-
-                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:border-orange-300 transition-all duration-200 cursor-pointer">
-                    <input type="checkbox" name="addons[]" value="spa" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500">
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-800">Spa Treatment</div>
-                        <div class="text-sm text-gray-600">Rp 250.000 per session</div>
+                @empty
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-plus-circle text-gray-300 text-4xl mb-4"></i>
+                        <p class="text-gray-500">No addons available</p>
                     </div>
-                </label>
-
-                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:border-orange-300 transition-all duration-200 cursor-pointer">
-                    <input type="checkbox" name="addons[]" value="transport" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500">
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-800">Airport Transfer</div>
-                        <div class="text-sm text-gray-600">Rp 150.000 per trip</div>
-                    </div>
-                </label>
-
-                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:border-orange-300 transition-all duration-200 cursor-pointer">
-                    <input type="checkbox" name="addons[]" value="guide" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500">
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-800">Tour Guide</div>
-                        <div class="text-sm text-gray-600">Rp 300.000 per day</div>
-                    </div>
-                </label>
-
-                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:border-orange-300 transition-all duration-200 cursor-pointer">
-                    <input type="checkbox" name="addons[]" value="laundry" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500">
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-800">Laundry Service</div>
-                        <div class="text-sm text-gray-600">Rp 50.000 per load</div>
-                    </div>
-                </label>
-
-                <label class="flex items-center p-4 border border-gray-200 rounded-xl hover:border-orange-300 transition-all duration-200 cursor-pointer">
-                    <input type="checkbox" name="addons[]" value="parking" class="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500">
-                    <div class="ml-3">
-                        <div class="font-semibold text-gray-800">Valet Parking</div>
-                        <div class="text-sm text-gray-600">Rp 25.000 per day</div>
-                    </div>
-                </label>
+                @endforelse
             </div>
         </div>
 
@@ -246,16 +284,20 @@ Complete your booking details!
             </h3>
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Package:</span>
+                    <span class="text-gray-600">Packages:</span>
                     <span class="font-semibold text-gray-800" id="summary-package">Not selected</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="text-gray-600">Duration:</span>
-                    <span class="font-semibold text-gray-800" id="summary-duration">0 nights</span>
+                    <span class="text-gray-600">Products:</span>
+                    <span class="font-semibold text-gray-800" id="summary-product">None</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600">Add-ons:</span>
                     <span class="font-semibold text-gray-800" id="summary-addons">None</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Duration:</span>
+                    <span class="font-semibold text-gray-800" id="summary-duration">1 night</span>
                 </div>
                 <hr class="border-gray-300">
                 <div class="flex justify-between items-center text-lg">
@@ -277,62 +319,122 @@ Complete your booking details!
 </div>
 
 <script>
-// Package selection functionality
-document.querySelectorAll('.package-option').forEach(option => {
+// Helper function
+function toggleSelection(el, borderClass) {
+    el.classList.toggle('selected');
+    el.classList.toggle(borderClass);
+    el.classList.toggle('border-gray-200');
+}
+
+// Update summary
+function updateSummary() {
+    let total = 0;
+    let packages = [];
+    let products = [];
+    let addons = [];
+
+    const durationInput = document.querySelector('input[name="duration_days"]');
+    const duration = durationInput ? parseInt(durationInput.value) || 1 : 1;
+
+    document.querySelectorAll('.package-option.selected').forEach(option => {
+        const name = option.querySelector('h4').textContent;
+        const price = parseInt(option.dataset.price) || 0;
+        const packageTotal = price * duration;
+        packages.push(`${name} - Rp ${price.toLocaleString('id-ID')}/night`);
+        total += packageTotal;
+    });
+    document.querySelectorAll('.product-option.selected').forEach(option => {
+        const name = option.querySelector('h4').textContent;
+        const price = parseInt(option.dataset.price) || 0;
+        products.push(`${name} - Rp ${price.toLocaleString('id-ID')}/unit`);
+        total += price;
+    });
+    document.querySelectorAll('.addon-option.selected').forEach(option => {
+        const name = option.querySelector('h4').textContent;
+        const price = parseInt(option.dataset.price) || 0;
+        const qtyInput = option.querySelector('input[type="number"]');
+        const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+        addons.push(`${name} x${qty} - Rp ${(price*qty).toLocaleString('id-ID')}`);
+        total += price*qty;
+    });
+
+    document.getElementById('summary-package').textContent = packages.length ? packages.join(', ') : 'Not selected';
+    document.getElementById('summary-product').textContent = products.length ? products.join(', ') : 'None';
+    document.getElementById('summary-addons').textContent = addons.length ? addons.join(', ') : 'None';
+    document.getElementById('summary-duration').textContent = duration + ' night' + (duration>1?'s':'');
+    document.getElementById('summary-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
+// Event listeners for booking type selection
+document.querySelectorAll('.booking-type-option').forEach(option => {
     option.addEventListener('click', function() {
-        // Remove selected class from all options
-        document.querySelectorAll('.package-option').forEach(opt => {
-            opt.classList.remove('border-blue-500', 'border-green-500', 'border-purple-500');
-            opt.classList.add('border-gray-200');
+        const type = this.dataset.type;
+        const checkbox = this.querySelector('.booking-type-checkbox');
+
+        // Toggle selection
+        const colorClass = type==='package'?'border-blue-500':type==='product'?'border-green-500':'border-orange-500';
+        toggleSelection(this, colorClass);
+
+        // Update checkbox
+        checkbox.checked = this.classList.contains('selected');
+
+        // Show/hide selection sections based on selected types
+        const selectedTypes = Array.from(document.querySelectorAll('.booking-type-option.selected')).map(opt => opt.dataset.type);
+
+        ['package','product','addon'].forEach(t => {
+            const section = document.getElementById(`${t}-selection`);
+            if (selectedTypes.includes(t)) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+                // Deselect all options in hidden sections
+                section.querySelectorAll(`.${t}-option.selected`).forEach(opt => {
+                    opt.classList.remove('selected', `border-${t==='package'?'blue':t==='product'?'green':'orange'}-500`);
+                    opt.classList.add('border-gray-200');
+                    const cb = opt.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = false;
+                });
+            }
         });
 
-        // Add selected class to clicked option
-        const packageId = this.dataset.package;
-        if (packageId == 1) {
-            this.classList.remove('border-gray-200');
-            this.classList.add('border-blue-500');
-        } else if (packageId == 2) {
-            this.classList.remove('border-gray-200');
-            this.classList.add('border-green-500');
-        } else if (packageId == 3) {
-            this.classList.remove('border-gray-200');
-            this.classList.add('border-purple-500');
-        }
-
-        // Check the radio button
-        this.querySelector('.package-radio').checked = true;
-
-        // Update summary
         updateSummary();
     });
 });
 
-// Update booking summary
-function updateSummary() {
-    const selectedPackage = document.querySelector('input[name="package_id"]:checked');
-    const packageNames = {
-        1: 'Standard Room - Rp 450.000/night',
-        2: 'Deluxe Room - Rp 750.000/night',
-        3: 'Suite - Rp 1.250.000/night'
-    };
-
-    if (selectedPackage) {
-        document.getElementById('summary-package').textContent = packageNames[selectedPackage.value];
-    }
-
-    // Calculate total (basic implementation)
-    let total = 0;
-    if (selectedPackage) {
-        const prices = {1: 450000, 2: 750000, 3: 1250000};
-        total = prices[selectedPackage.value] || 0;
-    }
-
-    document.getElementById('summary-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
-}
-
-// Update summary when add-ons change
-document.querySelectorAll('input[name="addons[]"]').forEach(addon => {
-    addon.addEventListener('change', updateSummary);
+// Selection listeners
+['package','product','addon'].forEach(type=>{
+    document.querySelectorAll(`.${type}-option`).forEach(option=>{
+        option.addEventListener('click', function(e){
+            e.stopPropagation(); // avoid triggering type click
+            const border = type==='package'?'border-blue-500':type==='product'?'border-green-500':'border-orange-500';
+            toggleSelection(this, border);
+            const checkbox = this.querySelector('input[type="checkbox"]');
+            if(checkbox) checkbox.checked = this.classList.contains('selected');
+            updateSummary();
+        });
+    });
 });
+
+// Quantity update
+document.querySelectorAll('.addon-option input[type="number"]').forEach(input=>{
+    input.addEventListener('input', updateSummary);
+});
+
+// Duration update
+document.querySelector('input[name="duration_days"]').addEventListener('input', updateSummary);
+
+// Pre-select URL
+const urlParams = new URLSearchParams(window.location.search);
+['package','product','addon'].forEach(type=>{
+    if(urlParams.has(type)){
+        const id = urlParams.get(type);
+        document.querySelector(`.booking-type-option[data-type="${type}"]`)?.click();
+        const option = document.querySelector(`.${type}-option[data-${type}="${id}"]`);
+        if(option) option.click();
+    }
+});
+
+// Initial summary
+updateSummary();
 </script>
 @endsection

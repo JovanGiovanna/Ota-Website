@@ -11,8 +11,8 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
 <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-800 rounded-2xl p-8 mb-8 text-white shadow-2xl">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-3xl font-bold mb-2">Discover Amazing Places</h1>
-            <p class="text-blue-100">Find and book the best hotel packages and services for your perfect getaway.</p>
+            <h1 class="text-3xl font-bold mb-2">Discover Amazing Packages</h1>
+            <p class="text-blue-100">Find and book the best packages with products and add-ons for your perfect experience.</p>
             <a href="{{ route('user.search') }}" class="inline-flex items-center mt-4 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg">
                 <i class="fas fa-search mr-2"></i>
                 Start Exploring
@@ -132,7 +132,7 @@ Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
                 <i class="fas fa-plus-circle text-green-600"></i>
             </div>
         </div>
-        <p class="text-gray-600 mb-4">Enhance your stay with additional services and experiences.</p>
+        <p class="text-gray-600 mb-4">Enhance your experience with additional services and add-ons.</p>
         <ul class="space-y-2 mb-6">
             <li class="flex items-center text-sm text-gray-600">
                 <i class="fas fa-check text-green-500 mr-2"></i>

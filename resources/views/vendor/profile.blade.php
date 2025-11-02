@@ -9,6 +9,11 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
 @section('logout_route', route('vendor.logout'))
 
 @section('content')
+@php
+    $vendor = Auth::guard('vendor')->user();
+    $info = $vendor->vendorInfo ?? null;
+@endphp
+
 <div class="px-6 py-8">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900">My Profile</h1>
@@ -27,37 +32,42 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Vendor Name</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->name }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $vendor->name }}</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Email</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->email }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $vendor->email }}</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Corporate Name</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->vendorInfo->name_corporate ?? 'Not provided' }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->name_corporate ?? 'Not provided' }}</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Phone</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->vendorInfo->phone ?? 'Not provided' }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->phone ?? 'Not provided' }}</p>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700">Address</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->address ?? 'Not provided' }}</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">City</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->vendorInfo->city->name ?? 'Not specified' }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->city->name ?? 'Not specified' }}</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Province</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->vendorInfo->city->province->name ?? 'Not specified' }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->city->province->name ?? 'Not specified' }}</p>
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700">Description</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->vendorInfo->desc ?? 'No description available' }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->description ?? 'No description available' }}</p>
                 </div>
 
                 <!-- Location Information -->
@@ -68,8 +78,8 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Coordinates</label>
                     <p class="mt-1 text-sm text-gray-900">
-                        @if(Auth::guard('vendor')->user()->vendorInfo->coordinate_latitude && Auth::guard('vendor')->user()->vendorInfo->coordinate_longitude)
-                            {{ Auth::guard('vendor')->user()->vendorInfo->coordinate_latitude }}, {{ Auth::guard('vendor')->user()->vendorInfo->coordinate_longitude }}
+                        @if(!empty($info?->coordinate_latitude) && !empty($info?->coordinate_longitude))
+                            {{ $info->coordinate_latitude }}, {{ $info->coordinate_longitude }}
                         @else
                             Not provided
                         @endif
@@ -78,7 +88,7 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700">Landmark Description</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->vendorInfo->landmark_description ?? 'Not provided' }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $info->landmark_description ?? 'Not provided' }}</p>
                 </div>
 
                 <!-- Status Information -->
@@ -88,15 +98,15 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Account Status</label>
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ Auth::guard('vendor')->user()->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                        {{ Auth::guard('vendor')->user()->is_active ? 'Active' : 'Inactive' }}
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $vendor->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                        {{ $vendor->is_active ? 'Active' : 'Inactive' }}
                     </span>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Verification Status</label>
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ Auth::guard('vendor')->user()->vendorInfo->is_verified ?? false ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                        {{ Auth::guard('vendor')->user()->vendorInfo->is_verified ?? false ? 'Verified' : 'Pending Verification' }}
+                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ ($info->is_verified ?? false) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                        {{ ($info->is_verified ?? false) ? 'Verified' : 'Pending Verification' }}
                     </span>
                 </div>
 
@@ -107,12 +117,12 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Joined Date</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->created_at->format('M d, Y') }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $vendor->created_at->format('M d, Y') }}</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Last Updated</label>
-                    <p class="mt-1 text-sm text-gray-900">{{ Auth::guard('vendor')->user()->updated_at->format('M d, Y H:i') }}</p>
+                    <p class="mt-1 text-sm text-gray-900">{{ $vendor->updated_at->format('M d, Y H:i') }}</p>
                 </div>
             </div>
         </div>

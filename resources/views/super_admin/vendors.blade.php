@@ -36,28 +36,6 @@ Vendors Management
                             <p class="text-sm text-gray-600">{{ $vendor->vendorInfo->description ?? 'Vendor' }}</p>
                         </div>
                     </div>
-                    <div class="flex space-x-2">
-                        <button class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
-                        <a href="{{ route('super_admin.vendors.edit', $vendor) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </a>
-                        <form action="{{ route('super_admin.vendors.destroy', $vendor) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this vendor?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
                 </div>
                 <div class="space-y-2">
                     <div class="flex justify-between">
@@ -75,6 +53,18 @@ Vendors Management
                     <div class="flex justify-between">
                         <span class="text-sm text-gray-600">Status:</span>
                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $vendor->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $vendor->is_active ? 'Active' : 'Inactive' }}</span>
+                    </div>
+                    <div class="flex justify-between mt-2">
+                        <form method="POST" action="{{ route('super_admin.vendors.update', $vendor) }}" class="inline">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="name" value="{{ $vendor->name }}">
+                            <input type="hidden" name="email" value="{{ $vendor->email }}">
+                            <input type="hidden" name="is_active" value="{{ $vendor->is_active ? 0 : 1 }}">
+                            <button type="submit" class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md {{ $vendor->is_active ? 'text-red-700 bg-red-50 hover:bg-red-100' : 'text-green-700 bg-green-50 hover:bg-green-100' }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $vendor->is_active ? 'focus:ring-red-500' : 'focus:ring-green-500' }}">
+                                {{ $vendor->is_active ? 'Deactivate' : 'Activate' }}
+                            </button>
+                        </form>
                     </div>
                 </div>
                 <!-- New Action Buttons -->

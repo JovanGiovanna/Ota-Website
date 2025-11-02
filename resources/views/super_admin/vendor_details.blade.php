@@ -104,6 +104,7 @@ Vendor Details Management
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business Info</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verification</th>
                         <th scope="col" class="relative px-6 py-3">
                             <span class="sr-only">Actions</span>
                         </th>
@@ -139,8 +140,10 @@ Vendor Details Management
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $vendorInfo->vendor->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $vendorInfo->vendor->is_active ? 'Active' : 'Inactive' }}</span>
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $vendorInfo->is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ $vendorInfo->is_verified ? 'Verified' : 'Unverified' }}</span>
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('super_admin.vendor_details.show', $vendorInfo->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
                             <a href="{{ route('super_admin.vendor_details.edit', $vendorInfo->id) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
                             <form action="{{ route('super_admin.vendor_details.destroy', $vendorInfo->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this vendor detail?')">
                                 @csrf
@@ -151,7 +154,7 @@ Vendor Details Management
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
+                        <td colspan="7" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">
                             No vendor details found.
                         </td>
                     </tr>

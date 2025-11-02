@@ -13,73 +13,66 @@
         </div>
 
         <div class="divide-y divide-gray-200">
-            <!-- Sample Booking 1 -->
+            @forelse($bookings as $booking)
             <div class="p-6 hover:bg-gray-50">
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold mb-2">Sample Hotel - Deluxe Room</h3>
-                        <p class="text-gray-600 mb-2">Booking ID: #BK001</p>
-                        <p class="text-sm text-gray-500">Check-in: 2024-01-15 | Check-out: 2024-01-17</p>
-                        <p class="text-sm text-gray-500">Guests: 2 Adults</p>
+                        <h3 class="text-lg font-semibold mb-2">
+                            @if($booking->packages->count() > 0)
+                                Package Booking ({{ $booking->packages->count() }} packages)
+                            @elseif($booking->products->count() > 0)
+                                Product Booking ({{ $booking->products->count() }} products)
+                            @elseif($booking->addons->count() > 0)
+                                Addon Booking ({{ $booking->addons->count() }} addons)
+                            @else
+                                Mixed Booking
+                            @endif
+                        </h3>
+                        <p class="text-gray-600 mb-2">Booking ID: #{{ $booking->id }}</p>
+                        <p class="text-sm text-gray-500">Check-in: {{ $booking->checkin_appointment_start->format('d M Y') }} | Check-out: {{ $booking->checkout_appointment_end->format('d M Y') }}</p>
+                        <p class="text-sm text-gray-500">Duration: {{ $booking->duration_days }} days</p>
+
+                        <!-- Show items -->
+                        <div class="mt-2 text-sm text-gray-600">
+                            @if($booking->packages->count() > 0)
+                                <p>Packages: {{ $booking->packages->pluck('name_package')->join(', ') }}</p>
+                            @endif
+                            @if($booking->products->count() > 0)
+                                <p>Products: {{ $booking->products->pluck('name')->join(', ') }}</p>
+                            @endif
+                            @if($booking->addons->count() > 0)
+                                <p>Add-ons: {{ $booking->addons->pluck('name')->join(', ') }}</p>
+                            @endif
+                        </div>
                     </div>
                     <div class="text-right">
                         <span class="inline-block px-3 py-1 rounded-full text-sm font-medium
-                            @if(true) bg-green-100 text-green-800 @else bg-yellow-100 text-yellow-800 @endif">
-                            Confirmed
+                            @if($booking->status == 'confirmed') bg-green-100 text-green-800
+                            @elseif($booking->status == 'pending') bg-yellow-100 text-yellow-800
+                            @elseif($booking->status == 'completed') bg-blue-100 text-blue-800
+                            @elseif($booking->status == 'checked_in') bg-purple-100 text-purple-800
+                            @elseif($booking->status == 'cancelled') bg-red-100 text-red-800
+                            @else bg-gray-100 text-gray-800 @endif">
+                            {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
                         </span>
-                        <p class="text-lg font-bold text-blue-600 mt-2">$300</p>
-                        <a href="{{ route('user.detail_history', ['id' => 1]) }}" class="inline-block mt-2 text-blue-600 hover:underline text-sm">View Details</a>
+                        <p class="text-lg font-bold text-blue-600 mt-2">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</p>
+                        <a href="{{ route('user.detail_history', $booking) }}" class="inline-block mt-2 text-blue-600 hover:underline text-sm">View Details</a>
                     </div>
                 </div>
             </div>
-
-            <!-- Sample Booking 2 -->
-            <div class="p-6 hover:bg-gray-50">
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold mb-2">Luxury Resort - Suite</h3>
-                        <p class="text-gray-600 mb-2">Booking ID: #BK002</p>
-                        <p class="text-sm text-gray-500">Check-in: 2024-02-10 | Check-out: 2024-02-15</p>
-                        <p class="text-sm text-gray-500">Guests: 4 Adults, 2 Children</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                            Pending
-                        </span>
-                        <p class="text-lg font-bold text-blue-600 mt-2">$1,250</p>
-                        <a href="{{ route('user.detail_history', ['id' => 2]) }}" class="inline-block mt-2 text-blue-600 hover:underline text-sm">View Details</a>
-                    </div>
-                </div>
+            @empty
+            <div class="p-6 text-center text-gray-500">
+                <p>No bookings found.</p>
             </div>
-
-            <!-- Sample Booking 3 -->
-            <div class="p-6 hover:bg-gray-50">
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold mb-2">Budget Hotel - Standard Room</h3>
-                        <p class="text-gray-600 mb-2">Booking ID: #BK003</p>
-                        <p class="text-sm text-gray-500">Check-in: 2023-12-20 | Check-out: 2023-12-22</p>
-                        <p class="text-sm text-gray-500">Guests: 1 Adult</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                            Completed
-                        </span>
-                        <p class="text-lg font-bold text-blue-600 mt-2">$160</p>
-                        <a href="{{ route('user.detail_history', ['id' => 3]) }}" class="inline-block mt-2 text-blue-600 hover:underline text-sm">View Details</a>
-                    </div>
-                </div>
-            </div>
+            @endforelse
         </div>
 
         <!-- Pagination -->
         <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
             <div class="flex justify-between items-center">
-                <p class="text-sm text-gray-600">Showing 1 to 3 of 3 bookings</p>
+                <p class="text-sm text-gray-600">Showing {{ $bookings->count() }} bookings</p>
                 <div class="flex space-x-2">
-                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50" disabled>Previous</button>
-                    <button class="px-3 py-1 bg-blue-500 text-white border border-blue-500 rounded-md text-sm" disabled>1</button>
-                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50" disabled>Next</button>
+                    {{ $bookings->links() }}
                 </div>
             </div>
         </div>

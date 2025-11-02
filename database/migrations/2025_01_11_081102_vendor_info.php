@@ -27,9 +27,6 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->string('description')->nullable();
-            $table->string('desc')->nullable();
-            $table->integer('coordinate');
-            $table->integer('landmark');
             $table->timestamps();
         });
     }

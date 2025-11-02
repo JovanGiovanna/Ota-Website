@@ -39,6 +39,7 @@ class BookPackageAddon extends Model
      */
     protected $fillable = [
         'id_book',
+        'id_package',
         'id_addons',
     ];
 
@@ -50,6 +51,7 @@ class BookPackageAddon extends Model
     protected $casts = [
         'id' => 'string',
         'id_book' => 'string',
+        'id_package' => 'string',
         'id_addons' => 'string',
     ];
 
@@ -88,5 +90,14 @@ class BookPackageAddon extends Model
     public function addon(): BelongsTo
     {
         return $this->belongsTo(Addon::class, 'id_addons');
+    }
+
+    /**
+     * Mendapatkan package yang terkait dengan book package addon ini.
+     * Relasi BelongsTo ke model 'Package' dengan foreign key 'id_package'.
+     */
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(Package::class, 'id_package');
     }
 }

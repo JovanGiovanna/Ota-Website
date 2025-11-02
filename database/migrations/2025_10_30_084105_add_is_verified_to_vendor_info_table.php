@@ -12,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('vendor_info', function (Blueprint $table) {
-            $table->decimal('coordinate_latitude', 10, 8)->nullable()->after('description');
-            $table->decimal('coordinate_longitude', 11, 8)->nullable()->after('coordinate_latitude');
-            $table->text('landmark_description')->nullable()->after('coordinate_longitude');
+            $table->boolean('is_verified')->default(false)->after('landmark_description');
         });
     }
 
@@ -24,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('vendor_info', function (Blueprint $table) {
-            $table->dropColumn(['coordinate_latitude', 'coordinate_longitude', 'landmark_description']);
+            $table->dropColumn('is_verified');
         });
     }
 };

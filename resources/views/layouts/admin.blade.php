@@ -1,3 +1,4 @@
+{{-- resources/views/layouts/admin.blade.php --}}
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -11,9 +12,11 @@
 </head>
 <body class="h-full bg-gradient-to-br from-indigo-50 to-blue-50">
     <div class="flex h-full">
+        <!-- Sidebar -->
         <div class="hidden md:flex md:w-72 md:flex-col">
             <div class="flex flex-col flex-grow bg-gradient-to-b from-indigo-900 via-blue-900 to-indigo-900 pt-6 pb-4 overflow-y-auto shadow-2xl">
                 
+                <!-- Logo -->
                 <div class="flex items-center flex-shrink-0 px-6 mb-8">
                     <div class="flex items-center space-x-3">
                         <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
@@ -26,125 +29,98 @@
                     </div>
                 </div>
 
+                <!-- Navigation -->
                 <div class="mt-2 flex-grow flex flex-col">
                     <nav class="flex-1 px-4 space-y-2">
-                        
-                        <a href="{{ route('admin.dashboard') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-tachometer-alt text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+
+                        <a href="{{ route('admin.dashboard') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-tachometer-alt text-indigo-400 group-hover:text-white mr-3"></i>
                             Dashboard
                         </a>
 
-                        <a href="{{ route('admin.packages') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-cube text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                        <a href="{{ route('admin.packages') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-cube text-indigo-400 group-hover:text-white mr-3"></i>
                             Packages
                         </a>
                         
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-calendar-check text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-calendar-check text-indigo-400 group-hover:text-white mr-3"></i>
                             Booking Approval
                         </a>
 
-                        <a href="{{ route('admin.profile') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-user text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
-                            Profile
-                        </a>
+                        {{-- ✅ Hanya admin yang bisa lihat Profile --}}
+                        @if (Auth::guard('admin')->check())
+                            <a href="{{ route('admin.profile') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-user text-indigo-400 group-hover:text-white mr-3"></i>
+                                Profile
+                            </a>
+                        @endif
                         
                         <div class="mt-4 pt-4 border-t border-indigo-700">
-                             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-indigo-300">Transaksi</p>
+                            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-indigo-300">Transaksi</p>
                         </div>
-                        
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-receipt text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-receipt text-indigo-400 group-hover:text-white mr-3"></i>
                             Transaction Packages
                         </a>
                         
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-shopping-bag text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-shopping-bag text-indigo-400 group-hover:text-white mr-3"></i>
                             Transaction Product
                         </a>
 
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-money-check-alt text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
+                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                            <i class="fas fa-money-check-alt text-indigo-400 group-hover:text-white mr-3"></i>
                             Transaction Addons
                         </a>
 
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md transition duration-150 ease-in-out">
-                            <i class="fas fa-fw fa-id-card text-indigo-400 group-hover:text-white mr-3 h-5 w-5"></i>
-                            Profile Vendor
-                        </a>
-                        
+                        {{-- ✅ Hanya admin yang bisa lihat Profile Vendor --}}
+                        @if (Auth::guard('admin')->check())
+                            <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                                <i class="fas fa-id-card text-indigo-400 group-hover:text-white mr-3"></i>
+                                Profile Vendor
+                            </a>
+                        @endif
+
                         @yield('sidebar')
                     </nav>
                 </div>
-                
+
+                <!-- Footer -->
                 <div class="px-4 py-4 border-t border-indigo-700">
                     <div class="flex items-center space-x-3">
                         <div class="w-8 h-8 bg-gradient-to-r from-indigo-400 to-blue-500 rounded-full flex items-center justify-center">
                             <i class="fas fa-user-cog text-white text-xs"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-white text-sm font-medium truncate">{{ Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name : (Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Unknown') }}</p>
-                            <p class="text-indigo-200 text-xs">Administrator</p>
+                            <p class="text-white text-sm font-medium truncate">
+                                {{ Auth::guard('admin')->check() 
+                                    ? Auth::guard('admin')->user()->name 
+                                    : (Auth::guard('super_admin')->check() 
+                                        ? Auth::guard('super_admin')->user()->name 
+                                        : 'Unknown') }}
+                            </p>
+                            <p class="text-indigo-200 text-xs">
+                                {{ Auth::guard('admin')->check() ? 'Admin' : 'Super Admin' }}
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="flex flex-col w-0 flex-1 overflow-hidden">
-            
-            <div class="relative z-10 flex-shrink-0 flex h-20 bg-white shadow-lg border-b border-indigo-200">
-                
-                <button class="px-4 border-r border-indigo-200 text-indigo-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 md:hidden">
-                    <span class="sr-only">Open sidebar</span>
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
-                    </svg>
-                </button>
-                
-                <div class="flex-1 px-6 flex justify-between items-center">
-                    
-                    <div class="flex-1 flex max-w-lg">
-                        <div class="w-full">
-                            <label for="search-field" class="sr-only">Search</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                </div>
-                                <input id="search-field" class="block w-full pl-10 pr-3 py-3 border border-indigo-300 rounded-xl text-indigo-900 placeholder-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-indigo-50" placeholder="Search admin data..." type="search">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="ml-4 flex items-center md:ml-6 space-x-4">
-                        <button class="p-2 text-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg transition duration-150 ease-in-out">
-                            <span class="sr-only">View notifications</span>
-                            <i class="fas fa-bell h-6 w-6"></i>
-                        </button>
 
-                        <div class="ml-3 relative">
-                            <div class="flex items-center space-x-4">
-                                <div class="flex items-center space-x-2">
-                                    <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center">
-                                        <span class="text-white text-sm font-medium">{{ substr(Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name : (Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'U'), 0, 1) }}</span>
-                                    </div>
-                                    <span class="text-indigo-700 font-medium hidden sm:block">@yield('welcome')</span>
-                                </div>
-                                
-                                <form method="POST" action="@yield('logout_route')" class="inline">
-                                    @csrf
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                        </svg>
-                                        Logout
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Main Content -->
+        <div class="flex flex-col w-0 flex-1 overflow-hidden">
+            <div class="relative z-10 flex-shrink-0 flex h-20 bg-white shadow-lg border-b border-indigo-200">
+                <div class="flex-1 px-6 flex justify-between items-center">
+                    <span class="text-indigo-700 font-medium">@yield('welcome')</span>
+                    <form method="POST" action="@yield('logout_route')">
+                        @csrf
+                        <button type="submit" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-2 rounded-lg font-medium">
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </div>
 

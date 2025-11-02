@@ -17,8 +17,23 @@ class Booking extends Model
 {
     use HasFactory;
 
+    /**
+     * Kunci utama adalah UUID, bukan integer auto-increment.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Nonaktifkan auto-incrementing untuk primary key.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
     // --- CASTS ---
     protected $casts = [
+        'id' => 'string',
         'checkin_appointment_start' => 'datetime',
         'checkout_appointment_end' => 'datetime',
         'total_price' => 'decimal:2',
@@ -27,7 +42,7 @@ class Booking extends Model
     // --- FILLABLE ---
     protected $fillable = [
         'id_user',
-        'id_package',
+        'id_package', // Nullable for flexible bookings
         'booker_name',
         'booker_email',
         'booker_telp',
@@ -40,6 +55,19 @@ class Booking extends Model
         'note',
     ];
     
+
+    protected static function boot()
+{
+    parent::boot();
+
+    // Auto-generate UUID setiap kali membuat Booking baru
+    static::creating(function ($model) {
+        if (empty($model->id)) {
+            $model->id = (string) \Illuminate\Support\Str::uuid();
+        }
+    });
+}
+
     // --- RELATIONS ---
 
     /**
@@ -60,13 +88,35 @@ class Booking extends Model
     }
     
     /**
-     * Relasi ke Addons (Many-to-Many).
+     * Relasi ke Addons (Many-to-Many through BookPackageAddon).
      * @return BelongsToMany
      */
     public function addons(): BelongsToMany
     {
-        return $this->belongsToMany(Addon::class, 'booking_addon')
-                    ->withPivot('quantity') // Mengambil kolom quantity dari tabel pivot
+        return $this->belongsToMany(Addon::class, 'book_package_addons', 'id_book', 'id_addons')
+                    ->withPivot('id_package') // Mengambil kolom id_package dari tabel pivot
+                    ->withTimestamps();
+    }
+
+    /**
+     * Relasi ke Packages (Many-to-Many through BookPackageAddon).
+     * @return BelongsToMany
+     */
+    public function packages(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class, 'book_package_addons', 'id_book', 'id_package')
+                    ->withPivot('id_addons') // Mengambil kolom id_addons dari tabel pivot
+                    ->withTimestamps();
+    }
+
+    /**
+     * Relasi ke Products (Many-to-Many through BookProduct).
+     * @return BelongsToMany
+     */
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'book_products', 'id_book', 'id_product')
+                    ->withPivot('amount', 'total_price') // Mengambil kolom amount dan total_price dari tabel pivot
                     ->withTimestamps();
     }
     

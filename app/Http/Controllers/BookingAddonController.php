@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class BookingAddonController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $bookingAddons = Booking::with('addons')->get()->map(function ($booking) {
@@ -21,7 +18,7 @@ class BookingAddonController extends Controller
                 'addons' => $booking->addons->map(function ($addon) {
                     return [
                         'addon_id' => $addon->id,
-                        'name' => $addon->name,
+                        'name' => $addon->addons, // kolom di tabel addons
                         'harga' => $addon->pivot->harga ?? $addon->price,
                         'jumlah' => $addon->pivot->jumlah ?? $addon->pivot->quantity,
                         'subtotal' => $addon->pivot->subtotal ?? ($addon->price * ($addon->pivot->quantity ?? 1)),
@@ -36,9 +33,6 @@ class BookingAddonController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -60,7 +54,6 @@ class BookingAddonController extends Controller
         $booking = Booking::findOrFail($request->booking_id);
         $addon = Addon::findOrFail($request->addon_id);
 
-        // Attach addon to booking with pivot data
         $booking->addons()->attach($addon->id, [
             'quantity' => $request->quantity,
             'harga' => $request->harga ?? $addon->price,
@@ -82,9 +75,6 @@ class BookingAddonController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($bookingId)
     {
         $booking = Booking::with('addons')->findOrFail($bookingId);
@@ -92,7 +82,7 @@ class BookingAddonController extends Controller
         $addons = $booking->addons->map(function ($addon) {
             return [
                 'addon_id' => $addon->id,
-                'name' => $addon->name,
+                'name' => $addon->addons,
                 'harga' => $addon->pivot->harga ?? $addon->price,
                 'jumlah' => $addon->pivot->jumlah ?? $addon->pivot->quantity,
                 'subtotal' => $addon->pivot->subtotal ?? ($addon->price * ($addon->pivot->quantity ?? 1)),
@@ -108,9 +98,6 @@ class BookingAddonController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $bookingId, $addonId)
     {
         $validator = Validator::make($request->all(), [
@@ -130,7 +117,6 @@ class BookingAddonController extends Controller
         $booking = Booking::findOrFail($bookingId);
         $addon = Addon::findOrFail($addonId);
 
-        // Update pivot data
         $booking->addons()->updateExistingPivot($addon->id, [
             'quantity' => $request->quantity ?? DB::raw('quantity'),
             'harga' => $request->harga ?? DB::raw('harga'),
@@ -152,9 +138,6 @@ class BookingAddonController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($bookingId, $addonId)
     {
         $booking = Booking::findOrFail($bookingId);

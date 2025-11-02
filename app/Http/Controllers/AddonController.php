@@ -163,7 +163,7 @@ class AddonController extends Controller
 
         try {
             $addon->delete(); // Soft delete
-            // 
+            //
             return response()->json(['message' => 'Addon berhasil dihapus (soft deleted)']);
         } catch (Exception $e) {
             return response()->json([
@@ -171,5 +171,14 @@ class AddonController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function showDetail($id)
+    {
+        $addon = Addon::with('vendor.vendorInfo')->find($id);
+        if (!$addon) {
+            abort(404, 'Addon not found');
+        }
+        return view('user.addon_detail', compact('addon'));
     }
 }

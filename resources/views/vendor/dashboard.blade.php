@@ -26,7 +26,7 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
     @endif
 
     @php
-        $vendor = Auth::guard('vendor')->user();
+$vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $hasVendorInfo = \App\Models\VendorInfo::where('id_vendor', $vendor->id)->exists();
     @endphp
 

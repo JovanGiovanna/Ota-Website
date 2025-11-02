@@ -47,6 +47,15 @@ Edit Vendor Information
                             </div>
 
                             <div class="md:col-span-2">
+                                <label for="address" class="block text-sm font-medium text-gray-700">Address</label>
+                                <textarea name="address" id="address" rows="3" required
+                                          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">{{ old('address', $vendorInfo->address) }}</textarea>
+                                @error('address')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div class="md:col-span-2">
                                 <label for="id_city" class="block text-sm font-medium text-gray-700">City</label>
                                 <select name="id_city" id="id_city" required
                                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">
@@ -66,10 +75,10 @@ Edit Vendor Information
 
                     <!-- Description -->
                     <div>
-                        <label for="desc" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea name="desc" id="desc" rows="4" required
-                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">{{ old('desc', $vendorInfo->desc) }}</textarea>
-                        @error('desc')
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea name="description" id="description" rows="4" required
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500">{{ old('description', $vendorInfo->description) }}</textarea>
+                        @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

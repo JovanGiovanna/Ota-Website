@@ -31,14 +31,10 @@ class BookProduct extends Model
      * @var array
      */
     protected $fillable = [
-        'id_user',
+        'id_book',
         'id_product',
-        'checkin_appointment_start_datetime',
-        'checkout_appointment_end_datetime',
         'amount',
-        'booker_name',
-        'booker_email',
-        'booker_telp',
+        'total_price',
     ];
 
     /**
@@ -47,9 +43,10 @@ class BookProduct extends Model
      * @var array
      */
     protected $casts = [
-        'checkin_appointment_start_datetime' => 'datetime',
-        'checkout_appointment_end_datetime' => 'datetime',
-        'amount' => 'decimal:2',
+        'id_book' => 'string',
+        'id_product' => 'string',
+        'amount' => 'integer',
+        'total_price' => 'decimal:2',
     ];
 
     /**
@@ -66,11 +63,11 @@ class BookProduct extends Model
     }
 
     /**
-     * Definisi relasi: Pemesanan ini milik seorang User.
+     * Definisi relasi: Pemesanan ini terkait dengan satu Booking.
      */
-    public function user()
+    public function booking()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(Booking::class, 'id_book');
     }
 
     /**

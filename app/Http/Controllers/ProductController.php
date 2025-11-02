@@ -141,4 +141,13 @@ class ProductController extends Controller
         $product->delete();
         return response()->json(['success' => true, 'message' => 'Product deleted successfully'], 204);
     }
+
+    public function showDetail($id)
+    {
+        $product = Product::with(['category', 'vendor.vendorInfo'])->find($id);
+        if (!$product) {
+            abort(404, 'Product not found');
+        }
+        return view('user.product_detail', compact('product'));
+    }
 }

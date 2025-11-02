@@ -12,7 +12,8 @@ return new class extends Migration
         Schema::create('book_package_addons', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(Str::uuid());
             $table->uuid('id_book');
-            $table->uuid('id_addons');
+            $table->uuid('id_package')->nullable();
+            $table->uuid('id_addons')->nullable();
             $table->timestamps();
 
             $table->foreign('id_book')
@@ -20,10 +21,15 @@ return new class extends Migration
                 ->on('bookings')
                 ->onDelete('cascade');
 
+            $table->foreign('id_package')
+                ->references('id')
+                ->on('packages')
+                ->onDelete('set null');
+
             $table->foreign('id_addons')
                 ->references('id')
                 ->on('addons')
-                ->onDelete('cascade');
+                ->onDelete('set null');
         });
     }
 

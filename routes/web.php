@@ -111,7 +111,10 @@ Route::middleware(['super_admin_access'])->group(function () {
 
     // Vendor-specific routes
     Route::get('/super-admin/vendors/{vendor}/products', [VendorController::class, 'vendorProducts'])->name('super_admin.vendors.products');
+    Route::get('/super-admin/vendors/{vendor}/products/{product}/detail', [VendorController::class, 'vendorProductDetail'])->name('super_admin.vendors.products.detail');
     Route::get('/super-admin/vendors/{vendor}/addons', [VendorController::class, 'vendorAddons'])->name('super_admin.vendors.addons');
+    Route::get('/super-admin/vendors/{vendor}/addons/{addon}/details', [VendorController::class, 'vendorAddonDetails'])->name('super_admin.vendors.addons.details');
+    Route::get('/super-admin/vendors/{vendor}/addons/{addon}/detail', [VendorController::class, 'vendorAddonDetail'])->name('super_admin.vendors.addons.detail');
     Route::get('/super-admin/vendors/{vendor}/profile', [VendorController::class, 'vendorProfile'])->name('super_admin.vendors.profile');
     Route::get('/super-admin/vendors/{vendor}/transaction-products', [VendorController::class, 'vendorTransactionProducts'])->name('super_admin.vendors.transaction_products');
     Route::get('/super-admin/vendors/{vendor}/transaction-addons', [VendorController::class, 'vendorTransactionAddons'])->name('super_admin.vendors.transaction_addons');
@@ -138,29 +141,30 @@ Route::middleware(['super_admin_access'])->group(function () {
 });
 
 // Protected routes
-Route::middleware(['super_admin_access:admin'])->group(function () {
+Route::middleware(['super_admin_access:admin']) ->prefix('admin')
+    ->name('admin.')->group(function () {
     // Admin dashboard - accessible by admin or super_admin
-    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Admin user management routes
-    Route::get('/admin/users', [DashboardController::class, 'users'])->name('admin.users');
+    Route::get('/users', [DashboardController::class, 'users'])->name('users');
 
     // Admin bookings routes
-    Route::get('/admin/bookings', [DashboardController::class, 'bookings'])->name('admin.bookings');
+    Route::get('/bookings', [DashboardController::class, 'bookings'])->name('bookings');
 
     // Admin categories routes
-    Route::get('/admin/packages', [DashboardController::class, 'packages'])->name('admin.packages');
-    Route::post('/admin/packages/store', [DashboardController::class, 'store'])->name('admin.packages.store');
-    Route::get('/admin/packages/create', [DashboardController::class, 'packagesCreate'])->name('admin.packages.create');
+    Route::get('/packages', [DashboardController::class, 'packages'])->name('packages');
+    Route::post('/packages/store', [DashboardController::class, 'store'])->name('packages.store');
+    Route::get('/packages/create', [DashboardController::class, 'packagesCreate'])->name('packages.create');
     // Admin analytics routes
-    Route::get('/admin/analytics', [DashboardController::class, 'analytics'])->name('admin.analytics');
+    Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
 
     // Admin settings routes
-    Route::get('/admin/settings', [DashboardController::class, 'settings'])->name('admin.settings');
+    Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
 
-    Route::get('/profile', [AdminAuthController::class, 'showProfilePage'])->name('admin.profile');
-    Route::get('/profile/edit', [AdminController::class, 'editProfile'])->name('admin.profile.edit');
-    Route::put('/profile/update', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+    Route::get('/profile', [AdminAuthController::class, 'showProfilePage'])->name('profile');
+    Route::get('/profile/edit', [AdminAuthController::class, 'editProfile'])->name('profile.edit');
+    Route::put('/profile/update', [AdminAuthController::class, 'updateProfile'])->name('profile.update');
     // Logout
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
@@ -172,24 +176,62 @@ Route::middleware(['auth'])->group(function () {
     })->name('user.home');
 
     Route::get('/search', function () {
-        return view('user.search');
+        // Get search type from request, default to 'all'
+        $searchType = request('type', 'all');
+
+        // Query packages
+        $packageQuery = \App\Models\Package::query();
+        if (request('destination')) {
+            $packageQuery->where('name_package', 'like', '%' . request('destination') . '%')
+                        ->orWhere('description', 'like', '%' . request('destination') . '%');
+        }
+        if (request('checkin') && request('checkout')) {
+            $packageQuery->where('start_publish', '<=', request('checkin'))
+                        ->where('end_publish', '>=', request('checkout'));
+        }
+        $packages = $packageQuery->where('is_active', true)->paginate(12);
+
+        // Query products
+        $productQuery = \App\Models\Product::query();
+        if (request('destination')) {
+            $productQuery->where('name', 'like', '%' . request('destination') . '%')
+                        ->orWhere('description', 'like', '%' . request('destination') . '%');
+        }
+        $products = $productQuery->where('status', 'available')->paginate(12);
+
+        // Query addons
+        $addonQuery = \App\Models\Addon::query();
+        if (request('destination')) {
+            $addonQuery->where('addons', 'like', '%' . request('destination') . '%')
+                      ->orWhere('desc', 'like', '%' . request('destination') . '%');
+        }
+        $addons = $addonQuery->where('status', 'available')->where('publish', true)->paginate(12);
+
+        return view('user.search', compact('packages', 'products', 'addons', 'searchType'));
     })->name('user.search');
 
     Route::get('/book', function () {
-        return view('user.form_booker');
+        $packages = \App\Models\Package::where('is_active', true)->get();
+        $products = \App\Models\Product::where('status', 'available')->get();
+        $addons = \App\Models\Addon::where('status', 'available')->where('publish', true)->get();
+
+        return view('user.form_booker', compact('packages', 'products', 'addons'));
     })->name('user.form_booker');
+
+    Route::post('/book', [BookingsController::class, 'store'])->name('user.book');
 
     Route::get('/profile', function () {
         return view('user.profil');
     })->name('user.profil');
 
-    Route::get('/history', function () {
-        return view('user.history');
-    })->name('user.history');
+    Route::get('/history', [BookingsController::class, 'history'])->name('user.history');
 
-    Route::get('/history/{id}', function ($id) {
-        return view('user.detail_history', compact('id'));
-    })->name('user.detail_history');
+    Route::get('/history/{booking}', [BookingsController::class, 'showDetail'])->name('user.detail_history');
+    Route::delete('/booking/cancel/{booking}', [BookingsController::class, 'cancel'])->name('booking.cancel');
+
+    // Product and Addon detail routes
+    Route::get('/product/{product}', [ProductController::class, 'showDetail'])->name('user.product_detail');
+    Route::get('/addon/{addon}', [AddonController::class, 'showDetail'])->name('user.addon_detail');
 
     // User dashboard - accessible by user
     Route::get('/dashboard', function () {

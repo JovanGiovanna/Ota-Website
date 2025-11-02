@@ -37,7 +37,7 @@ public function updateProfile(Request $request)
         'email' => $request->email,
     ]);
     
-    return redirect()->route('admin.profile')->with('success', 'Profil berhasil diperbarui!');
+    return redirect()->route('admin.profil')->with('success', 'Profil berhasil diperbarui!');
 }
     // --- Tampilan Form ---
 

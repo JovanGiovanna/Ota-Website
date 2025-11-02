@@ -1,17 +1,17 @@
 @extends('layouts.user')
 
-@section('title', 'Search Hotels & Packages')
+@section('title', 'Search')
 
 @section('welcome')
-Find your perfect stay!
+Find your perfect packages, products, and add-ons!
 @endsection
 
 @section('content')
 <!-- Search Hero Section -->
 <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-800 rounded-2xl p-8 mb-8 text-white shadow-2xl">
     <div class="max-w-4xl mx-auto text-center">
-        <h1 class="text-4xl font-bold mb-4">Find Your Perfect Stay</h1>
-        <p class="text-blue-100 text-lg mb-8">Discover amazing hotels and packages for your next adventure</p>
+        <h1 class="text-4xl font-bold mb-4">Find Your Perfect Package</h1>
+        <p class="text-blue-100 text-lg mb-8">Discover amazing packages with products and add-ons for your next adventure</p>
 
         <!-- Advanced Search Form -->
         <div class="bg-white rounded-2xl p-6 shadow-xl">
@@ -54,6 +54,30 @@ Find your perfect stay!
     </div>
 </div>
 
+<!-- Type Tabs -->
+<div class="flex flex-wrap gap-2 mb-8 bg-white rounded-xl p-2 shadow-md">
+    <a href="{{ route('user.search', array_merge(request()->query(), ['type' => 'all'])) }}"
+       class="px-6 py-3 rounded-lg font-medium transition-all duration-200 {{ $searchType == 'all' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100' }}">
+        <i class="fas fa-th-large mr-2"></i>
+        All
+    </a>
+    <a href="{{ route('user.search', array_merge(request()->query(), ['type' => 'packages'])) }}"
+       class="px-6 py-3 rounded-lg font-medium transition-all duration-200 {{ $searchType == 'packages' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100' }}">
+        <i class="fas fa-box mr-2"></i>
+        Packages
+    </a>
+    <a href="{{ route('user.search', array_merge(request()->query(), ['type' => 'products'])) }}"
+       class="px-6 py-3 rounded-lg font-medium transition-all duration-200 {{ $searchType == 'products' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100' }}">
+        <i class="fas fa-shopping-bag mr-2"></i>
+        Products
+    </a>
+    <a href="{{ route('user.search', array_merge(request()->query(), ['type' => 'addons'])) }}"
+       class="px-6 py-3 rounded-lg font-medium transition-all duration-200 {{ $searchType == 'addons' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-700 hover:bg-gray-100' }}">
+        <i class="fas fa-plus-circle mr-2"></i>
+        Add-ons
+    </a>
+</div>
+
 <!-- Quick Filters -->
 <div class="flex flex-wrap gap-4 mb-8">
     <button class="px-6 py-3 bg-white rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-all duration-200 flex items-center space-x-2">
@@ -78,262 +102,160 @@ Find your perfect stay!
 @if(request()->has('destination') || request()->has('checkin'))
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-2">Search Results</h2>
-        <p class="text-gray-600">Found {{ count($hotels ?? []) }} hotels matching your criteria</p>
+        @if($searchType == 'all' || $searchType == 'packages')
+            <p class="text-gray-600">Found {{ $packages->count() }} packages, {{ $products->count() }} products, {{ $addons->count() }} add-ons matching your criteria</p>
+        @elseif($searchType == 'products')
+            <p class="text-gray-600">Found {{ $products->count() }} products matching your criteria</p>
+        @elseif($searchType == 'addons')
+            <p class="text-gray-600">Found {{ $addons->count() }} add-ons matching your criteria</p>
+        @endif
     </div>
 @else
     <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Popular Destinations</h2>
-        <p class="text-gray-600">Explore our most popular hotels and packages</p>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Popular Items</h2>
+        <p class="text-gray-600">Explore our most popular packages, products, and add-ons</p>
     </div>
 @endif
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-    <!-- Hotel Cards -->
-    @forelse($hotels ?? [] as $hotel)
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div class="relative">
-                <img src="{{ $hotel->image ?? 'https://via.placeholder.com/400x250' }}" alt="{{ $hotel->name }}" class="w-full h-48 object-cover">
-                <div class="absolute top-4 right-4">
-                    <div class="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <span class="text-sm font-semibold">{{ $hotel->rating ?? 4.5 }}</span>
-                    </div>
-                </div>
-                @if($hotel->featured ?? false)
-                    <div class="absolute top-4 left-4">
-                        <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">Featured</span>
-                    </div>
-                @endif
-            </div>
-            <div class="p-6">
-                <div class="flex items-start justify-between mb-2">
-                    <h3 class="text-xl font-bold text-gray-800">{{ $hotel->name }}</h3>
-                    <div class="flex items-center space-x-1">
-                        @for($i = 1; $i <= 5; $i++)
-                            <i class="fas fa-star {{ $i <= ($hotel->rating ?? 4) ? 'text-yellow-500' : 'text-gray-300' }} text-sm"></i>
-                        @endfor
-                    </div>
-                </div>
-                <div class="flex items-center text-gray-600 mb-3">
-                    <i class="fas fa-map-marker-alt mr-2"></i>
-                    <span class="text-sm">{{ $hotel->location ?? 'Jakarta, Indonesia' }}</span>
-                </div>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ $hotel->description ?? 'Beautiful hotel with amazing amenities and comfortable rooms.' }}</p>
-
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                        @if($hotel->wifi ?? true)
-                            <div class="flex items-center">
-                                <i class="fas fa-wifi mr-1"></i>
-                                <span>WiFi</span>
-                            </div>
-                        @endif
-                        @if($hotel->pool ?? true)
-                            <div class="flex items-center">
-                                <i class="fas fa-swimming-pool mr-1"></i>
-                                <span>Pool</span>
-                            </div>
-                        @endif
-                        @if($hotel->gym ?? true)
-                            <div class="flex items-center">
-                                <i class="fas fa-dumbbell mr-1"></i>
-                                <span>Gym</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-3xl font-bold text-blue-600">Rp {{ number_format($hotel->price ?? 150000, 0, ',', '.') }}</span>
-                        <span class="text-gray-500 text-sm">/night</span>
-                    </div>
-                    <a href="{{ route('user.form_booker', ['hotel' => $hotel->id ?? 1]) }}" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                        Book Now
-                    </a>
-                </div>
-            </div>
-        </div>
-    @empty
-        <!-- Sample Hotel Cards -->
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div class="relative">
-                <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400" alt="Grand Hotel Jakarta" class="w-full h-48 object-cover">
-                <div class="absolute top-4 right-4">
-                    <div class="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <span class="text-sm font-semibold">4.8</span>
-                    </div>
-                </div>
-                <div class="absolute top-4 left-4">
-                    <span class="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">Featured</span>
-                </div>
-            </div>
-            <div class="p-6">
-                <div class="flex items-start justify-between mb-2">
-                    <h3 class="text-xl font-bold text-gray-800">Grand Hotel Jakarta</h3>
-                    <div class="flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star-half-alt text-yellow-500 text-sm"></i>
-                    </div>
-                </div>
-                <div class="flex items-center text-gray-600 mb-3">
-                    <i class="fas fa-map-marker-alt mr-2"></i>
-                    <span class="text-sm">Jakarta Pusat, Indonesia</span>
-                </div>
-                <p class="text-gray-600 text-sm mb-4">Luxury 5-star hotel in the heart of Jakarta with world-class amenities and exceptional service.</p>
-
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                        <div class="flex items-center">
-                            <i class="fas fa-wifi mr-1"></i>
-                            <span>WiFi</span>
+    @if($searchType == 'all' || $searchType == 'packages')
+        @forelse($packages as $package)
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <div class="relative">
+                    @if($package->image)
+                        <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name_package }}" class="w-full h-48 object-cover">
+                    @else
+                        <div class="w-full h-48 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                            <i class="fas fa-box text-white text-4xl"></i>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-swimming-pool mr-1"></i>
-                            <span>Pool</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-dumbbell mr-1"></i>
-                            <span>Gym</span>
+                    @endif
+                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
+                        <div class="flex items-center space-x-1">
+                            <i class="fas fa-star text-yellow-500"></i>
+                            <span class="text-sm font-semibold">{{ number_format($package->averageRating(), 1) }}</span>
                         </div>
                     </div>
                 </div>
-
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-3xl font-bold text-blue-600">Rp 1.250.000</span>
-                        <span class="text-gray-500 text-sm">/night</span>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ $package->name_package }}</h3>
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ Str::limit($package->description, 100) }}</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-2xl font-bold text-blue-600">Rp {{ number_format($package->price_publish, 0, ',', '.') }}</div>
+                        <span class="text-sm text-gray-500">per night</span>
                     </div>
-                    <a href="{{ route('user.form_booker') }}" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                        Book Now
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div class="relative">
-                <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=400" alt="Bali Paradise Resort" class="w-full h-48 object-cover">
-                <div class="absolute top-4 right-4">
-                    <div class="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <span class="text-sm font-semibold">4.6</span>
+                    <div class="flex space-x-2">
+                        <a href="{{ route('user.product_detail', $package->slug) }}" class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200 text-center">
+                            View Details
+                        </a>
+                        <a href="{{ route('user.form_booker', ['package' => $package->id]) }}" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 text-center">
+                            Book Now
+                        </a>
                     </div>
                 </div>
             </div>
-            <div class="p-6">
-                <div class="flex items-start justify-between mb-2">
-                    <h3 class="text-xl font-bold text-gray-800">Bali Paradise Resort</h3>
-                    <div class="flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star-half-alt text-yellow-500 text-sm"></i>
+        @empty
+            @if($searchType == 'packages')
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-box text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No packages found</h3>
+                    <p class="text-gray-500">Try adjusting your search criteria</p>
+                </div>
+            @endif
+        @endforelse
+    @endif
+
+    @if($searchType == 'all' || $searchType == 'products')
+        @forelse($products as $product)
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <div class="relative">
+                    @if($product->image)
+                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-48 object-cover">
+                    @else
+                        <div class="w-full h-48 bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-white text-4xl"></i>
+                        </div>
+                    @endif
+                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
+                        <span class="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-full">{{ $product->category->categories ?? 'Product' }}</span>
                     </div>
                 </div>
-                <div class="flex items-center text-gray-600 mb-3">
-                    <i class="fas fa-map-marker-alt mr-2"></i>
-                    <span class="text-sm">Nusa Dua, Bali</span>
-                </div>
-                <p class="text-gray-600 text-sm mb-4">Stunning beachfront resort with private villas, infinity pools, and breathtaking ocean views.</p>
-
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                        <div class="flex items-center">
-                            <i class="fas fa-wifi mr-1"></i>
-                            <span>WiFi</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-swimming-pool mr-1"></i>
-                            <span>Pool</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-spa mr-1"></i>
-                            <span>Spa</span>
-                        </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ $product->name }}</h3>
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ Str::limit($product->description, 100) }}</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-2xl font-bold text-green-600">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
+                        <span class="text-sm text-gray-500">per unit</span>
                     </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-3xl font-bold text-blue-600">Rp 850.000</span>
-                        <span class="text-gray-500 text-sm">/night</span>
-                    </div>
-                    <a href="{{ route('user.form_booker') }}" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                        Book Now
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div class="relative">
-                <img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400" alt="Yogyakarta Heritage Hotel" class="w-full h-48 object-cover">
-                <div class="absolute top-4 right-4">
-                    <div class="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <span class="text-sm font-semibold">4.4</span>
+                    <div class="flex space-x-2">
+                        <a href="{{ route('user.product_detail', $product->id) }}" class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200 text-center">
+                            View Details
+                        </a>
+                        <a href="{{ route('user.form_booker', ['product' => $product->id]) }}" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all duration-200 text-center">
+                            Book Now
+                        </a>
                     </div>
                 </div>
             </div>
-            <div class="p-6">
-                <div class="flex items-start justify-between mb-2">
-                    <h3 class="text-xl font-bold text-gray-800">Yogyakarta Heritage Hotel</h3>
-                    <div class="flex items-center space-x-1">
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-yellow-500 text-sm"></i>
-                        <i class="fas fa-star text-gray-300 text-sm"></i>
-                    </div>
+        @empty
+            @if($searchType == 'products')
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-shopping-cart text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No products found</h3>
+                    <p class="text-gray-500">Try adjusting your search criteria</p>
                 </div>
-                <div class="flex items-center text-gray-600 mb-3">
-                    <i class="fas fa-map-marker-alt mr-2"></i>
-                    <span class="text-sm">Yogyakarta, Indonesia</span>
-                </div>
-                <p class="text-gray-600 text-sm mb-4">Charming heritage hotel blending traditional Javanese architecture with modern comfort.</p>
+            @endif
+        @endforelse
+    @endif
 
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center space-x-4 text-sm text-gray-600">
-                        <div class="flex items-center">
-                            <i class="fas fa-wifi mr-1"></i>
-                            <span>WiFi</span>
+    @if($searchType == 'all' || $searchType == 'addons')
+        @forelse($addons as $addon)
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+                <div class="relative">
+                    @if($addon->image)
+                        <img src="{{ asset('storage/' . $addon->image) }}" alt="{{ $addon->addons }}" class="w-full h-48 object-cover">
+                    @else
+                        <div class="w-full h-48 bg-gradient-to-r from-orange-400 to-red-500 flex items-center justify-center">
+                            <i class="fas fa-plus-circle text-white text-4xl"></i>
                         </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-utensils mr-1"></i>
-                            <span>Restaurant</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-parking mr-1"></i>
-                            <span>Parking</span>
-                        </div>
+                    @endif
+                    <div class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
+                        <span class="text-xs font-semibold text-orange-600 bg-orange-100 px-2 py-1 rounded-full">Addon</span>
                     </div>
                 </div>
-
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-3xl font-bold text-blue-600">Rp 450.000</span>
-                        <span class="text-gray-500 text-sm">/night</span>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ $addon->addons }}</h3>
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ Str::limit($addon->desc, 100) }}</p>
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-2xl font-bold text-orange-600">Rp {{ number_format($addon->price, 0, ',', '.') }}</div>
+                        <span class="text-sm text-gray-500">per unit</span>
                     </div>
-                    <a href="{{ route('user.form_booker') }}" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                        Book Now
-                    </a>
+                    <div class="flex space-x-2">
+                        <a href="{{ route('user.addon_detail', $addon->id) }}" class="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200 text-center">
+                            View Details
+                        </a>
+                        <a href="{{ route('user.form_booker', ['addon' => $addon->id]) }}" class="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-all duration-200 text-center">
+                            Book Now
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    @endforelse
+        @empty
+            @if($searchType == 'addons')
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-plus-circle text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">No add-ons found</h3>
+                    <p class="text-gray-500">Try adjusting your search criteria</p>
+                </div>
+            @endif
+        @endforelse
+    @endif
 </div>
 
 <!-- Load More Button -->
-@if((count($hotels ?? []) > 0 && count($hotels) >= 9) || (!request()->has('destination') && !request()->has('checkin')))
+@if((count($packages ?? []) > 0 && $packages->count() >= 9) || (!request()->has('destination') && !request()->has('checkin')))
     <div class="text-center mt-12">
         <button class="bg-white border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-blue-600 hover:text-white transition-all duration-200 shadow-lg">
-            Load More Hotels
+            Load More Packages
         </button>
     </div>
 @endif

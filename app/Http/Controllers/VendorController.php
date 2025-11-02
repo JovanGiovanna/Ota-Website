@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use App\Models\VendorInfo;
 use App\Models\Booking;
 use App\Models\Vendor;
@@ -76,8 +77,9 @@ class VendorController extends Controller
             'address' => $request->address,
             'description' => $request->description,
             'desc' => $request->description,
-            'coordinate' => 0,
-            'landmark' => 0,
+            'coordinate_latitude' => null,
+            'coordinate_longitude' => null,
+            'landmark_description' => null,
         ]);
 
         return redirect()->route('super_admin.vendors')->with('success', 'Vendor created successfully');
@@ -101,11 +103,13 @@ class VendorController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'description' => 'nullable|string',
+            'is_active' => 'required|boolean',
         ]);
 
         $vendor->update([
             'name' => $request->name,
             'email' => $request->email,
+            'is_active' => $request->is_active,
         ]);
 
         if ($request->filled('password')) {
@@ -211,8 +215,7 @@ class VendorController extends Controller
     public function vendorProducts($vendorId)
     {
         $vendor = Vendor::findOrFail($vendorId);
-        // Assuming products are related to vendor
-        $products = []; // Replace with actual product model query, e.g., Product::where('vendor_id', $vendorId)->paginate(10);
+        $products = \App\Models\Product::where('id_vendor', $vendorId)->with('category')->paginate(10);
 
         return view('super_admin.vendors.products', compact('vendor', 'products'));
     }
@@ -220,10 +223,39 @@ class VendorController extends Controller
     public function vendorAddons($vendorId)
     {
         $vendor = Vendor::findOrFail($vendorId);
-        // Assuming addons are related to vendor
-        $addons = []; // Replace with actual addon model query, e.g., Addon::where('vendor_id', $vendorId)->paginate(10);
+        $addons = \App\Models\Addon::where('id_vendor', $vendorId)->paginate(10);
 
         return view('super_admin.vendors.addons', compact('vendor', 'addons'));
+    }
+
+    public function vendorAddonDetails($vendorId, $addonId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $addon = \App\Models\Addon::where('id_vendor', $vendorId)->where('id', $addonId)->firstOrFail();
+
+        return response()->json([
+            'addons' => $addon->addons,
+            'price' => $addon->price,
+            'status' => $addon->status,
+            'publish' => $addon->publish,
+            'desc' => $addon->desc,
+        ]);
+    }
+
+    public function vendorProductDetail($vendorId, $productId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $product = \App\Models\Product::where('id_vendor', $vendorId)->where('id', $productId)->with('category')->firstOrFail();
+
+        return view('super_admin.vendors.product_detail', compact('vendor', 'product'));
+    }
+
+    public function vendorAddonDetail($vendorId, $addonId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $addon = \App\Models\Addon::where('id_vendor', $vendorId)->where('id', $addonId)->firstOrFail();
+
+        return view('super_admin.vendors.addon_detail', compact('vendor', 'addon'));
     }
 
     public function vendorProfile($vendorId)
@@ -236,8 +268,10 @@ class VendorController extends Controller
     public function vendorTransactionProducts($vendorId)
     {
         $vendor = Vendor::findOrFail($vendorId);
-        // Assuming transactions are related to vendor products
-        $transactions = []; // Replace with actual transaction model query
+        // Get transactions for vendor's products - using Detail_Booking which relates to products
+        $transactions = \App\Models\Detail_Booking::whereHas('product', function($query) use ($vendorId) {
+            $query->where('id_vendor', $vendorId);
+        })->with(['booking.user', 'product'])->paginate(10);
 
         return view('super_admin.vendors.transaction_products', compact('vendor', 'transactions'));
     }
@@ -245,8 +279,10 @@ class VendorController extends Controller
     public function vendorTransactionAddons($vendorId)
     {
         $vendor = Vendor::findOrFail($vendorId);
-        // Assuming transactions are related to vendor addons
-        $transactions = []; // Replace with actual transaction model query
+        // Get transactions for vendor's addons
+        $transactions = \App\Models\BookAddon::whereHas('addon', function($query) use ($vendorId) {
+            $query->where('id_vendor', $vendorId);
+        })->with(['user', 'addon'])->paginate(10);
 
         return view('super_admin.vendors.transaction_addons', compact('vendor', 'transactions'));
     }
@@ -254,7 +290,7 @@ class VendorController extends Controller
     // Vendor-specific methods for vendor dashboard
     public function vendorProductsDashboard()
     {
-        $vendor = Auth::guard('vendor')->user();
+$vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $products = \App\Models\Product::where('id_vendor', $vendor->id)->with('category')->paginate(10);
 
         return view('vendor.products', compact('products'));
@@ -262,7 +298,7 @@ class VendorController extends Controller
 
     public function vendorAddonsDashboard()
     {
-        $vendor = Auth::guard('vendor')->user();
+$vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $addons = \App\Models\Addon::where('id_vendor', $vendor->id)->paginate(10);
 
         return view('vendor.addons', compact('addons'));

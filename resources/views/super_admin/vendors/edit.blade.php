@@ -58,6 +58,18 @@ Edit Vendor
                 </div>
             </div>
 
+            <div>
+                <label for="is_active" class="block text-sm font-medium text-gray-700">Account Status</label>
+                <select name="is_active" id="is_active" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('is_active') border-red-500 @enderror">
+                    <option value="1" {{ old('is_active', $vendor->is_active) ? 'selected' : '' }}>Active</option>
+                    <option value="0" {{ old('is_active', $vendor->is_active) ? '' : 'selected' }}>Inactive</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">Set vendor account status</p>
+                @error('is_active')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="flex justify-end space-x-3 pt-4">
                 <a href="{{ route('super_admin.vendors') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Cancel
