@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\VendorInfo;
 use App\Models\Booking;
 use App\Models\Vendor;
+use App\Models\Addon; 
+
 
 class VendorController extends Controller
 {
@@ -421,61 +424,140 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         return view('vendor.addons.create');
     }
 
-    public function storeAddon(Request $request)
+public function storeAddon(Request $request)
     {
         $request->validate([
-            'addons' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'desc' => 'nullable|string|max:500',
-            'status' => 'sometimes|string|in:available,unavailable,draft',
-            'publish' => 'sometimes|boolean',
+            'addons'    => 'required|string|max:255',
+            'price'     => 'required|numeric|min:0',
+            'desc'      => 'nullable|string|max:500',
+            'status'    => 'sometimes|string|in:available,unavailable,draft',
+            'publish'   => 'sometimes|boolean',
+            'pax'       => 'sometimes|integer|min:1',
+            'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'image_url' => 'nullable|url|max:2048',
         ]);
 
         $vendor = Auth::guard('vendor')->user();
-
-        $data = $request->all();
+        $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
         $data['id_vendor'] = $vendor->id;
+        $path = null;
 
-        \App\Models\Addon::create($data);
+        DB::beginTransaction();
+        try {
+            // 1. Upload File (Path RELATIF disave)
+            if ($request->hasFile('image')) {
+                // store() HANYA akan mengembalikan path relatif (e.g., addons/xxx.jpg),
+                // asalkan konfigurasi filesystems.php sudah benar.
+                $path = $request->file('image')->store('addons', 'public'); 
+                $data['image'] = $path;
+            } elseif ($request->filled('image_url')) {
+                // 2. Jika menggunakan URL eksternal
+                $data['image'] = $request->input('image_url');
+            }
 
-        return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
+            Addon::create($data);
+
+            DB::commit();
+
+            return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // 3. Hapus file yang baru ter-upload jika terjadi error
+            if (isset($path) && $path && Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat addon: ' . $e->getMessage());
+        }
     }
 
-    public function editAddon($id)
-    {
-        $vendor = Auth::guard('vendor')->user();
-        $addon = \App\Models\Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
-
-        return view('vendor.addons.edit', compact('addon'));
-    }
-
+    /**
+     * Memperbarui addon tertentu (Web/Blade View).
+     */
     public function updateAddon(Request $request, $id)
     {
-        $vendor = Auth::guard('vendor')->user();
-        $addon = \App\Models\Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
-
         $request->validate([
-            'addons' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
-            'desc' => 'nullable|string|max:500',
-            'status' => 'sometimes|string|in:available,unavailable,draft',
-            'publish' => 'sometimes|boolean',
+            'addons'    => 'sometimes|required|string|max:255',
+            'price'     => 'sometimes|required|numeric|min:0',
+            'desc'      => 'nullable|string|max:500',
+            'status'    => 'sometimes|string|in:available,unavailable,draft',
+            'publish'   => 'sometimes|boolean',
+            'pax'       => 'sometimes|integer|min:1',
+            'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'image_url' => 'nullable|url|max:2048',
         ]);
 
-        $addon->update($request->all());
+        $vendor = Auth::guard('vendor')->user();
+        $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->first();
 
-        return redirect()->route('vendor.addons')->with('success', 'Addon updated successfully');
+        if (!$addon) {
+            return redirect()->route('vendor.addons')->with('error', 'Addon tidak ditemukan atau akses ditolak');
+        }
+
+        $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
+        $newPath = null;
+        $oldImagePath = $addon->image;
+
+        DB::beginTransaction();
+        try {
+            // 1. Logika Upload Gambar Baru
+            if ($request->hasFile('image')) {
+                $newPath = $request->file('image')->store('addons', 'public');
+                $data['image'] = $newPath;
+
+                // Hapus file lama jika ada dan file tersebut tersimpan di disk public (bukan URL)
+                if ($oldImagePath && !filter_var($oldImagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->delete($oldImagePath);
+                }
+            } elseif ($request->filled('image_url')) {
+                // 2. Mengubah ke URL eksternal, hapus file lama jika ada
+                if ($oldImagePath && !filter_var($oldImagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->delete($oldImagePath);
+                }
+                $data['image'] = $request->input('image_url');
+            } elseif ($request->boolean('remove_image')) {
+                 // 3. Logika opsional: Jika user ingin menghapus gambar yang ada
+                if ($oldImagePath && !filter_var($oldImagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($oldImagePath)) {
+                    Storage::disk('public')->delete($oldImagePath);
+                }
+                $data['image'] = null;
+            }
+
+            $addon->update($data);
+
+            DB::commit();
+
+            return redirect()->route('vendor.addons')->with('success', 'Addon updated successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // 4. Hapus file baru jika dibuat tapi terjadi error
+            if (isset($newPath) && $newPath && Storage::disk('public')->exists($newPath)) {
+                Storage::disk('public')->delete($newPath);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui addon: ' . $e->getMessage());
+        }
     }
 
+    /**
+     * Menghapus addon tertentu (Soft Delete + Hapus File Fisik).
+     */
     public function destroyAddon($id)
     {
         $vendor = Auth::guard('vendor')->user();
-        $addon = \App\Models\Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
 
+        // Cek apakah ada file gambar, dan hapus dari storage sebelum soft delete
+        $imagePath = $addon->image;
+        if ($imagePath && !filter_var($imagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($imagePath)) {
+            Storage::disk('public')->delete($imagePath);
+        }
+        
+        // Lakukan soft delete (diperlukan Trait SoftDeletes di model Addon)
         $addon->delete();
 
-        return redirect()->route('vendor.addons')->with('success', 'Addon deleted successfully');
+        return redirect()->route('vendor.addons')->with('success', 'Addon deleted successfully (Soft Deleted)');
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Exception;
 
 class AddonController extends Controller
@@ -35,54 +36,112 @@ class AddonController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-      public function store(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
+{
+    $validator = Validator::make($request->all(), [
+        'id_vendor' => 'nullable|uuid|exists:vendor,id',
+        'addons' => 'required|string|max:255',
+        'desc' => 'nullable|string|max:500',
+        'status' => 'sometimes|string|in:available,unavailable,draft',
+        'price' => 'required|numeric|min:0',
+        'publish' => 'sometimes|boolean',
+        'pax' => 'sometimes|integer|min:1',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
+    }
+
+    $data = $request->only(['id_vendor','addons','desc','status','price','publish','pax']);
+
+    DB::beginTransaction();
+    try {
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('addons', 'public'); // -> "addons/xxx.jpg"
+            $data['image'] = $path;
+        }
+
+        $addon = Addon::create($data);
+
+        DB::commit();
+
+        $addon->image_url = $addon->image ? Storage::url($addon->image) : null;
+
+        return response()->json(['message' => 'Addon berhasil ditambahkan', 'data' => $addon], 201);
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        if (isset($path) && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+
+        return response()->json(['message' => 'Gagal menyimpan Addon','error' => $e->getMessage()], 500);
+    }
+}
+
+    public function update(Request $request, string $id): JsonResponse
     {
-        // 1. Aturan Validasi Diperbarui untuk File Gambar
+        $addon = Addon::find($id);
+
+        if (!$addon) {
+            return response()->json(['message' => 'Addon tidak ditemukan'], 404);
+        }
+
         $validator = Validator::make($request->all(), [
             'id_vendor' => 'nullable|uuid|exists:vendor,id',
-            'addons' => 'required|string|max:255',
+            'addons' => 'sometimes|string|max:255',
             'desc' => 'nullable|string|max:500',
             'status' => 'sometimes|string|in:available,unavailable,draft',
-            'price' => 'required|numeric|min:0',
+            'price' => 'sometimes|numeric|min:0',
             'publish' => 'sometimes|boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', 
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        DB::beginTransaction();
         try {
-            $data = $request->except('image');
-            $imagePath = null;
+            $data = $request->only(['id_vendor', 'addons', 'desc', 'status', 'price', 'publish']);
 
+            // Jika meng-upload gambar baru, simpan dan hapus gambar lama
             if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('addons', 'public');
-                
-                // Tambahkan path gambar ke data yang akan disimpan di database
-                $data['image'] = $imagePath;
+                $newPath = $request->file('image')->store('addons', 'public');
+
+                // hapus file lama bila ada
+                if ($addon->image && Storage::disk('public')->exists($addon->image)) {
+                    Storage::disk('public')->delete($addon->image);
+                }
+
+                $data['image'] = $newPath;
             }
 
-            // Simpan data (termasuk path gambar jika ada)
-            $addon = Addon::create($data);
+            $addon->update($data);
+            DB::commit();
+
+            $addon->image_url = $addon->image ? Storage::url($addon->image) : null;
 
             return response()->json([
-                'message' => 'Addon berhasil ditambahkan',
+                'message' => 'Addon berhasil diperbarui',
                 'data' => $addon
-            ], 201);
-
+            ]);
         } catch (Exception $e) {
-            // Jika terjadi error, dan file sempat terunggah, hapus file tersebut
-            if (isset($imagePath)) {
-                 Storage::disk('public')->delete($imagePath);
+            DB::rollBack();
+
+            // jika file baru telah dibuat namun update gagal, hapus file baru
+            if (isset($newPath) && Storage::disk('public')->exists($newPath)) {
+                Storage::disk('public')->delete($newPath);
             }
-            
+
             return response()->json([
-                'message' => 'Gagal menyimpan Addon',
+                'message' => 'Gagal memperbarui Addon',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+    
     /**
      * Menampilkan detail addon tertentu.
      *
@@ -103,49 +162,6 @@ class AddonController extends Controller
         ]);
     }
 
-    /**
-     * Memperbarui addon tertentu.
-     *
-     * @param Request $request
-     * @param string $id
-     * @return JsonResponse
-     */
-    public function update(Request $request, string $id): JsonResponse
-    {
-        $addon = Addon::find($id);
-
-        if (!$addon) {
-            return response()->json(['message' => 'Addon tidak ditemukan'], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'id_vendor' => 'nullable|uuid|exists:vendor,id',
-            'addons' => 'sometimes|string|max:255',
-            'desc' => 'nullable|string|max:500',
-            'status' => 'sometimes|string|in:available,unavailable,draft',
-            'price' => 'sometimes|numeric|min:0',
-            'publish' => 'sometimes|boolean',
-            'image_url' => 'nullable|url|max:2048',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-        
-        try {
-            $addon->update($request->all());
-
-            return response()->json([
-                'message' => 'Addon berhasil diperbarui',
-                'data' => $addon
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memperbarui Addon',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Menghapus addon tertentu (Soft Delete).

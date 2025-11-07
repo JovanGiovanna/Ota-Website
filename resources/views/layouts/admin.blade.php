@@ -43,7 +43,7 @@
                             Packages
                         </a>
                         
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a href="{{ route('admin.bookings') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-calendar-check text-indigo-400 group-hover:text-white mr-3"></i>
                             Booking Approval
                         </a>
@@ -60,28 +60,20 @@
                             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-indigo-300">Transaksi</p>
                         </div>
 
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a href="{{ route('super_admin.package.index') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-receipt text-indigo-400 group-hover:text-white mr-3"></i>
                             Transaction Packages
                         </a>
                         
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a href="{{ route('super_admin.product.index') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-shopping-bag text-indigo-400 group-hover:text-white mr-3"></i>
                             Transaction Product
                         </a>
 
-                        <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <a href="{{ route('super_admin.addon.index') }}" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
                             <i class="fas fa-money-check-alt text-indigo-400 group-hover:text-white mr-3"></i>
                             Transaction Addons
                         </a>
-
-                        {{-- ✅ Hanya admin yang bisa lihat Profile Vendor --}}
-                        @if (Auth::guard('admin')->check())
-                            <a href="#" class="text-indigo-200 hover:bg-indigo-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md">
-                                <i class="fas fa-id-card text-indigo-400 group-hover:text-white mr-3"></i>
-                                Profile Vendor
-                            </a>
-                        @endif
 
                         @yield('sidebar')
                     </nav>

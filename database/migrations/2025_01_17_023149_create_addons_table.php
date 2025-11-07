@@ -18,14 +18,15 @@ return new class extends Migration
             // Kolom Foreign Key (UUID) - DISIMPLIFIKASI
             // Menggunakan constrained() untuk sintaks yang lebih rapi
             $table->foreignUuid('id_vendor')
-                  ->nullable()                  // <<< HARUS NULLABLE untuk ON DELETE SET NULL
+                  ->nullable()                 
                   ->constrained('vendor')      // MENGGANTIKAN references('id')->on('vendor')
                   ->onDelete('set null');       // Aturan penghapusan
 
             // Kolom Data
-            $table->string('addons', 255);      // Nama addon
+            $table->string('addons', 255);      
             $table->string('desc', 500)->nullable(); // Deskripsi
             $table->string('status', 50)->default('available'); // Status
+            $table->integer('pax'); 
             $table->decimal('price', 10, 2);    // Harga
             $table->boolean('publish')->default(false); // Status publikasi
             

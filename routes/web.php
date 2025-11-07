@@ -157,7 +157,8 @@ Route::middleware(['super_admin_access:admin']) ->prefix('admin')
     Route::get('/packages', [DashboardController::class, 'packages'])->name('packages');
     Route::post('/packages/store', [DashboardController::class, 'store'])->name('packages.store');
     Route::get('/packages/create', [DashboardController::class, 'packagesCreate'])->name('packages.create');
-    // Admin analytics routes
+    Route::get('/packages/{package}/edit', [DashboardController::class, 'packagesUpdate'])->name('packages.edit'); // Edit Form
+    Route::put('/packages/{package}', [DashboardController::class, 'update'])->name('packages.update'); // Update Data    // Admin analytics routes
     Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
 
     // Admin settings routes
@@ -166,9 +167,61 @@ Route::middleware(['super_admin_access:admin']) ->prefix('admin')
     Route::get('/profile', [AdminAuthController::class, 'showProfilePage'])->name('profile');
     Route::get('/profile/edit', [AdminAuthController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile/update', [AdminAuthController::class, 'updateProfile'])->name('profile.update');
-    // Logout
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
+Route::prefix('super-admin/transactions')->middleware(['super_admin_access:admin'])->name('super_admin.transaction.')->group(function () {
+    // Index sudah ada di Controller Anda: $bookings = Booking::with...->paginate(10);
+    Route::get('/packages', [BookingsController::class, 'index'])->name('packages'); // Mengarah ke view 'super_admin.transaction_packages'
+
+    // Route Approval BARU
+    Route::post('/{booking}/approve', [BookingsController::class, 'approve'])->name('approve');
+
+    // Route Rejection BARU
+    Route::post('/{booking}/reject', [BookingsController::class, 'reject'])->name('reject');
+
+    Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail');
+
+    // Route Detail (Anda mungkin ingin membuat fungsi detail khusus Admin)
+    // Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail'); 
+});
+Route::prefix('addons')->name('super_admin.addon.')->group(function () {
+        // Index Semua Booking Addon
+        // URL: /super-admin/addons/IndexAddons
+        Route::get('/IndexAddons', [BookingsController::class, 'indexAddonsOnly'])->name('index'); 
+
+        // Route Detail (Re-use fungsi showDetailAdmin)
+        // URL: /super-admin/addons/{booking}/detail
+        Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail');
+
+        // ROUTE APPROVE DAN REJECT KHUSUS ADDON
+        Route::post('/{booking}/approve', [BookingsController::class, 'approve'])->name('approve');
+        Route::post('/{booking}/reject', [BookingsController::class, 'reject'])->name('reject');
+    });
+    
+Route::prefix('packages')->name('super_admin.package.')->group(function () {
+        // Index Semua Booking Package
+        Route::get('/IndexPackages', [BookingsController::class, 'indexPackagesOnly'])->name('index'); 
+
+        // Index Khusus Approval Booking Package (Status PENDING)
+        Route::get('/approval', [BookingsController::class, 'indexPackageApproval'])->name('approval'); 
+
+        // Re-use fungsi approve/reject dari Controller (menggunakan nama route packages.)
+        Route::post('/{booking}/approve', [BookingsController::class, 'approve'])->name('approve');
+        Route::post('/{booking}/reject', [BookingsController::class, 'reject'])->name('reject');
+    });
+
+Route::prefix('products')->name('super_admin.product.')->group(function () {
+        // Index Semua Booking Product
+        // URL: /super-admin/products/IndexProducts
+        Route::get('/IndexProducts', [BookingsController::class, 'indexProductsOnly'])->name('index'); 
+
+        // Route Detail (Re-use fungsi yang sama)
+        // URL: /super-admin/products/{booking}/detail
+        Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail');
+        Route::post('/{booking}/approve', [BookingsController::class, 'approve'])->name('approve');
+        Route::post('/{booking}/reject', [BookingsController::class, 'reject'])->name('reject');
+    });
+
 
 Route::middleware(['auth'])->group(function () {
     // User pages

@@ -1,5 +1,4 @@
 <?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -28,6 +27,7 @@ class AddonSeeder extends Seeder
                 'addons' => 'Comfort Eye Mask',
                 'desc' => 'Masker mata lembut untuk tidur yang lebih nyaman selama perjalanan.',
                 'price' => 15000,
+                'pax' => 1, // Addon ini dihitung per individu
                 'status' => 'available',
                 'publish' => true,
                 'id_vendor' => $vendor->id,
@@ -36,6 +36,7 @@ class AddonSeeder extends Seeder
                 'addons' => 'Travel Neck Pillow',
                 'desc' => 'Bantal leher ergonomis untuk menjaga kenyamanan saat bepergian jauh.',
                 'price' => 25000,
+                'pax' => 1, // Addon ini dihitung per individu
                 'status' => 'available',
                 'publish' => true,
                 'id_vendor' => $vendor->id,
@@ -44,6 +45,7 @@ class AddonSeeder extends Seeder
                 'addons' => 'Premium Seat Upgrade',
                 'desc' => 'Naik kelas tempat duduk untuk pengalaman perjalanan yang lebih mewah.',
                 'price' => 50000,
+                'pax' => 1, // Upgrade per tempat duduk/orang
                 'status' => 'available',
                 'publish' => true,
                 'id_vendor' => $vendor->id,
@@ -52,6 +54,7 @@ class AddonSeeder extends Seeder
                 'addons' => 'Aromatherapy Kit',
                 'desc' => 'Set aromaterapi dengan minyak esensial untuk relaksasi selama perjalanan.',
                 'price' => 30000,
+                'pax' => 1, // Kit biasanya untuk 1 set/grup
                 'status' => 'available',
                 'publish' => true,
                 'id_vendor' => $vendor->id,
@@ -60,6 +63,7 @@ class AddonSeeder extends Seeder
                 'addons' => 'Guided Meditation Session',
                 'desc' => 'Sesi meditasi terpandu untuk menenangkan pikiran sebelum perjalanan dimulai.',
                 'price' => 40000,
+                'pax' => 1, // Sesi ini dihitung per individu
                 'status' => 'available',
                 'publish' => true,
                 'id_vendor' => $vendor->id,
@@ -67,9 +71,8 @@ class AddonSeeder extends Seeder
         ];
 
         foreach ($addons as $addon) {
-            Addon::create(array_merge($addon, [
-                'id' => Str::uuid(),
-            ]));
+            // Karena Model Addon menggunakan mekanisme UUID di boot(), kita hanya perlu memanggil create()
+            Addon::create($addon);
         }
     }
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,7 +34,7 @@ class Addon extends Model
 
     /**
      * Atribut yang dapat diisi secara massal (mass assignable).
-     *
+     * Kolom 'pax' ditambahkan di sini.
      * @var array<int, string>
      */
     protected $fillable = [
@@ -44,17 +43,19 @@ class Addon extends Model
         'desc',
         'status',
         'price',
+        'pax', // <-- KOLOM BARU DITAMBAHKAN
         'publish',
         'image',
     ];
 
     /**
      * Atribut yang harus di-casting.
-     *
+     * Kolom 'pax' di-cast sebagai integer.
      * @var array<string, string>
      */
     protected $casts = [
         'price' => 'decimal:2',
+        'pax' => 'integer', // <-- KOLOM BARU DITAMBAHKAN
         'publish' => 'boolean',
         'deleted_at' => 'datetime',
     ];

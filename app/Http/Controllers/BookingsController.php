@@ -7,7 +7,8 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use App\Models\{Booking, Package, Product, Addon, Detail_Booking};
+// Pastikan Anda mengimpor semua Model yang diperlukan (termasuk BookPackageAddon dan BookProduct jika diperlukan)
+use App\Models\{Booking, Package, Product, Addon, Detail_Booking}; 
 
 class BookingsController extends Controller
 {
@@ -20,8 +21,75 @@ class BookingsController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('super_admin.transaction_packages', compact('bookings'));
+        return view('admin.transaction.packages', compact('bookings'));
     }
+
+    // --- FUNGSI BARU UNTUK INDEX PAKET SAJA ---
+
+    /**
+     * Admin: Menampilkan hanya booking yang mengandung Package (terlepas dari status).
+     * Digunakan untuk rute packages/IndexPackages.
+     */
+    public function indexPackagesOnly()
+    {
+        // Ambil booking yang memiliki relasi dengan packages
+        $bookings = Booking::whereHas('packages')
+            ->with(['user', 'packages', 'products', 'addons'])
+            ->latest()
+            ->paginate(10);
+
+        // Anda mungkin perlu membuat view baru (misalnya super_admin.packages.index)
+        return view('admin.transaction.packages', compact('bookings')); 
+    }
+
+    public function indexProductsOnly()
+    {
+        // Ambil booking yang memiliki relasi dengan products
+        // DAN TIDAK memiliki relasi dengan packages atau addons (BookPackageAddon)
+        $bookings = Booking::whereHas('products')
+            ->whereDoesntHave('packages')
+            ->whereDoesntHave('addons') // Asumsi 'addons' merujuk ke relasi BookPackageAddon dengan id_addons IS NOT NULL
+            ->with(['user', 'products']) // Hanya muat relasi yang relevan untuk produk
+            ->latest()
+            ->paginate(10);
+
+        // Catatan: Anda perlu membuat view baru di sini
+        return view('admin.transaction.product', compact('bookings'));
+    }
+
+    public function indexAddonsOnly()
+    {
+        // Ambil booking yang memiliki relasi dengan addons (melalui BookPackageAddon dengan id_addons IS NOT NULL)
+        // DAN TIDAK memiliki relasi dengan packages atau products
+        $bookings = Booking::whereHas('addons')
+            ->whereDoesntHave('packages')
+            ->whereDoesntHave('products')
+            ->with(['user', 'addons']) // Hanya muat relasi yang relevan untuk addons
+            ->latest()
+            ->paginate(10);
+
+        // Catatan: Anda perlu membuat view baru di sini
+        return view('admin.transaction.addons', compact('bookings'));
+    }
+
+    /**
+     * Admin: Menampilkan booking packages yang statusnya PENDING untuk approval.
+     * Digunakan untuk rute packages/approval.
+     */
+    public function indexPackageApproval()
+    {
+        // Ambil booking yang memiliki relasi dengan packages DAN statusnya 'pending'
+        $bookings = Booking::whereHas('packages')
+            ->where('status', 'pending')
+            ->with(['user', 'packages', 'products', 'addons'])
+            ->latest()
+            ->paginate(10);
+
+        // Anda mungkin perlu membuat view baru (misalnya super_admin.packages.approval)
+        return view('super_admin.packages.approval', compact('bookings'));
+    }
+
+    // --- FUNGSI LAMA/LAINNYA ---
 
     /**
      * Form booking (user).
@@ -191,7 +259,7 @@ class BookingsController extends Controller
 
         $selectedTypes = implode(', ', $validated['booking_types']);
         $msg = 'Booking berhasil dibuat! Tipe: ' . $selectedTypes . '. Durasi: ' . $validated['duration_days'] . ' hari. Total Rp ' .
-               number_format($totalPrice, 0, ',', '.');
+            number_format($totalPrice, 0, ',', '.');
 
         return redirect()->route('user.history')->with('success', $msg);
     }
@@ -248,6 +316,58 @@ class BookingsController extends Controller
     }
 
     /**
+     * Superadmin/Admin: Mengubah status booking menjadi 'confirmed' (Disetujui).
+     */
+    public function approve(Booking $booking)
+    {
+        // Guard: Pastikan hanya booking 'pending' yang bisa di-approve
+        if ($booking->status !== 'pending') {
+            return back()->with('error', 'Booking tidak dalam status pending.');
+        }
+
+        // Lakukan perubahan status
+        $booking->status = 'confirmed';
+        // $booking->approved_by = Auth::id(); // Opsional
+        $booking->save();
+
+        // TODO: Kirim notifikasi/email ke user bahwa booking telah dikonfirmasi
+
+        return back()->with('success', 'Booking #'.$booking->id.' berhasil dikonfirmasi.');
+    }
+
+    /**
+     * Superadmin/Admin: Mengubah status booking menjadi 'cancelled' (Ditolak).
+     */
+    public function reject(Booking $booking)
+    {
+        // Guard: Pastikan hanya booking 'pending' yang bisa di-reject
+        if ($booking->status !== 'pending') {
+            return back()->with('error', 'Booking tidak dalam status pending.');
+        }
+
+        // Lakukan perubahan status
+        $booking->status = 'cancelled'; // Menggunakan 'cancelled' sebagai status ditolak
+        // $booking->rejected_by = Auth::id(); // Opsional
+        $booking->save();
+
+        // TODO: Kirim notifikasi/email ke user bahwa booking telah dibatalkan/ditolak
+
+        return back()->with('success', 'Booking #'.$booking->id.' berhasil ditolak (Cancelled).');
+    }
+    
+    /**
+     * Admin/Superadmin: Menampilkan detail booking.
+     */
+    public function showDetailAdmin(Booking $booking)
+    {
+        // Pastikan relasi dimuat (packages, products, addons, user)
+        $booking->load(['user', 'packages', 'products', 'addons']);
+        
+        // Perhatikan path view yang Anda gunakan: 'admin.transaction.detail'
+        return view('admin.transaction.detail', compact('booking')); 
+    }
+
+    /**
      * Contact support page for booking.
      */
     public function support(Booking $booking)
@@ -280,15 +400,10 @@ class BookingsController extends Controller
             'contact_email' => 'required|email',
         ]);
 
-        // Here you could save to database or send email
-        // For now, we'll just redirect with success message
-        // In a real application, you'd want to:
-        // 1. Save to support_tickets table
-        // 2. Send email to support team
-        // 3. Send confirmation email to user
+        // ... (Logic to save/send support request) ...
 
         return redirect()->route('user.detail_history', $booking->id)
-                        ->with('success', 'Your support request has been submitted successfully. Our team will get back to you within 24 hours.');
+            ->with('success', 'Your support request has been submitted successfully. Our team will get back to you within 24 hours.');
     }
 
     /**

@@ -1,14 +1,14 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; 
 use Illuminate\Support\Str;
 
 class Package extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes; // Menggunakan SoftDeletes
 
     /**
      * Nama tabel yang terkait dengan model.
@@ -33,7 +33,7 @@ class Package extends Model
 
     /**
      * Kolom-kolom yang dapat diisi secara massal (mass assignable).
-     *
+     * Menghapus id_product, id_addons, dan pax tunggal. Menambahkan kolom JSON.
      * @var array<int, string>
      */
     protected $fillable = [
@@ -41,22 +41,27 @@ class Package extends Model
         'slug',
         'description',
         'image',
+        'price_real',
         'price_publish',
         'start_publish',
         'end_publish',
         'is_active',
+        'products_data', 
+        'addons_data',
     ];
 
     /**
      * Kolom-kolom yang harus di-cast ke tipe data asli.
-     *
      * @var array<string, string>
      */
     protected $casts = [
         'price_publish' => 'decimal:2',
+        'price_real' => 'decimal:2', 
         'start_publish' => 'datetime',
         'end_publish' => 'datetime',
         'is_active' => 'boolean',
+        'products_data' => 'array',
+        'addons_data' => 'array',
     ];
     
     /**
@@ -72,22 +77,15 @@ class Package extends Model
         });
     }
 
-    /**
-     * Menggunakan kolom 'slug' untuk binding rute model implisit.
-     *
-     * @return string
-     */
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
-
+    // --- Relasi (Relasi product() dan addon() dihapus karena sudah diganti data JSON) ---
+    
     /**
      * Get the reviews for the package.
      */
     public function reviews()
     {
-        return $this->hasMany(Review::class);
+        // Pastikan model Review sudah diimport atau menggunakan FQCN
+        return $this->hasMany(\App\Models\Review::class); 
     }
 
     /**

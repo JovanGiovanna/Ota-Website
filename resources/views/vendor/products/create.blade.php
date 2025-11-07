@@ -8,6 +8,7 @@
         <form action="{{ route('vendor.products.store') }}" method="POST" enctype="multipart/form-data" class="bg-white shadow-md rounded-lg p-6">
             @csrf
 
+            {{-- Product Name --}}
             <div class="mb-4">
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
                 <input type="text" name="name" id="name" value="{{ old('name') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -16,6 +17,7 @@
                 @enderror
             </div>
 
+            {{-- Category --}}
             <div class="mb-4">
                 <label for="id_category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
                 <select name="id_category" id="id_category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -29,6 +31,7 @@
                 @enderror
             </div>
 
+            {{-- Price --}}
             <div class="mb-4">
                 <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
                 <input type="number" name="price" id="price" value="{{ old('price') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -37,6 +40,7 @@
                 @enderror
             </div>
 
+            {{-- Product Image --}}
             <div class="mb-4">
                 <label for="image" class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
                 <input type="file" name="image" id="image" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -45,6 +49,7 @@
                 @enderror
             </div>
 
+            {{-- Description --}}
             <div class="mb-4">
                 <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea name="description" id="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description') }}</textarea>
@@ -53,6 +58,17 @@
                 @enderror
             </div>
 
+            {{-- PAX (KAPASITAS) DITAMBAHKAN DI SINI --}}
+            <div class="mb-4">
+                <label for="pax" class="block text-sm font-medium text-gray-700 mb-2">Pax (Capacity / Min Quantity)</label>
+                <input type="number" name="pax" id="pax" value="{{ old('pax', 1) }}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                @error('pax')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            {{-- AKHIR PAX --}}
+
+            {{-- Jumlah (Stock Quantity) --}}
             <div class="mb-4">
                 <label for="jumlah" class="block text-sm font-medium text-gray-700 mb-2">Jumlah (Stock Quantity)</label>
                 <input type="number" name="jumlah" id="jumlah" value="{{ old('jumlah', 1) }}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -61,6 +77,7 @@
                 @enderror
             </div>
 
+            {{-- Max Adults --}}
             <div class="mb-4">
                 <label for="max_adults" class="block text-sm font-medium text-gray-700 mb-2">Max Adults</label>
                 <input type="number" name="max_adults" id="max_adults" value="{{ old('max_adults', 2) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -69,6 +86,7 @@
                 @enderror
             </div>
 
+            {{-- Max Children --}}
             <div class="mb-4">
                 <label for="max_children" class="block text-sm font-medium text-gray-700 mb-2">Max Children</label>
                 <input type="number" name="max_children" id="max_children" value="{{ old('max_children', 1) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -77,6 +95,7 @@
                 @enderror
             </div>
 
+            {{-- Status --}}
             <div class="mb-4">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select name="status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">

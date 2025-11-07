@@ -34,8 +34,7 @@ return new class extends Migration
             $table->foreignUuid('id_vendor')
                   ->constrained('vendor')           // Menggunakan 'vendors' (plural) untuk mengikuti konvensi Laravel. Sesuaikan jika nama tabel Anda adalah 'vendor' (singular).
                   ->onDelete('cascade');
-            
-            // Kolom Inventaris/Kapasitas (Jika produk adalah kamar/unit)
+            $table->integer('pax'); 
             $table->integer('jumlah')->unsigned();     // Jumlah unit/stok yang tersedia
             $table->integer('max_adults')->default(2); // Kapasitas dewasa
             $table->integer('max_children')->default(1); // Kapasitas anak

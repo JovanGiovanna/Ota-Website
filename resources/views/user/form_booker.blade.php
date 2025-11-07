@@ -243,8 +243,8 @@ Book Your Package with Products and Add-ons!
                                     <i class="fas fa-plus-circle text-orange-600"></i>
                                 @endif
                             </div>
-                            <h4 class="font-bold text-gray-800">{{ $addon->name }}</h4>
-                            <p class="text-gray-600 text-sm">{{ Str::limit($addon->description, 50) }}</p>
+                            <h4 class="font-bold text-gray-800">{{ $addon->addons }}</h4>
+                            <p class="text-gray-600 text-sm">{{ Str::limit($addon->desc, 50) }}</p>
                         </div>
                         <div class="text-center">
                             <div class="text-2xl font-bold text-orange-600 mb-2">Rp {{ number_format($addon->price, 0, ',', '.') }}</div>

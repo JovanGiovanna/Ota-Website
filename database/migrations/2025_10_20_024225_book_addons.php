@@ -37,7 +37,6 @@ return new class extends Migration
             $table->string('booker_name', 100);
             $table->string('booker_email')->nullable();
             $table->string('booker_telp', 20)->nullable();
-            
             // Kolom Pendukung Tambahan yang Umum
             $table->string('booking_code')->unique(); // Kode unik untuk setiap pesanan
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])

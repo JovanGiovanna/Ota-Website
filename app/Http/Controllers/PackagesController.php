@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\Product; 
+use App\Models\Addon;
 
 class PackagesController extends Controller
 {
@@ -29,7 +31,9 @@ class PackagesController extends Controller
      */
     public function create()
     {
-        return view('super_admin.packages.create');
+        $products = Product::all();
+        $addons = Addon::all();
+        return view('super_admin.packages.create', compact('products', 'addons'));    
     }
     
     /**
@@ -55,6 +59,8 @@ class PackagesController extends Controller
      */
     public function edit(Package $package)
     {
+        $products = Product::all();
+        $addons = Addon::all();
         return view('super_admin.packages.edit', compact('package'));
     }
     
@@ -71,6 +77,8 @@ class PackagesController extends Controller
         // 1. Validasi Data
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
+            'id_product' => 'required|uuid|exists:products,id',
+            'id_addons' => 'required|uuid|exists:addons,id',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',
@@ -131,6 +139,8 @@ class PackagesController extends Controller
         // 1. Validasi Data
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
+            'id_product' => 'required|uuid|exists:products,id',
+            'id_addons' => 'required|uuid|exists:addons,id',
             'description' => 'nullable|string',
             'image' => 'nullable|sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',

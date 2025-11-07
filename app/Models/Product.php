@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Untuk Primary Key UUID
+use Illuminate\Database\Eloquent\SoftDeletes; // Untuk Soft Deletes
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model
@@ -14,6 +14,11 @@ class Product extends Model
 
     protected $table = 'products';
 
+    /**
+     * Atribut yang dapat diisi (mass assignable).
+     * Kolom 'pax' sudah ditambahkan.
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'image',
@@ -21,24 +26,40 @@ class Product extends Model
         'price',
         'id_category',
         'id_vendor',
+        'pax',
         'jumlah',
         'max_adults',
         'max_children',
         'status',
     ];
 
+    /**
+     * Tentukan atribut yang harus di-cast ke tipe data asli.
+     * Kolom 'pax' sudah ditambahkan.
+     * @var array<string, string>
+     */
     protected $casts = [
-        'price' => 'decimal:2',
-        'max_adults' => 'integer',
+        'price'        => 'decimal:2',
+        'pax'          => 'integer', // <-- KOLOM BARU DITAMBAHKAN
+        'max_adults'   => 'integer',
         'max_children' => 'integer',
-        'jumlah' => 'integer',
+        'jumlah'       => 'integer',
+        'status'       => 'string',
     ];
 
+    // --- Relasi ---
+
+    /**
+     * Mendapatkan kategori yang dimiliki produk ini.
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'id_category');
     }
 
+    /**
+     * Mendapatkan vendor yang menjual produk ini.
+     */
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'id_vendor');

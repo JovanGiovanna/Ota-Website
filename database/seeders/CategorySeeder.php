@@ -4,8 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Category;
-use App\Models\Type; // pastikan ada model Type
-use Illuminate\Support\Str;
+use App\Models\Type; // Pastikan Anda mengimpor Model Type
 
 class CategorySeeder extends Seeder
 {
@@ -14,32 +13,46 @@ class CategorySeeder extends Seeder
      */
     public function run(): void
     {
-        // Ambil semua type yang sudah ada
-        $types = Type::all()->keyBy('type'); // pastikan 'type' ada di tabel types
+        // 1. Ambil SEMUA data Type dan buat array map [type_name => id]
+        // Asumsikan kolom nama di tabel 'types' adalah 'name'.
+        $types = Type::pluck('id', 'type')->toArray(); 
+        
+        // Cek apakah data Type sudah ada
+        if (empty($types)) {
+            $this->command->warn('⚠️ Seeder dihentikan: Tabel types kosong. Pastikan TypeSeeder sudah dijalankan.');
+            return;
+        }
 
-        // Kalau kamu punya data types seperti: Basic, Premium, Wellness, dll.
-        // Sesuaikan di bawah ini dengan nama type sebenarnya.
-        $categories = [
-            ['categories' => 'Comfort Accessories', 'type_name' => 'Basic'],
-            ['categories' => 'Relaxation Services', 'type_name' => 'Basic'],
-            ['categories' => 'Comfort Transportation', 'type_name' => 'Premium'],
-            ['categories' => 'Comfort Accommodation', 'type_name' => 'Premium'],
-            ['categories' => 'Wellness Activities', 'type_name' => 'Wellness'],
+        $categoriesData = [
+            // Ganti 'type_name' menjadi 'type_id' untuk memudahkan mapping
+            ['categories' => 'Comfort Accessories',      'type_id_name' => 'Basic'],
+            ['categories' => 'Relaxation Services',      'type_id_name' => 'Basic'],
+            ['categories' => 'Comfort Transportation',   'type_id_name' => 'Premium'],
+            ['categories' => 'Comfort Accommodation',    'type_id_name' => 'Premium'],
+            ['categories' => 'Wellness Activities',      'type_id_name' => 'Wellness'],
         ];
 
-        foreach ($categories as $data) {
-            $type = $types->get($data['type_name']);
+        foreach ($categoriesData as $categoryData) {
+            $typeName = $categoryData['type_id_name'];
 
-            if ($type) {
+            // 2. Ambil ID Type berdasarkan nama (key)
+            $typeId = $types[$typeName] ?? null;
+
+            // 3. Hanya buat kategori jika ID Type ditemukan
+            if ($typeId) {
+                // Hapus key type_id_name
+                unset($categoryData['type_id_name']);
+                
+                // Tambahkan foreign key id_type
+                $categoryData['id_type'] = $typeId; 
+
+                // Lakukan proses seeding (misalnya menggunakan updateOrCreate atau create)
                 Category::updateOrCreate(
-                    ['categories' => $data['categories']],
-                    [
-                        'id' => Str::uuid(),
-                        'id_type' => $type->id, // ambil UUID dari tabel types
-                    ]
+                    ['categories' => $categoryData['categories']],
+                    $categoryData
                 );
             } else {
-                echo "⚠️ Type '{$data['type_name']}' tidak ditemukan. Pastikan tabel 'types' sudah di-seed.\n";
+                 $this->command->warn("Nama Type '{$typeName}' tidak ditemukan di tabel types.");
             }
         }
     }

@@ -21,6 +21,19 @@ Welcome, {{ Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name :
         </a>
     </div>
 
+    {{-- Alert untuk Success/Error Message --}}
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+    {{-- End Alert --}}
+
     <div class="bg-white rounded-xl shadow-lg border border-indigo-100 overflow-hidden">
         <div class="p-6">
             @if(isset($packages) && count($packages) > 0)
@@ -43,22 +56,26 @@ Welcome, {{ Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name :
                             <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $package->name_package ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ Str::limit($package->description ?? 'N/A', 50) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $package->slug ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $package->slug ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">Rp {{ number_format($package->price_publish ?? 0, 0, ',', '.') }}</td>
-                              <td class="px-6 py-4 whitespace-nowrap">
-                                @if($package->is_active == 'available')
-                                    <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 border border-green-300">Available</span>
-                                @elseif($package->is_active == 0)
-                                    <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">Draft</span>
-                                @else
-                                    <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{{ ucfirst($package->is_active) }}</span>
-                                @endif
-                            </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{-- PERBAIKAN LOGIKA STATUS BERDASARKAN is_active (boolean) --}}
+                                    @if($package->is_active == 1)
+                                        <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 border border-green-300">Active</span>
+                                    @else
+                                        <span class="inline-flex px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300">Draft / Inactive</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                                    <a href="" class="text-blue-600 hover:text-blue-800 transition duration-150 ease-in-out" title="Edit">
+                                    {{-- PERBAIKAN ROUTE EDIT --}}
+                                    {{-- Menggunakan route('admin.packages.edit', $package) untuk mendapatkan ID/slug --}}
+                                    <a href="{{ route('admin.packages.edit', $package) }}" class="text-blue-600 hover:text-blue-800 transition duration-150 ease-in-out" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form method="POST" action="" class="inline" onsubmit="return confirm('Are you sure you want to delete this package?');">
+                                    
+                                    {{-- PERBAIKAN ROUTE DELETE --}}
+                                    {{-- Menggunakan route('admin.packages.destroy', $package) untuk mendapatkan ID/slug --}}
+                                    <form method="POST" action="" class="inline" onsubmit="return confirm('Are you sure you want to delete this package? This action cannot be undone.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-800 transition duration-150 ease-in-out" title="Delete">
