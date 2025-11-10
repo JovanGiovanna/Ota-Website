@@ -46,6 +46,7 @@ class Booking extends Model
         'booker_name',
         'booker_email',
         'booker_telp',
+        'booking_code',
         'checkin_appointment_start',
         'checkout_appointment_end',
         'duration_days',
@@ -94,7 +95,7 @@ class Booking extends Model
     public function addons(): BelongsToMany
     {
         return $this->belongsToMany(Addon::class, 'book_package_addons', 'id_book', 'id_addons')
-                    ->withPivot('id_package') // Mengambil kolom id_package dari tabel pivot
+                    ->withPivot('id_package', 'quantity') // Mengambil kolom id_package dan quantity dari tabel pivot
                     ->withTimestamps();
     }
 

@@ -18,17 +18,28 @@
                 <div class="flex justify-between items-start">
                     <div class="flex-1">
                         <h3 class="text-lg font-semibold mb-2">
-                            @if($booking->packages->count() > 0)
-                                Package Booking ({{ $booking->packages->count() }} packages)
-                            @elseif($booking->products->count() > 0)
-                                Product Booking ({{ $booking->products->count() }} products)
-                            @elseif($booking->addons->count() > 0)
-                                Addon Booking ({{ $booking->addons->count() }} addons)
+                            @php
+                                $hasPackages = $booking->packages->count() > 0;
+                                $hasProducts = $booking->products->count() > 0;
+                                $hasAddons = $booking->addons->count() > 0;
+                                $types = [];
+                                if ($hasPackages) $types[] = $booking->packages->count() . ' package' . ($booking->packages->count() > 1 ? 's' : '');
+                                if ($hasProducts) $types[] = $booking->products->count() . ' product' . ($booking->products->count() > 1 ? 's' : '');
+                                if ($hasAddons) $types[] = $booking->addons->count() . ' addon' . ($booking->addons->count() > 1 ? 's' : '');
+                            @endphp
+                            @if(count($types) > 1)
+                                Mixed Booking ({{ implode(', ', $types) }})
+                            @elseif($hasPackages)
+                                Package Booking ({{ $types[0] }})
+                            @elseif($hasProducts)
+                                Product Booking ({{ $types[0] }})
+                            @elseif($hasAddons)
+                                Addon Booking ({{ $types[0] }})
                             @else
-                                Mixed Booking
+                                Unknown Booking Type
                             @endif
                         </h3>
-                        <p class="text-gray-600 mb-2">Booking ID: #{{ $booking->id }}</p>
+                        <p class="text-gray-600 mb-2">Booking ID: {{ $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)) }}</p>
                         <p class="text-sm text-gray-500">Check-in: {{ $booking->checkin_appointment_start->format('d M Y') }} | Check-out: {{ $booking->checkout_appointment_end->format('d M Y') }}</p>
                         <p class="text-sm text-gray-500">Duration: {{ $booking->duration_days }} days</p>
 

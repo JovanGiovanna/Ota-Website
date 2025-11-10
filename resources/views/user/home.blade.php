@@ -3,7 +3,7 @@
 @section('title', 'Home')
 
 @section('welcome')
-Welcome back, {{ Auth::user()->name ?? 'Traveler' }}!
+Welcome back, {{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}!
 @endsection
 
 @section('content')

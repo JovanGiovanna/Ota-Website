@@ -61,9 +61,9 @@ class PackagesController extends Controller
     {
         $products = Product::all();
         $addons = Addon::all();
-        return view('super_admin.packages.edit', compact('package'));
+        return view('super_admin.packages.edit', compact('package', 'products', 'addons'));
     }
-    
+
     // ------------------------------------------------------------------
 
     /**
@@ -77,14 +77,19 @@ class PackagesController extends Controller
         // 1. Validasi Data
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
-            'id_product' => 'required|uuid|exists:products,id',
-            'id_addons' => 'required|uuid|exists:addons,id',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',
+            'price_real' => 'nullable|numeric|min:0',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
             'is_active' => 'boolean',
+            'products' => 'required|array|min:1',
+            'products.*.id' => 'required|uuid|exists:products,id',
+            'products.*.amount' => 'required|integer|min:1',
+            'addons' => 'required|array|min:1',
+            'addons.*.id' => 'required|uuid|exists:addons,id',
+            'addons.*.quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -93,7 +98,12 @@ class PackagesController extends Controller
 
         $data = $validator->validated();
 
-        // 2. Tangani Pengunggahan Gambar
+        // 2. Prepare JSON data for products and addons
+        $data['products_data'] = $data['products'];
+        $data['addons_data'] = $data['addons'];
+        unset($data['products'], $data['addons']);
+
+        // 3. Tangani Pengunggahan Gambar
         if ($request->hasFile('image')) {
             try {
                 $path = $request->file('image')->store('packages', 'public');
@@ -103,7 +113,7 @@ class PackagesController extends Controller
             }
         }
 
-        // 3. Buat Slug
+        // 4. Buat Slug
         $slug = Str::slug($data['name_package']);
         $originalSlug = $slug;
         $count = 1;
@@ -113,7 +123,7 @@ class PackagesController extends Controller
         $data['slug'] = $slug;
 
         try {
-            // 4. Simpan ke Database
+            // 5. Simpan ke Database
             Package::create($data);
             return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil ditambahkan!');
         } catch (\Exception $e) {
@@ -139,14 +149,19 @@ class PackagesController extends Controller
         // 1. Validasi Data
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
-            'id_product' => 'required|uuid|exists:products,id',
-            'id_addons' => 'required|uuid|exists:addons,id',
             'description' => 'nullable|string',
             'image' => 'nullable|sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',
+            'price_real' => 'nullable|numeric|min:0',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
             'is_active' => 'boolean',
+            'products' => 'required|array|min:1',
+            'products.*.id' => 'required|uuid|exists:products,id',
+            'products.*.amount' => 'required|integer|min:1',
+            'addons' => 'required|array|min:1',
+            'addons.*.id' => 'required|uuid|exists:addons,id',
+            'addons.*.quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -156,7 +171,12 @@ class PackagesController extends Controller
         $data = $validator->validated();
         $oldImage = $package->image;
 
-        // 2. Tangani Pengunggahan/Penggantian Gambar
+        // 2. Prepare JSON data for products and addons
+        $data['products_data'] = $data['products'];
+        $data['addons_data'] = $data['addons'];
+        unset($data['products'], $data['addons']);
+
+        // 3. Tangani Pengunggahan/Penggantian Gambar
         if ($request->hasFile('image')) {
             try {
                 // Hapus gambar lama jika ada
@@ -176,7 +196,7 @@ class PackagesController extends Controller
             $data['image'] = null;
         }
 
-        // 3. Perbarui Slug jika nama paket berubah
+        // 4. Perbarui Slug jika nama paket berubah
         if (isset($data['name_package']) && $data['name_package'] !== $package->name_package) {
             $slug = Str::slug($data['name_package']);
             $originalSlug = $slug;
@@ -188,7 +208,7 @@ class PackagesController extends Controller
         }
 
         try {
-            // 4. Perbarui Database
+            // 5. Perbarui Database
             $package->update($data);
             return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil diperbarui!');
         } catch (\Exception $e) {
@@ -221,5 +241,18 @@ class PackagesController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal menghapus paket: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Show package detail for user
+     *
+     * @param  \App\Models\Package  $package
+     * @return \Illuminate\View\View
+     */
+    public function showDetail(Package $package)
+    {
+        $package->load(['vendorInfo', 'reviews.user']);
+
+        return view('user.package_detail', compact('package'));
     }
 }

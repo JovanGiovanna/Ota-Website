@@ -233,6 +233,26 @@ class DashboardController extends Controller
         }
         $selectedAddonsData = $selectedAddonsData ?? [];
 
+        // Normalize the products data to ensure 'name' key exists
+        $selectedProductsData = collect($selectedProductsData)->map(function ($product) {
+            return [
+                'id' => $product['id'] ?? '',
+                'name' => $product['name'] ?? 'Unknown Product',
+                'price' => $product['price'] ?? 0,
+                'pax' => $product['pax'] ?? 1,
+            ];
+        })->toArray();
+
+        // Normalize the addons data to ensure 'name' key exists
+        $selectedAddonsData = collect($selectedAddonsData)->map(function ($addon) {
+            return [
+                'id' => $addon['id'] ?? '',
+                'name' => $addon['name'] ?? $addon['addons'] ?? 'Unknown Addon',
+                'price' => $addon['price'] ?? 0,
+                'pax' => $addon['pax'] ?? 1,
+            ];
+        })->toArray();
+
         // Ambil ID produk dan addon yang sudah terpilih untuk pre-select di form
         $selectedProductIds = collect($selectedProductsData)->pluck('id')->toArray();
         $selectedAddonIds = collect($selectedAddonsData)->pluck('id')->toArray();

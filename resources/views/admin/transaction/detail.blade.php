@@ -145,14 +145,17 @@
             {{-- Form Update Status Manual (Untuk Admin) --}}
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h2 class="text-xl font-semibold border-b pb-3 mb-4">⚙️ Ubah Status Manual</h2>
-                <form action="#" method="POST">
+                <form action="{{ route('admin.transaction.updateStatus', $booking) }}" method="POST">
                     @csrf
+                    @method('PUT')
                     <div class="mb-4">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Pilih Status Baru</label>
                         <select name="status" id="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                             <option value="pending" @if($booking->status == 'pending') selected @endif>Pending</option>
                             <option value="confirmed" @if($booking->status == 'confirmed') selected @endif>Confirmed</option>
                             <option value="checked_in" @if($booking->status == 'checked_in') selected @endif>Checked In</option>
+                            <option value="checked_out" @if($booking->status == 'checked_out') selected @endif>Checked Out</option>
+                            <option value="maintenance" @if($booking->status == 'maintenance') selected @endif>Maintenance</option>
                             <option value="completed" @if($booking->status == 'completed') selected @endif>Completed</option>
                             <option value="cancelled" @if($booking->status == 'cancelled') selected @endif>Cancelled</option>
                         </select>

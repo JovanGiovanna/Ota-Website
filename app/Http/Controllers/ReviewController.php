@@ -19,7 +19,7 @@ class ReviewController extends Controller
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        $booking = Booking::findOrFail($bookingId);
+        $booking = Booking::with('packages', 'bookProducts', 'bookPackageAddons')->findOrFail($bookingId);
 
         // Check if user owns the booking
         if ($booking->id_user !== Auth::id()) {
@@ -40,10 +40,21 @@ class ReviewController extends Controller
             return redirect()->back()->with('error', 'You have already reviewed this booking.');
         }
 
+        // Get the first package ID from the booking's packages relation
+        $packageId = $booking->packages->first()->id ?? null;
+
+        // Get the first product ID from the booking's products relation
+        $productId = $booking->bookProducts->first()->id_product ?? null;
+
+        // Get the first addon ID from the booking's addons relation
+        $addonId = $booking->bookPackageAddons->first()->id_addons ?? null;
+
         Review::create([
             'user_id' => Auth::id(),
             'booking_id' => $bookingId,
-            'package_id' => $booking->id_package,
+            'package_id' => $packageId,
+            'product_id' => $productId,
+            'addon_id' => $addonId,
             'rating' => $request->rating,
             'comment' => $request->comment,
         ]);

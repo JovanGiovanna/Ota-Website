@@ -45,31 +45,23 @@
                 <div class="flex items-center space-x-3">
                     <!-- Search -->
                     <div class="hidden md:block">
-                        <div class="relative">
+                        <form action="{{ route('user.search') }}" method="GET" class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <input id="search-field" class="block w-64 pl-10 pr-3 py-2 border border-blue-300 rounded-lg text-blue-900 placeholder-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50 text-sm" placeholder="Search destinations..." type="search">
-                        </div>
+                            <input name="destination" class="block w-64 pl-10 pr-3 py-2 border border-blue-300 rounded-lg text-blue-900 placeholder-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50 text-sm" placeholder="Search destinations..." type="search">
+                        </form>
                     </div>
-
-                    <!-- Notifications -->
-                    <button class="p-2 text-blue-400 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors duration-200">
-                        <span class="sr-only">View notifications</span>
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM15 7v5h5l-5-5zM4 12h8m-8 4h6" />
-                        </svg>
-                    </button>
 
                     <!-- Profile Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
                             <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-medium">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</span>
+                                <span class="text-white text-sm font-medium">{{ substr(Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'S'), 0, 1) }}</span>
                             </div>
-                            <span class="text-blue-700 font-medium hidden xl:block">{{ Auth::user()->name ?? 'User' }}</span>
+                            <span class="text-blue-700 font-medium hidden xl:block">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</span>
                             <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
@@ -78,12 +70,14 @@
                         <!-- Dropdown Menu -->
                         <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-blue-200 py-1 z-50">
                             <div class="px-4 py-2 border-b border-blue-100">
-                                <p class="text-sm font-medium text-gray-900">{{ Auth::user()->name ?? 'User' }}</p>
-                                <p class="text-xs text-gray-500">Customer</p>
+                                <p class="text-sm font-medium text-gray-900">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</p>
+                                <p class="text-xs text-gray-500">{{ Auth::user() ? 'Customer' : 'Super Admin' }}</p>
                             </div>
+                            @if(Auth::user())
                             <a href="{{ route('user.profil') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                                 <i class="fas fa-user mr-2"></i>View Profile
                             </a>
+                            @endif
                             <div class="border-t border-blue-100">
                                 <form method="POST" action="{{ route('logout') }}" class="inline w-full">
                                     @csrf

@@ -48,4 +48,29 @@ class VendorInfo extends Model
             'id_province' // Local key di City
         );
     }
+
+    public function packages()
+    {
+        return $this->hasMany(Package::class, 'id_vendor_info');
+    }
+
+    /**
+     * Get the average rating for the vendor info.
+     */
+    public function averageRating()
+    {
+        // Get all packages for this vendor info and calculate average rating
+        $packages = $this->packages()->with('reviews')->get();
+        $totalRating = 0;
+        $totalReviews = 0;
+
+        foreach ($packages as $package) {
+            $rating = $package->averageRating();
+            $reviewCount = $package->reviews->count();
+            $totalRating += $rating * $reviewCount;
+            $totalReviews += $reviewCount;
+        }
+
+        return $totalReviews > 0 ? $totalRating / $totalReviews : 0;
+    }
 }

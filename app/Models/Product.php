@@ -64,4 +64,20 @@ class Product extends Model
     {
         return $this->belongsTo(Vendor::class, 'id_vendor');
     }
+
+    /**
+     * Mendapatkan reviews untuk produk ini.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Mendapatkan rata-rata rating produk.
+     */
+    public function averageRating()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
 }

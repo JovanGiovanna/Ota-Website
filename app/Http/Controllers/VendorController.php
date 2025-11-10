@@ -340,6 +340,7 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
             'price' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
+            'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:1',
             'max_adults' => 'nullable|integer|min:0',
             'max_children' => 'nullable|integer|min:0',
@@ -381,6 +382,7 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
             'price' => 'required|numeric|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
+            'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:1',
             'max_adults' => 'nullable|integer|min:0',
             'max_children' => 'nullable|integer|min:0',
@@ -477,16 +479,21 @@ public function storeAddon(Request $request)
      */
     public function updateAddon(Request $request, $id)
     {
-        $request->validate([
+        $rules = [
             'addons'    => 'sometimes|required|string|max:255',
             'price'     => 'sometimes|required|numeric|min:0',
             'desc'      => 'nullable|string|max:500',
             'status'    => 'sometimes|string|in:available,unavailable,draft',
             'publish'   => 'sometimes|boolean',
             'pax'       => 'sometimes|integer|min:1',
-            'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'image_url' => 'nullable|url|max:2048',
-        ]);
+        ];
+
+        // Only validate image if a file is actually uploaded
+        if ($request->hasFile('image')) {
+            $rules['image'] = 'image|mimes:jpeg,png,jpg,gif,svg|max:2048';
+        }
+
+        $request->validate($rules);
 
         $vendor = Auth::guard('vendor')->user();
         $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->first();
@@ -542,6 +549,17 @@ public function storeAddon(Request $request)
     }
 
     /**
+     * Menampilkan form edit addon tertentu.
+     */
+    public function editAddon($id)
+    {
+        $vendor = Auth::guard('vendor')->user();
+        $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+
+        return view('vendor.addons.edit', compact('addon'));
+    }
+
+    /**
      * Menghapus addon tertentu (Soft Delete + Hapus File Fisik).
      */
     public function destroyAddon($id)
@@ -554,7 +572,7 @@ public function storeAddon(Request $request)
         if ($imagePath && !filter_var($imagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($imagePath)) {
             Storage::disk('public')->delete($imagePath);
         }
-        
+
         // Lakukan soft delete (diperlukan Trait SoftDeletes di model Addon)
         $addon->delete();
 

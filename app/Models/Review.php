@@ -40,6 +40,8 @@ class Review extends Model
         'user_id',
         'booking_id',
         'package_id',
+        'product_id',
+        'addon_id',
         'rating',
         'comment',
     ];
@@ -89,5 +91,21 @@ class Review extends Model
     public function package()
     {
         return $this->belongsTo(Package::class);
+    }
+
+    /**
+     * Get the product that owns the review.
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the addon that owns the review.
+     */
+    public function addon()
+    {
+        return $this->belongsTo(Addon::class);
     }
 }

@@ -187,6 +187,15 @@ class BookingsController extends Controller
             }
         }
 
+        // Generate sequential booking code
+        $lastBooking = Booking::orderBy('created_at', 'desc')->first();
+        $nextNumber = 1;
+        if ($lastBooking && $lastBooking->booking_code) {
+            $lastNumber = (int) str_replace('BK-', '', $lastBooking->booking_code);
+            $nextNumber = $lastNumber + 1;
+        }
+        $bookingCode = 'BK-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
         // Buat Booking utama
         $booking = Booking::create([
             'id' => Str::uuid(), // Generate UUID for id
@@ -194,6 +203,7 @@ class BookingsController extends Controller
             'booker_name' => $validated['booker_name'],
             'booker_email' => $validated['booker_email'],
             'booker_telp' => $validated['booker_telp'],
+            'booking_code' => $bookingCode,
             'checkin_appointment_start' => $validated['checkin_appointment_start'],
             'checkout_appointment_end' => $validated['checkout_appointment_end'],
             'duration_days' => $validated['duration_days'],
@@ -287,7 +297,7 @@ class BookingsController extends Controller
             abort(403);
         }
 
-        $booking->load(['packages', 'products', 'addons']);
+        $booking->load(['packages', 'products', 'addons', 'reviews']);
 
         return view('user.detail_history', compact('booking'));
     }
@@ -306,7 +316,7 @@ class BookingsController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,confirmed,checked_in,completed,cancelled',
+            'status' => 'required|string|in:pending,confirmed,checked_in,checked_out,maintenance,completed,cancelled',
         ]);
 
         $booking = Booking::findOrFail($id);

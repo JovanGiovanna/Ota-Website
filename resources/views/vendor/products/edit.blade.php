@@ -60,6 +60,16 @@
                 @enderror
             </div>
 
+            {{-- PAX (KAPASITAS) DITAMBAHKAN DI SINI --}}
+            <div class="mb-4">
+                <label for="pax" class="block text-sm font-medium text-gray-700 mb-2">Pax (Capacity / Min Quantity)</label>
+                <input type="number" name="pax" id="pax" value="{{ old('pax', $product->pax ?? 1) }}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                @error('pax')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+            {{-- AKHIR PAX --}}
+
             <div class="mb-4">
                 <label for="jumlah" class="block text-sm font-medium text-gray-700 mb-2">Jumlah (Stock Quantity)</label>
                 <input type="number" name="jumlah" id="jumlah" value="{{ old('jumlah', $product->jumlah) }}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>

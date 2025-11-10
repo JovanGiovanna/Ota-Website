@@ -39,6 +39,7 @@ class PackageSeeder extends Seeder
             return [
                 'id' => $product->id,
                 'name' => $product->name,
+                'description' => $product->description,
                 'price' => $product->price,
                 'pax' => $pax,
                 'sub_total' => $product->price * $pax,
@@ -49,7 +50,8 @@ class PackageSeeder extends Seeder
         $formatAddon = function($addon, $pax = 1) {
             return [
                 'id' => $addon->id,
-                'name' => $addon->addons,
+                'addons' => $addon->addons,
+                'desc' => $addon->desc,
                 'price' => $addon->price,
                 'pax' => $pax,
                 'sub_total' => $addon->price * $pax,

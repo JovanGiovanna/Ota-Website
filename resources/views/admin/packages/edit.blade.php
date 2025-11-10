@@ -182,10 +182,13 @@
                         <h4 class="text-md font-medium text-purple-700 mb-3">Addon Quantity (PAX)</h4>
                         {{-- PHP Loop untuk data awal --}}
                         @foreach($selectedAddonsData ?? [] as $selectedAddon)
+                            @php
+                                $addonName = $selectedAddon['name'] ?? $selectedAddon['addons'] ?? 'Unknown Addon';
+                            @endphp
                             <div class="flex items-center space-x-2 mb-2 addon-pax-input" data-addon-id="{{ $selectedAddon['id'] }}">
-                                <label class="w-3/5 text-sm text-gray-700 truncate" title="{{ $selectedAddon['name'] }}">{{ $selectedAddon['name'] }} (Rp{{ number_format($selectedAddon['price']) }}):</label>
-                                <input type="number" name="addon_pax[{{ $selectedAddon['id'] }}]" 
-                                    value="{{ old('addon_pax.' . $selectedAddon['id'], $selectedAddon['pax']) }}" 
+                                <label class="w-3/5 text-sm text-gray-700 truncate" title="{{ $addonName }}">{{ $addonName }} (Rp{{ number_format($selectedAddon['price']) }}):</label>
+                                <input type="number" name="addon_pax[{{ $selectedAddon['id'] }}]"
+                                    value="{{ old('addon_pax.' . $selectedAddon['id'], $selectedAddon['pax']) }}"
                                     min="1" class="w-2/5 px-2 py-1 border border-gray-300 rounded-md text-sm pax-input focus:ring-purple-500" required>
                             </div>
                         @endforeach

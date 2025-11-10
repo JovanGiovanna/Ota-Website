@@ -78,14 +78,30 @@ class Package extends Model
     }
 
     // --- Relasi (Relasi product() dan addon() dihapus karena sudah diganti data JSON) ---
-    
+
+    /**
+     * Get the vendor info for the package.
+     */
+    public function vendorInfo()
+    {
+        return $this->belongsTo(\App\Models\VendorInfo::class, 'id_vendor_info');
+    }
+
+    /**
+     * Get the type for the package.
+     */
+    public function type()
+    {
+        return $this->belongsTo(\App\Models\Type::class, 'id_type');
+    }
+
     /**
      * Get the reviews for the package.
      */
     public function reviews()
     {
         // Pastikan model Review sudah diimport atau menggunakan FQCN
-        return $this->hasMany(\App\Models\Review::class); 
+        return $this->hasMany(\App\Models\Review::class);
     }
 
     /**

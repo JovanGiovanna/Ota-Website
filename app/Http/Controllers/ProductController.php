@@ -48,6 +48,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'id_category' => 'required|exists:categories,id',
             'id_vendor' => 'required|exists:vendor,id',
+            'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:0',
             'max_adults' => 'required|integer|min:1',
             'max_children' => 'required|integer|min:0',
@@ -94,6 +95,7 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'id_category' => 'required|exists:categories,id',
             'id_vendor' => 'required|exists:vendor,id',
+            'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:0',
             'max_adults' => 'required|integer|min:1',
             'max_children' => 'required|integer|min:0',
@@ -144,7 +146,7 @@ class ProductController extends Controller
 
     public function showDetail($id)
     {
-        $product = Product::with(['category', 'vendor.vendorInfo'])->find($id);
+        $product = Product::with(['category', 'vendor.vendorInfo', 'reviews.user'])->find($id);
         if (!$product) {
             abort(404, 'Product not found');
         }

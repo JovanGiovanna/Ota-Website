@@ -191,7 +191,7 @@ class AddonController extends Controller
 
     public function showDetail($id)
     {
-        $addon = Addon::with('vendor.vendorInfo')->find($id);
+        $addon = Addon::with('vendor.vendorInfo', 'reviews.user')->find($id);
         if (!$addon) {
             abort(404, 'Addon not found');
         }

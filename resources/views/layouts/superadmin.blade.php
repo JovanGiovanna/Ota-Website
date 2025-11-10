@@ -6,6 +6,7 @@
     <title>@yield('title', 'Super Admin Dashboard')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     @stack('styles')
 </head>
@@ -174,7 +175,7 @@
                             <i class="fas fa-user-shield text-white text-xs"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-white text-sm font-medium truncate">{{ Auth::guard('super_admin')->user()->name }}</p>
+                            <p class="text-white text-sm font-medium truncate">{{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Super Admin' }}</p>
                             <p class="text-slate-400 text-xs">Super Administrator</p>
                         </div>
                     </div>
@@ -192,45 +193,30 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
                 </button>
-                <div class="flex-1 px-6 flex justify-between items-center">
-                    <div class="flex-1 flex max-w-lg">
-                        <div class="w-full">
-                            <label for="search-field" class="sr-only">Search</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                    </svg>
-                                </div>
-                                <input id="search-field" class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50" placeholder="Search system..." type="search">
+                <div class="flex-1 px-6 flex justify-end items-center">
+                    <!-- Profile dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium">{{ substr(Auth::guard('super_admin')->check() && Auth::guard('super_admin')->user() ? Auth::guard('super_admin')->user()->name : 'S', 0, 1) }}</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="ml-4 flex items-center md:ml-6 space-x-4">
-                        <!-- Notifications -->
-                        <button class="p-2 text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg">
-                            <span class="sr-only">View notifications</span>
-                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM15 7v5h5l-5-5zM4 12h8m-8 4h6" />
+                            <span class="text-slate-700 font-medium hidden xl:block">{{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Super Admin' }}</span>
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
 
-                        <!-- Profile dropdown -->
-                        <div class="ml-3 relative">
-                            <div class="flex items-center space-x-4">
-                                <div class="flex items-center space-x-2">
-                                    <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                        <span class="text-white text-sm font-medium">{{ substr(Auth::guard('super_admin')->user()->name, 0, 1) }}</span>
-                                    </div>
-                                    <span class="text-slate-700 font-medium hidden sm:block">@yield('welcome')</span>
-                                </div>
-                                <form method="POST" action="@yield('logout_route')" class="inline">
+                        <!-- Dropdown Menu -->
+                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                            <div class="px-4 py-2 border-b border-slate-100">
+                                <p class="text-sm font-medium text-gray-900">{{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Super Admin' }}</p>
+                                <p class="text-xs text-gray-500">Super Administrator</p>
+                            </div>
+                            <div class="border-t border-slate-100">
+                                <form method="POST" action="{{ route('super_admin.logout') }}" class="inline w-full">
                                     @csrf
-                                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                        </svg>
-                                        Logout
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
+                                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                                     </button>
                                 </form>
                             </div>

@@ -88,4 +88,20 @@ class Addon extends Model
         // Asumsi model untuk tabel 'vendor' adalah 'Vendor'
         return $this->belongsTo(Vendor::class, 'id_vendor');
     }
+
+    /**
+     * Get the reviews for the addon.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Get the average rating for the addon.
+     */
+    public function averageRating()
+    {
+        return $this->reviews()->avg('rating') ?? 0;
+    }
 }

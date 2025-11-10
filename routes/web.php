@@ -21,6 +21,7 @@ use App\Http\Controllers\BookPackageAddonController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\SearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -182,7 +183,12 @@ Route::prefix('super-admin/transactions')->middleware(['super_admin_access:admin
     Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail');
 
     // Route Detail (Anda mungkin ingin membuat fungsi detail khusus Admin)
-    // Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail'); 
+    // Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail');
+});
+
+// Admin transaction routes
+Route::middleware(['super_admin_access:admin'])->prefix('admin/transactions')->name('admin.transaction.')->group(function () {
+    Route::put('/{booking}/updateStatus', [BookingsController::class, 'updateStatus'])->name('updateStatus');
 });
 Route::prefix('addons')->name('super_admin.addon.')->group(function () {
         // Index Semua Booking Addon
@@ -223,46 +229,14 @@ Route::prefix('products')->name('super_admin.product.')->group(function () {
     });
 
 
-Route::middleware(['auth'])->group(function () {
+// Search route
+Route::get('/search', [SearchController::class, 'index'])->name('user.search');
+
+Route::middleware(['super_admin_access'])->group(function () {
     // User pages
     Route::get('/home', function () {
         return view('user.home');
     })->name('user.home');
-
-    Route::get('/search', function () {
-        // Get search type from request, default to 'all'
-        $searchType = request('type', 'all');
-
-        // Query packages
-        $packageQuery = \App\Models\Package::query();
-        if (request('destination')) {
-            $packageQuery->where('name_package', 'like', '%' . request('destination') . '%')
-                        ->orWhere('description', 'like', '%' . request('destination') . '%');
-        }
-        if (request('checkin') && request('checkout')) {
-            $packageQuery->where('start_publish', '<=', request('checkin'))
-                        ->where('end_publish', '>=', request('checkout'));
-        }
-        $packages = $packageQuery->where('is_active', true)->paginate(12);
-
-        // Query products
-        $productQuery = \App\Models\Product::query();
-        if (request('destination')) {
-            $productQuery->where('name', 'like', '%' . request('destination') . '%')
-                        ->orWhere('description', 'like', '%' . request('destination') . '%');
-        }
-        $products = $productQuery->where('status', 'available')->paginate(12);
-
-        // Query addons
-        $addonQuery = \App\Models\Addon::query();
-        if (request('destination')) {
-            $addonQuery->where('addons', 'like', '%' . request('destination') . '%')
-                      ->orWhere('desc', 'like', '%' . request('destination') . '%');
-        }
-        $addons = $addonQuery->where('status', 'available')->where('publish', true)->paginate(12);
-
-        return view('user.search', compact('packages', 'products', 'addons', 'searchType'));
-    })->name('user.search');
 
     Route::get('/book', function () {
         $packages = \App\Models\Package::where('is_active', true)->get();
@@ -274,9 +248,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/book', [BookingsController::class, 'store'])->name('user.book');
 
-    Route::get('/profile', function () {
-        return view('user.profil');
-    })->name('user.profil');
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/profile', function () {
+            return view('user.profil');
+        })->name('user.profil');
+    });
 
     Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('user.profile.update');
     Route::put('/profile/change-password', [AuthController::class, 'changePassword'])->name('user.profile.change_password');
@@ -291,6 +267,7 @@ Route::middleware(['auth'])->group(function () {
     // Product and Addon detail routes
     Route::get('/product/{product}', [ProductController::class, 'showDetail'])->name('user.product_detail');
     Route::get('/addon/{addon}', [AddonController::class, 'showDetail'])->name('user.addon_detail');
+    Route::get('/package/{package}', [PackagesController::class, 'showDetail'])->name('user.package_detail');
 
     // User dashboard - accessible by user
     Route::get('/dashboard', function () {
