@@ -1,5 +1,6 @@
 @extends('layouts.admin')
 
+
 @section('content')
 
 <div class="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -73,29 +74,45 @@
             </div>
 
             {{-- Bagian 2: Harga & Periode --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 bg-emerald-50/50 rounded-lg border border-emerald-100">
-                <div class="md:col-span-3">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 p-6 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                <div class="md:col-span-4">
                     <h2 class="text-2xl font-semibold text-emerald-700 mb-4">Pricing & Publication Period</h2>
                 </div>
                 
-                {{-- Harga Publish (Harga Jual) --}}
-                <div>
-                    <label for="price_publish" class="block text-sm font-semibold text-green-700 mb-2">Publish Price (Rp) <span class="text-red-500">*</span></label>
-                    <input type="number" name="price_publish" id="price_publish" value="{{ old('price_publish', $package->price_publish) }}" step="0.01" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-150" required>
-                    @error('price_publish')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
                 {{-- Harga Real (Akumulasi) --}}
                 <div>
                     <label for="price_real_display" class="block text-sm font-semibold text-gray-700 mb-2">Accumulated Price (Rp)</label>
                     <input type="text" id="price_real_display" value="{{ number_format(old('price_real', $package->price_real), 0, ',', '.') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 font-medium" readonly>
                     {{-- Input Hidden untuk dikirim ke backend --}}
                     <input type="hidden" name="price_real" id="price_real" value="{{ old('price_real', $package->price_real) }}">
-                    @error('price_real')
+                    <p class="text-xs text-gray-500 mt-1">Dihitung otomatis dari produk & addon.</p>
+                </div>
+                
+                {{-- Discount Percentage (Dengan perbaikan padding) --}}
+                <div>
+                    <label for="discount_percentage" class="block text-sm font-semibold text-pink-700 mb-2">Discount (%) <span class="text-red-500">*</span></label>
+                    <div class="relative rounded-lg shadow-sm">
+                        {{-- pr-6 memberi ruang di input field --}}
+                        <input type="number" name="discount_percentage" id="discount_percentage" value="{{ old('discount_percentage', $package->discount_percentage) }}" min="0" max="100" class="w-full pr-6 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-150" required>
+                        {{-- pr-2 menggeser simbol % lebih jauh dari tepi --}}
+                        <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">%</span>
+                        </div>
+                    </div>
+                    @error('discount_percentage')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
+                    <p class="text-xs text-gray-500 mt-1">0% = Harga Normal. 100% = Gratis.</p>
+                </div>
+
+                {{-- Harga Publish (Harga Jual) --}}
+                <div>
+                    <label for="price_publish_input" class="block text-sm font-semibold text-green-700 mb-2">Publish Price (Rp) <span class="text-red-500">*</span></label>
+                    <input type="number" name="price_publish_input" id="price_publish_input" value="{{ old('price_publish_input', $package->price_publish) }}" step="0.01" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-150" required>
+                    @error('price_publish_input')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-gray-500 mt-1" id="price-publish-note">Harga di atas dihitung otomatis.</p>
                 </div>
                 
                 {{-- Tanggal Mulai Publish --}}
@@ -108,7 +125,7 @@
                 </div>
                 
                 {{-- Tanggal Akhir Publish --}}
-                <div class="md:col-span-3">
+                <div class="md:col-span-4">
                     <label for="end_publish" class="block text-sm font-semibold text-gray-700 mb-2">End Publish Date (Optional)</label>
                     <input type="date" name="end_publish" id="end_publish" value="{{ old('end_publish', $package->end_publish ? \Carbon\Carbon::parse($package->end_publish)->format('Y-m-d') : '') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-150">
                     <p class="text-xs text-gray-500 mt-1">Kosongkan jika paket ingin tayang tanpa batas waktu.</p>
@@ -118,86 +135,137 @@
                 </div>
             </div>
 
-            {{-- Bagian 3: Products dan Addons --}}
+            {{-- Bagian 3: Products dan Addons (Menggunakan Checkbox) --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 
-                {{-- Pemilihan Products --}}
-                <div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Products Included <span class="text-red-500">*</span></h3>
-                    <label for="products" class="block text-sm font-medium text-gray-700 mb-2">Select Products (Hold CTRL/CMD to select multiple)</label>
+                {{-- Pemilihan Products (Checkbox Style) --}}
+                <div class="space-y-4 border p-4 rounded-lg bg-blue-50/50">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 text-blue-700">Products Included <span class="text-red-500">*</span></h3>
                     
-                    {{-- Select Box Products --}}
-                    <select name="products[]" id="products" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-48" multiple required>
-                        @foreach($products as $product)
-                            <option value="{{ $product->id }}" data-price="{{ $product->price }}" 
-                                {{ in_array($product->id, old('products', $selectedProductIds ?? [])) ? 'selected' : '' }}>
-                                {{ $product->name }} (Rp{{ number_format($product->price) }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('products')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                    
-                    {{-- Container untuk PAX Products --}}
-                    <div id="product-pax-container" class="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200 shadow-inner">
-                        <h4 class="text-md font-medium text-blue-700 mb-3">Product Quantity (PAX)</h4>
-                        {{-- PHP Loop untuk data awal --}}
-                        @foreach($selectedProductsData ?? [] as $selectedProduct)
-                            <div class="flex items-center space-x-2 mb-2 product-pax-input" data-product-id="{{ $selectedProduct['id'] }}">
-                                <label class="w-3/5 text-sm text-gray-700 truncate" title="{{ $selectedProduct['name'] }}">{{ $selectedProduct['name'] }} (Rp{{ number_format($selectedProduct['price']) }}):</label>
-                                <input type="number" name="product_pax[{{ $selectedProduct['id'] }}]" 
-                                    value="{{ old('product_pax.' . $selectedProduct['id'], $selectedProduct['pax']) }}" 
-                                    min="1" class="w-2/5 px-2 py-1 border border-gray-300 rounded-md text-sm pax-input focus:ring-blue-500" required>
+                    <div class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto"> 
+                        @forelse ($products as $product)
+                            {{-- Cek apakah produk ini sudah dipilih (baik dari data tersimpan atau old data) --}}
+                            @php
+                                // Cek data yang sudah ada di database
+                                $isSelected = in_array($product->id, $selectedProductIds); 
+                                
+                                // Cek data dari old input (jika ada error validasi)
+                                // Jika ada old input, kita prioritaskan old input
+                                if (old('products')) {
+                                    $isSelected = in_array($product->id, old('products'));
+                                }
+
+                                // Ambil PAX yang sudah tersimpan atau dari old input
+                                $initialPax = 1;
+                                if (old('product_pax') && isset(old('product_pax')[$product->id])) {
+                                    $initialPax = old('product_pax')[$product->id];
+                                } elseif ($isSelected && $package->products_data) {
+                                    // Ambil dari data tersimpan jika tidak ada old input
+                                    $paxData = collect($selectedProductsData)->firstWhere('id', $product->id);
+                                    $initialPax = $paxData['pax'] ?? 1;
+                                }
+                                $minPax = 1; // Jika produk tidak memiliki min pax
+
+                            @endphp
+                            
+                            <div class="flex items-start space-x-3 product-item" data-id="{{ $product->id }}" data-price="{{ $product->price ?? 0 }}">
+                                
+                                {{-- Checkbox --}}
+                                <input type="checkbox" id="product_{{ $product->id }}" name="products[]" value="{{ $product->id }}" 
+                                    class="mt-1 product-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isSelected ? 'checked' : '' }}>
+                                
+                                {{-- Label --}}
+                                <label for="product_{{ $product->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
+                                    {{ $product->name }} (Rp{{ number_format($product->price ?? 0, 0, ',', '.') }})
+                                </label>
+                                
+                                {{-- Input Pax untuk Produk --}}
+                                <div class="w-32">
+                                    <label for="product_pax_{{ $product->id }}" class="block text-xs text-gray-500 mb-1">Pax</label>
+                                    <input type="number" id="product_pax_{{ $product->id }}" name="product_pax[{{ $product->id }}]" 
+                                        min="{{ $minPax }}" value="{{ $initialPax }}" 
+                                        class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" 
+                                        {{ $isSelected ? '' : 'disabled' }} required>
+                                </div>
                             </div>
-                        @endforeach
-                        {{-- Pesan default jika belum ada yang dipilih --}}
-                        <p id="no-product-selected" class="{{ count($selectedProductsData ?? []) > 0 ? 'hidden' : '' }} text-sm text-gray-500 italic">Select product(s) above to set the quantity.</p>
+                        @empty
+                            <p class="text-gray-500">No products available.</p>
+                        @endforelse
                     </div>
-                    @error('product_pax')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+
+                    @error('products')
+                        <p class="text-red-500 text-sm mt-1">Anda harus memilih setidaknya satu produk.</p>
                     @enderror
+
+                @if ($products instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                <div class="mt-4">
+                    {{ $products->links() }}
+                </div>
+                @endif
                 </div>
 
-                {{-- Pemilihan Addons --}}
-                <div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Addons (Optional)</h3>
-                    <label for="addons" class="block text-sm font-medium text-gray-700 mb-2">Select Addons (Hold CTRL/CMD to select multiple)</label>
+
+                {{-- Pemilihan Addons (Checkbox Style) --}}
+                <div class="space-y-4 border p-4 rounded-lg bg-purple-50/50">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 text-purple-700">Addons (Optional)</h3>
                     
-                    {{-- Select Box Addons --}}
-                    <select name="addons[]" id="addons" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 h-48" multiple>
-                        @foreach($addons as $addon)
-                            <option value="{{ $addon->id }}" data-price="{{ $addon->price }}" 
-                                {{ in_array($addon->id, old('addons', $selectedAddonIds ?? [])) ? 'selected' : '' }}>
-                                {{ $addon->addons }} (Rp{{ number_format($addon->price) }})
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto">
+                        @forelse ($addons as $addon)
+                            @php
+                                // Cek data yang sudah ada di database
+                                $isSelected = in_array($addon->id, $selectedAddonIds); 
+
+                                // Cek data dari old input (jika ada error validasi)
+                                if (old('addons')) {
+                                    $isSelected = in_array($addon->id, old('addons'));
+                                }
+
+                                // Ambil PAX yang sudah tersimpan atau dari old input
+                                $initialPax = 1;
+                                if (old('addon_pax') && isset(old('addon_pax')[$addon->id])) {
+                                    $initialPax = old('addon_pax')[$addon->id];
+                                } elseif ($isSelected && $package->addons_data) {
+                                    $paxData = collect($selectedAddonsData)->firstWhere('id', $addon->id);
+                                    $initialPax = $paxData['pax'] ?? 1;
+                                }
+                                $minPax = 1; // Jika addon tidak memiliki min pax
+                            @endphp
+
+                            <div class="flex items-start space-x-3 addon-item" data-id="{{ $addon->id }}" data-price="{{ $addon->price ?? 0 }}">
+                                
+                                {{-- Checkbox --}}
+                                <input type="checkbox" id="addon_{{ $addon->id }}" name="addons[]" value="{{ $addon->id }}" 
+                                    class="mt-1 addon-checkbox h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500" {{ $isSelected ? 'checked' : '' }}>
+                                
+                                {{-- Label --}}
+                                <label for="addon_{{ $addon->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
+                                    {{ $addon->addons }} (Rp{{ number_format($addon->price ?? 0, 0, ',', '.') }})
+                                </label>
+                                
+                                {{-- Input Pax untuk Addon --}}
+                                <div class="w-32">
+                                    <label for="addon_pax_{{ $addon->id }}" class="block text-xs text-gray-500 mb-1">Pax</label>
+                                    <input type="number" id="addon_pax_{{ $addon->id }}" name="addon_pax[{{ $addon->id }}]" 
+                                        min="{{ $minPax }}" value="{{ $initialPax }}" 
+                                        class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" 
+                                        {{ $isSelected ? '' : 'disabled' }} required>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-gray-500">No addons available.</p>
+                        @endforelse
+                    </div>
+
                     @error('addons')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
-                    
-                    {{-- Container untuk PAX Addons --}}
-                    <div id="addon-pax-container" class="mt-4 p-4 rounded-lg bg-purple-50 border border-purple-200 shadow-inner">
-                        <h4 class="text-md font-medium text-purple-700 mb-3">Addon Quantity (PAX)</h4>
-                        {{-- PHP Loop untuk data awal --}}
-                        @foreach($selectedAddonsData ?? [] as $selectedAddon)
-                            @php
-                                $addonName = $selectedAddon['name'] ?? $selectedAddon['addons'] ?? 'Unknown Addon';
-                            @endphp
-                            <div class="flex items-center space-x-2 mb-2 addon-pax-input" data-addon-id="{{ $selectedAddon['id'] }}">
-                                <label class="w-3/5 text-sm text-gray-700 truncate" title="{{ $addonName }}">{{ $addonName }} (Rp{{ number_format($selectedAddon['price']) }}):</label>
-                                <input type="number" name="addon_pax[{{ $selectedAddon['id'] }}]"
-                                    value="{{ old('addon_pax.' . $selectedAddon['id'], $selectedAddon['pax']) }}"
-                                    min="1" class="w-2/5 px-2 py-1 border border-gray-300 rounded-md text-sm pax-input focus:ring-purple-500" required>
-                            </div>
-                        @endforeach
-                        {{-- Pesan default jika belum ada yang dipilih --}}
-                        <p id="no-addon-selected" class="{{ count($selectedAddonsData ?? []) > 0 ? 'hidden' : '' }} text-sm text-gray-500 italic">Select addon(s) above to set the quantity.</p>
-                    </div>
-                    @error('addon_pax')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+
+                @if ($addons instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                <div class="mt-4">
+                    {{ $addons->links() }}
+                </div>
+                @endif
+            </div>
                 </div>
             </div>
 
@@ -213,136 +281,140 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const productSelect = document.getElementById('products');
-        const addonSelect = document.getElementById('addons');
-        const productPaxContainer = document.getElementById('product-pax-container');
-        const addonPaxContainer = document.getElementById('addon-pax-container');
+    // FUNGSI UTILITY
+    function formatRupiah(number) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(number);
+    }
+    
+    // FUNGSI UTAMA UNTUK PERHITUNGAN HARGA
+    function calculatePrices() {
+        let totalRealPrice = 0;
+
+        // 1. Hitung Total dari Products
+        document.querySelectorAll('.product-item').forEach(item => {
+            const checkbox = item.querySelector('.product-checkbox');
+            const paxInput = item.querySelector('.pax-input');
+            
+            if (checkbox.checked) {
+                const price = parseFloat(item.dataset.price) || 0;
+                const pax = parseInt(paxInput.value) || 1;
+                totalRealPrice += price * pax; 
+            }
+        });
+
+        // 2. Hitung Total dari Addons
+        document.querySelectorAll('.addon-item').forEach(item => {
+            const checkbox = item.querySelector('.addon-checkbox');
+            const paxInput = item.querySelector('.pax-input');
+
+            if (checkbox.checked) {
+                const price = parseFloat(item.dataset.price) || 0;
+                const pax = parseInt(paxInput.value) || 1;
+                totalRealPrice += price * pax; 
+            }
+        });
+
+        // 3. Update Harga Real
         const priceRealInput = document.getElementById('price_real');
         const priceRealDisplay = document.getElementById('price_real_display');
-        const noProductSelected = document.getElementById('no-product-selected');
-        const noAddonSelected = document.getElementById('no-addon-selected');
+        priceRealInput.value = totalRealPrice.toFixed(0);
+        priceRealDisplay.value = totalRealPrice.toLocaleString('id-ID', { minimumFractionDigits: 0 });
 
-        // Fungsi untuk mengupdate input PAX dan menghitung harga real
-        function updatePaxInputsAndPrice(selectElement, paxContainer, isProduct = true) {
-            const selectedOptions = Array.from(selectElement.selectedOptions);
-            let totalRealPrice = 0;
-            const currentPaxInputs = {};
-            
-            // Simpan nilai PAX yang sudah ada
-            // Ambil dari input yang sudah ada saat ini (untuk mempertahankan nilai saat change)
-            paxContainer.querySelectorAll('.pax-input').forEach(input => {
-                const itemId = input.name.match(/\[(.*?)\]/)[1];
-                currentPaxInputs[itemId] = input.value;
-            });
+        // 4. Hitung Harga Publish Berdasarkan Diskon
+        const discountPercentageInput = document.getElementById('discount_percentage');
+        const pricePublishInput = document.getElementById('price_publish_input');
+        const pricePublishNote = document.getElementById('price-publish-note');
 
-            // Kosongkan container dan siapkan ulang judul
-            paxContainer.innerHTML = `<h4 class="text-md font-medium text-${isProduct ? 'blue' : 'purple'}-700 mb-3">${isProduct ? 'Product' : 'Addon'} Quantity (PAX)</h4>`;
-            
-            if (selectedOptions.length === 0) {
-                if (isProduct) {
-                    paxContainer.appendChild(noProductSelected);
-                    noProductSelected.classList.remove('hidden');
+        let discountPercentage = parseInt(discountPercentageInput.value) || 0;
+        discountPercentage = Math.min(100, Math.max(0, discountPercentage)); // Batasi 0-100
+        
+        // Pastikan harga real tidak negatif sebelum diskon
+        const priceBeforeDiscount = Math.max(0, totalRealPrice); 
+        const discountedPrice = priceBeforeDiscount * (1 - discountPercentage / 100);
+        
+        // 5. Update Harga Publish dan Note
+        const autoCalculatedValue = Math.round(discountedPrice);
+
+        if (discountPercentage > 0) {
+            pricePublishInput.value = autoCalculatedValue;
+            pricePublishNote.innerHTML = `**Harga di atas dihitung otomatis** (${discountPercentage}% diskon). Anda bisa mengubahnya.`;
+            pricePublishNote.classList.remove('text-gray-500', 'text-red-500');
+            pricePublishNote.classList.add('text-indigo-600');
+        } else {
+            pricePublishInput.value = autoCalculatedValue; // Sama dengan totalRealPrice
+            pricePublishNote.innerHTML = `**Harga di atas sama dengan Harga Real** (Diskon 0%). Anda bisa mengubahnya.`;
+            pricePublishNote.classList.remove('text-indigo-600', 'text-red-500');
+            pricePublishNote.classList.add('text-gray-500');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const discountPercentageInput = document.getElementById('discount_percentage');
+        const pricePublishInput = document.getElementById('price_publish_input');
+        const pricePublishNote = document.getElementById('price-publish-note');
+        const priceRealInput = document.getElementById('price_real');
+
+        // --- 1. LOGIC CHECKBOX & PAX ---
+        
+        // Event listener untuk semua checkbox (Product dan Addon)
+        document.querySelectorAll('.product-checkbox, .addon-checkbox').forEach(checkbox => {
+            const paxInput = checkbox.closest('.flex').querySelector('.pax-input');
+            const initialPaxValue = paxInput.value; 
+
+            // Event saat checkbox berubah
+            checkbox.addEventListener('change', function() {
+                paxInput.disabled = !this.checked;
+                if (this.checked) {
+                    paxInput.value = initialPaxValue; 
+                    paxInput.focus();
                 } else {
-                    paxContainer.appendChild(noAddonSelected);
-                    noAddonSelected.classList.remove('hidden');
+                    paxInput.value = paxInput.min; 
                 }
-                return 0; 
-            }
-
-            // Tambahkan input PAX untuk item yang dipilih
-            selectedOptions.forEach(option => {
-                const itemId = option.value;
-                const itemName = option.text.split(' (Rp')[0];
-                const itemPrice = parseFloat(option.getAttribute('data-price'));
-                // Gunakan nilai yang sudah ada atau default 1
-                const paxValue = currentPaxInputs[itemId] || 1; 
-
-                // Buat elemen input PAX
-                const div = document.createElement('div');
-                div.className = `flex items-center space-x-2 mb-2 ${isProduct ? 'product-pax-input' : 'addon-pax-input'}`;
-                div.setAttribute(`data-${isProduct ? 'product' : 'addon'}-id`, itemId);
-                div.innerHTML = `
-                    <label class="w-3/5 text-sm text-gray-700 truncate" title="${itemName}">${itemName} (Rp${itemPrice.toLocaleString('id-ID')}):</label>
-                    <input type="number" name="${isProduct ? 'product_pax' : 'addon_pax'}[${itemId}]" 
-                        value="${paxValue}" 
-                        min="1" class="w-2/5 px-2 py-1 border border-gray-300 rounded-md text-sm pax-input focus:ring-${isProduct ? 'blue' : 'purple'}-500" required>
-                `;
-                paxContainer.appendChild(div);
-
-                // Hitung subtotal
-                totalRealPrice += itemPrice * parseInt(paxValue);
+                calculatePrices(); 
             });
+        });
+        
+        // Event listener untuk semua input Pax
+        document.querySelectorAll('.pax-input').forEach(paxInput => {
+            paxInput.addEventListener('input', function() {
+                let currentValue = parseInt(this.value);
+                let minValue = parseInt(this.min);
+
+                if (currentValue < minValue) {
+                    this.value = minValue;
+                }
+                
+                calculatePrices(); 
+            });
+        });
+
+        // Event listener untuk Discount Percentage
+        discountPercentageInput.addEventListener('input', calculatePrices);
+        discountPercentageInput.addEventListener('change', calculatePrices);
+
+        // Listener untuk Harga Publish: Jika user mengubahnya manual
+        pricePublishInput.addEventListener('input', function() {
+            // Hitung nilai yang seharusnya (otomatis)
+            const totalRealPrice = parseFloat(priceRealInput.value) || 0;
+            const discountPercentage = parseFloat(discountPercentageInput.value) || 0;
+            const autoCalculatedValue = Math.round(totalRealPrice * (1 - discountPercentage / 100));
             
-            if (isProduct) {
-                noProductSelected.classList.add('hidden');
+            // Bandingkan dengan nilai input user
+            if (parseFloat(this.value) != autoCalculatedValue) {
+                pricePublishNote.innerHTML = 'Anda **memasukkan harga jual secara manual**. Perhitungan diskon otomatis diabaikan.';
+                pricePublishNote.classList.remove('text-gray-500', 'text-indigo-600');
+                pricePublishNote.classList.add('text-red-500');
             } else {
-                noAddonSelected.classList.add('hidden');
+                 calculatePrices(); // Jika dikembalikan ke harga hasil hitungan
             }
-
-            return totalRealPrice;
-        }
-
-        // Fungsi untuk menghitung total harga real
-        function calculateTotalRealPrice() {
-            // Hitung harga real produk
-            const productPrice = Array.from(productPaxContainer.querySelectorAll('.pax-input')).reduce((total, input) => {
-                const itemId = input.name.match(/\[(.*?)\]/)[1];
-                const option = productSelect.querySelector(`option[value="${itemId}"]`);
-                if (option) {
-                    const price = parseFloat(option.getAttribute('data-price'));
-                    const pax = parseInt(input.value) || 0;
-                    return total + (price * pax);
-                }
-                return total;
-            }, 0);
-
-            // Hitung harga real addon
-            const addonPrice = Array.from(addonPaxContainer.querySelectorAll('.pax-input')).reduce((total, input) => {
-                const itemId = input.name.match(/\[(.*?)\]/)[1];
-                const option = addonSelect.querySelector(`option[value="${itemId}"]`);
-                if (option) {
-                    const price = parseFloat(option.getAttribute('data-price'));
-                    const pax = parseInt(input.value) || 0;
-                    return total + (price * pax);
-                }
-                return total;
-            }, 0);
-
-            const total = productPrice + addonPrice;
-
-            // Update field harga real
-            priceRealInput.value = total.toFixed(2); // Simpan dengan 2 desimal
-            priceRealDisplay.value = total.toLocaleString('id-ID', { minimumFractionDigits: 0 }); // Tampilkan dalam format mata uang tanpa desimal
-        }
-
-        // --- Inisialisasi ---
-        // Panggil fungsi untuk mengisi ulang input PAX dan menghitung harga saat load
-        // Ini mengatasi masalah ketika data awal hilang setelah ada perubahan select box
-        // Kita perlu menjalankan ini dua kali: sekali untuk mengisi ulang PAX container berdasarkan data PHP, 
-        // dan sekali lagi setelah event listener ditambahkan.
-
-        // Inisialisasi data PAX berdasarkan data awal dari PHP (sudah ada di HTML)
-        calculateTotalRealPrice(); 
-
-        // Event listener untuk perubahan Products
-        productSelect.addEventListener('change', function() {
-            updatePaxInputsAndPrice(this, productPaxContainer, true);
-            calculateTotalRealPrice();
         });
 
-        // Event listener untuk perubahan Addons
-        addonSelect.addEventListener('change', function() {
-            updatePaxInputsAndPrice(this, addonPaxContainer, false);
-            calculateTotalRealPrice();
-        });
-
-        // Event listener untuk perubahan nilai PAX (menggunakan event delegation)
-        productPaxContainer.addEventListener('change', calculateTotalRealPrice);
-        addonPaxContainer.addEventListener('change', calculateTotalRealPrice);
-        productPaxContainer.addEventListener('input', calculateTotalRealPrice);
-        addonPaxContainer.addEventListener('input', calculateTotalRealPrice);
-
+        // --- 2. INITIAL CALCULATION ---
+        calculatePrices();
     });
 </script>
 @endsection

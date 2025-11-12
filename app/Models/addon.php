@@ -11,95 +11,52 @@ class Addon extends Model
 {
     use HasFactory, SoftDeletes;
 
-    /**
-     * Nama tabel yang terkait dengan model.
-     *
-     * @var string
-     */
     protected $table = 'addons';
 
-    /**
-     * Kunci utama adalah UUID, bukan integer auto-increment.
-     *
-     * @var string
-     */
     protected $keyType = 'string';
 
-    /**
-     * Nonaktifkan auto-incrementing untuk primary key.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * Atribut yang dapat diisi secara massal (mass assignable).
-     * Kolom 'pax' ditambahkan di sini.
-     * @var array<int, string>
-     */
     protected $fillable = [
         'id_vendor',
         'addons',
         'desc',
         'status',
         'price',
-        'pax', // <-- KOLOM BARU DITAMBAHKAN
+        'pax',
         'publish',
-        'image',
+        'images', 
     ];
 
-    /**
-     * Atribut yang harus di-casting.
-     * Kolom 'pax' di-cast sebagai integer.
-     * @var array<string, string>
-     */
     protected $casts = [
         'price' => 'decimal:2',
-        'pax' => 'integer', // <-- KOLOM BARU DITAMBAHKAN
+        'pax' => 'integer',
         'publish' => 'boolean',
         'deleted_at' => 'datetime',
+        'images' => 'array',
     ];
-
-    // --- Booting Model ---
     
-    /**
-     * Metode boot model. Digunakan untuk membuat UUID sebelum model disimpan.
-     */
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($model) {
-            // Pastikan ID diset sebagai UUID jika belum ada
             if (empty($model->{$model->getKeyName()})) {
                 $model->{$model->getKeyName()} = Str::uuid();
             }
         });
     }
 
-    // --- Relasi ---
-
-    /**
-     * Mendapatkan vendor yang memiliki addon ini.
-     * Relasi BelongsTo ke model 'Vendor' dengan foreign key 'id_vendor'.
-     */
     public function vendor(): BelongsTo
     {
-        // Asumsi model untuk tabel 'vendor' adalah 'Vendor'
         return $this->belongsTo(Vendor::class, 'id_vendor');
     }
 
-    /**
-     * Get the reviews for the addon.
-     */
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
 
-    /**
-     * Get the average rating for the addon.
-     */
     public function averageRating()
     {
         return $this->reviews()->avg('rating') ?? 0;

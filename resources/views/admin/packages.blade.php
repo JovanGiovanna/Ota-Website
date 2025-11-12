@@ -44,6 +44,7 @@ Welcome, {{ Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name :
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wider">Name</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wider">Description</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wider">Slug</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-indigo-600 uppercase tracking-wider">Discount</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wider">Price</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-indigo-600 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3 text-right text-xs font-semibold text-indigo-600 uppercase tracking-wider">
@@ -57,6 +58,10 @@ Welcome, {{ Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name :
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $package->name_package ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ Str::limit($package->description ?? 'N/A', 50) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $package->slug ?? 'N/A' }}</td>
+                                {{-- DATA BARU: DISCOUNT PERCENTAGE --}}
+                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold @if(($package->discount_percentage ?? 0) > 0) text-red-600 @else text-gray-500 @endif">
+                                    {{ $package->discount_percentage ?? 0 }}%
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">Rp {{ number_format($package->price_publish ?? 0, 0, ',', '.') }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     {{-- PERBAIKAN LOGIKA STATUS BERDASARKAN is_active (boolean) --}}

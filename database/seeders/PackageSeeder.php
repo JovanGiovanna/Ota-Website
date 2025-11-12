@@ -34,63 +34,66 @@ class PackageSeeder extends Seeder
 
         // --- 2. Fungsi Pembantu untuk Format Data JSON ---
         
-        // Helper untuk membuat struktur item Produk
         $formatProduct = function($product, $pax = 1) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'description' => $product->description,
                 'price' => $product->price,
                 'pax' => $pax,
                 'sub_total' => $product->price * $pax,
             ];
         };
 
-        // Helper untuk membuat struktur item Addon
         $formatAddon = function($addon, $pax = 1) {
             return [
                 'id' => $addon->id,
-                'addons' => $addon->addons,
-                'desc' => $addon->desc,
+                'name' => $addon->addons, 
                 'price' => $addon->price,
                 'pax' => $pax,
                 'sub_total' => $addon->price * $pax,
             ];
         };
+        
+        $defaultImages = []; // Ganti dengan array of strings jika Anda memiliki path gambar dummy: ['path/to/img1.jpg', 'path/to/img2.jpg']
 
         // --- 3. Isi Tabel Packages (Menggunakan JSON Data) ---
 
-        // Paket 1: Comfort Travel Kit Plus (Pillow + Eye Mask)
-        $pax1 = 2; // Contoh: Paket untuk 2 orang
+        // Paket 1: Comfort Travel Kit Plus (Pillow + Eye Mask) - Diskon 0%
+        $pax1 = 2;
+        $discount1 = 0; 
         $productsData1 = [$formatProduct($productPillow, $pax1)];
         $addonsData1 = [$formatAddon($addonEyeMask, $pax1)];
         $priceReal1 = array_sum(array_column($productsData1, 'sub_total')) + 
                       array_sum(array_column($addonsData1, 'sub_total'));
+        $pricePublish1 = round($priceReal1 * (1 - $discount1 / 100)); // Pembulatan
 
         Package::updateOrCreate(
             [
-                'slug' => 'comfort-travel-kit-plus', // Gunakan slug untuk identifikasi unik
+                'slug' => 'comfort-travel-kit-plus',
             ],
             [
                 'name_package' => 'Comfort Travel Kit Plus',
                 'description' => 'Kombinasi bantal dan masker mata untuk perjalanan jarak jauh yang super nyaman.',
-                'price_publish' => $priceReal1,
+                'price_publish' => $pricePublish1, 
                 'price_real' => $priceReal1,
+                'discount_percentage' => $discount1, 
                 'start_publish' => now()->subDay(),
                 'end_publish' => now()->addMonths(6),
                 'is_active' => true,
-                'image' => null,
+                'images' => $defaultImages, 
                 'products_data' => $productsData1,
                 'addons_data' => $addonsData1,
             ]
         );
 
-        // Paket 2: Ultimate Relaxation Bundle (Spa Session + Neck Pillow)
-        $pax2 = 1; // Contoh: Paket untuk 1 orang
+        // Paket 2: Ultimate Relaxation Bundle (Spa Session + Neck Pillow) - Diskon 15%
+        $pax2 = 1;
+        $discount2 = 15; 
         $productsData2 = [$formatProduct($productSpa, $pax2)];
         $addonsData2 = [$formatAddon($addonNeckPillow, $pax2)];
         $priceReal2 = array_sum(array_column($productsData2, 'sub_total')) + 
                       array_sum(array_column($addonsData2, 'sub_total'));
+        $pricePublish2 = round($priceReal2 * (1 - $discount2 / 100)); 
         
         Package::updateOrCreate(
             [
@@ -99,23 +102,26 @@ class PackageSeeder extends Seeder
             [
                 'name_package' => 'Ultimate Relaxation Bundle',
                 'description' => 'Sesi spa mewah ditambah bantal leher untuk pengalaman relaksasi total.',
-                'price_publish' => $priceReal2,
+                'price_publish' => $pricePublish2, 
                 'price_real' => $priceReal2,
+                'discount_percentage' => $discount2, 
                 'start_publish' => now()->subWeek(),
                 'end_publish' => now()->addYear(),
                 'is_active' => true,
-                'image' => null,
+                'images' => $defaultImages, 
                 'products_data' => $productsData2,
                 'addons_data' => $addonsData2,
             ]
         );
         
-        // Paket 3: VIP Commute Experience (Bus Service + Seat Upgrade)
-        $pax3 = 3; // Contoh: Paket untuk 3 orang
+        // Paket 3: VIP Commute Experience (Bus Service + Seat Upgrade) - Diskon 10%
+        $pax3 = 3;
+        $discount3 = 10; 
         $productsData3 = [$formatProduct($productBus, $pax3)];
         $addonsData3 = [$formatAddon($addonSeatUpgrade, $pax3)];
         $priceReal3 = array_sum(array_column($productsData3, 'sub_total')) + 
                       array_sum(array_column($addonsData3, 'sub_total'));
+        $pricePublish3 = round($priceReal3 * (1 - $discount3 / 100));
 
         Package::updateOrCreate(
             [
@@ -124,17 +130,19 @@ class PackageSeeder extends Seeder
             [
                 'name_package' => 'VIP Commute Experience',
                 'description' => 'Layanan bus premium dengan jaminan peningkatan kursi (seat upgrade) untuk kenyamanan maksimal.',
-                'price_publish' => $priceReal3 * 0.9, // Memberi diskon 10%
+                'price_publish' => $pricePublish3, 
                 'price_real' => $priceReal3,
+                'discount_percentage' => $discount3, 
                 'start_publish' => now(),
                 'end_publish' => now()->addMonths(3),
                 'is_active' => true,
-                'image' => null,
+                // MODIFIKASI: Mengganti 'image' menjadi 'images'
+                'images' => $defaultImages, 
                 'products_data' => $productsData3,
                 'addons_data' => $addonsData3,
             ]
         );
         
-        $this->command->info('✅ PackageSeeder berhasil dijalankan menggunakan kolom JSON.');
+        $this->command->info('✅ PackageSeeder berhasil dijalankan menggunakan kolom JSON dan Discount Percentage.');
     }
 }

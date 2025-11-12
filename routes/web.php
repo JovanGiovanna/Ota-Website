@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Notifications\EmailNotification;
+use App\Models\User;
+use App\Models\Booking;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\AddonController;
@@ -43,6 +46,20 @@ Route::post('/login', [AuthController::class, 'loginWeb'])->name('login.web');
 Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [AuthController::class, 'registerWeb'])->name('register.web');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+//notification
+Route::get('/test-user-email', function () {
+    $user = User::first(); 
+    $booking = Booking::first(); 
+
+    if (!$user || !$booking) {
+        return "ERROR: Pastikan ada data User dan Booking di database.";
+    }
+
+    $user->notify(new EmailNotification($booking));
+
+    return "Email konfirmasi booking #{$booking->id} dikirim ke Mailtrap (penerima: {$user->email})!";
+});
 
 // Admin authentication routes
 Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');

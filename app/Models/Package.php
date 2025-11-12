@@ -33,16 +33,17 @@ class Package extends Model
 
     /**
      * Kolom-kolom yang dapat diisi secara massal (mass assignable).
-     * Menghapus id_product, id_addons, dan pax tunggal. Menambahkan kolom JSON.
+     * Menambahkan 'discount_percentage'.
      * @var array<int, string>
      */
     protected $fillable = [
         'name_package',
         'slug',
         'description',
-        'image',
+        'images',
         'price_real',
         'price_publish',
+        'discount_percentage',
         'start_publish',
         'end_publish',
         'is_active',
@@ -52,16 +53,19 @@ class Package extends Model
 
     /**
      * Kolom-kolom yang harus di-cast ke tipe data asli.
+     * Menambahkan 'discount_percentage'.
      * @var array<string, string>
      */
     protected $casts = [
         'price_publish' => 'decimal:2',
         'price_real' => 'decimal:2', 
+        'discount_percentage' => 'integer', 
         'start_publish' => 'datetime',
         'end_publish' => 'datetime',
         'is_active' => 'boolean',
         'products_data' => 'array',
         'addons_data' => 'array',
+        'images' => 'array',
     ];
     
     /**

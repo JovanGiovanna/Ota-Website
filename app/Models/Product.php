@@ -21,7 +21,7 @@ class Product extends Model
      */
     protected $fillable = [
         'name',
-        'image',
+        'images',
         'description',
         'price',
         'id_category',
@@ -40,11 +40,12 @@ class Product extends Model
      */
     protected $casts = [
         'price'        => 'decimal:2',
-        'pax'          => 'integer', // <-- KOLOM BARU DITAMBAHKAN
+        'pax'          => 'integer',
         'max_adults'   => 'integer',
         'max_children' => 'integer',
         'jumlah'       => 'integer',
         'status'       => 'string',
+        'images'       => 'array',
     ];
 
     // --- Relasi ---

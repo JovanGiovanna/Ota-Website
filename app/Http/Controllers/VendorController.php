@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Models\VendorInfo;
 use App\Models\Booking;
+use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\Addon; 
 
@@ -332,13 +333,16 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         return view('vendor.products.create', compact('categories'));
     }
 
-    public function storeProduct(Request $request)
+   public function storeProduct(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // VALIDASI UNTUK MULTIPLE IMAGES
+            'images' => 'nullable|array|max:5', // Maksimal 5 gambar
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk setiap file
+            
             'description' => 'nullable|string',
             'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:1',
@@ -349,15 +353,20 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
 
         $vendor = Auth::guard('vendor')->user();
 
-        $data = $request->all();
+        $data = $request->except('images'); // Ambil semua data kecuali 'images'
         $data['id_vendor'] = $vendor->id;
+        $imagePaths = [];
 
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
-            $data['image'] = $imagePath;
+        // PROSES UPLOAD MULTIPLE IMAGES
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imagePaths[] = $image->store('products', 'public');
+            }
         }
+        
+        $data['images'] = $imagePaths; // Simpan array paths ke kolom 'images'
 
-        \App\Models\Product::create($data);
+        Product::create($data);
 
         return redirect()->route('vendor.products')->with('success', 'Product created successfully');
     }
@@ -365,7 +374,7 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
     public function editProduct($id)
     {
         $vendor = Auth::guard('vendor')->user();
-        $product = \App\Models\Product::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        $product = Product::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
         $categories = \App\Models\Category::all();
 
         return view('vendor.products.edit', compact('product', 'categories'));
@@ -374,13 +383,14 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
     public function updateProduct(Request $request, $id)
     {
         $vendor = Auth::guard('vendor')->user();
-        $product = \App\Models\Product::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        $product = Product::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
 
         $request->validate([
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images' => 'nullable|array|max:5', 
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', 
             'description' => 'nullable|string',
             'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:1',
@@ -389,21 +399,42 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
             'status' => 'nullable|in:available,unavailable,draft',
         ]);
 
-        $data = $request->all();
+        $data = $request->except('images');
+        $imagePaths = $product->images ?? [];
 
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($product->image && \Storage::disk('public')->exists($product->image)) {
-                \Storage::disk('public')->delete($product->image);
+        if ($request->hasFile('images')) {
+            // Hapus gambar lama (Tergantung Kebutuhan: Anda mungkin ingin menghapus semua
+            // gambar lama atau hanya yang diganti/dihapus oleh user di form)
+            
+            // CONTOH: Jika Anda ingin *menambah* gambar baru ke gambar yang sudah ada:
+            foreach ($request->file('images') as $image) {
+                $imagePaths[] = $image->store('products', 'public');
             }
-            $imagePath = $request->file('image')->store('products', 'public');
-            $data['image'] = $imagePath;
+            
+            // CATATAN: Jika Anda ingin gambar baru *menggantikan* gambar lama (seperti single image sebelumnya),
+            // Anda harus menghapus gambar lama dan mereset $imagePaths:
+            
+            /* if (is_array($product->images)) {
+                 foreach ($product->images as $oldImage) {
+                    if (Storage::disk('public')->exists($oldImage)) {
+                        Storage::disk('public')->delete($oldImage);
+                    }
+                 }
+            }
+            $imagePaths = [];
+            foreach ($request->file('images') as $image) {
+                $imagePaths[] = $image->store('products', 'public');
+            }
+            */
         }
+        
+        $data['images'] = $imagePaths; // Simpan array paths (lama + baru)
 
         $product->update($data);
 
         return redirect()->route('vendor.products')->with('success', 'Product updated successfully');
     }
+
 
     public function destroyProduct($id)
     {
@@ -427,53 +458,61 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
     }
 
 public function storeAddon(Request $request)
-    {
-        $request->validate([
-            'addons'    => 'required|string|max:255',
-            'price'     => 'required|numeric|min:0',
-            'desc'      => 'nullable|string|max:500',
-            'status'    => 'sometimes|string|in:available,unavailable,draft',
-            'publish'   => 'sometimes|boolean',
-            'pax'       => 'sometimes|integer|min:1',
-            'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'image_url' => 'nullable|url|max:2048',
-        ]);
+{
+    $request->validate([
+        'addons'    => 'required|string|max:255',
+        'price'     => 'required|numeric|min:0',
+        'desc'      => 'nullable|string|max:500',
+        'status'    => 'sometimes|string|in:available,unavailable,draft',
+        'publish'   => 'sometimes|boolean',
+        'pax'       => 'sometimes|integer|min:1',
+        
+        // Validasi untuk Multiple Images
+        'images'    => 'nullable|array|max:5', 
+        'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    ]);
 
-        $vendor = Auth::guard('vendor')->user();
-        $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
-        $data['id_vendor'] = $vendor->id;
-        $path = null;
+    $vendor = Auth::guard('vendor')->user();
+    
+    // Ambil data non-file/non-image
+    $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
+    $data['id_vendor'] = $vendor->id;
+    
+    $imagePaths = [];
+    $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
 
-        DB::beginTransaction();
-        try {
-            // 1. Upload File (Path RELATIF disave)
-            if ($request->hasFile('image')) {
-                // store() HANYA akan mengembalikan path relatif (e.g., addons/xxx.jpg),
-                // asalkan konfigurasi filesystems.php sudah benar.
-                $path = $request->file('image')->store('addons', 'public'); 
-                $data['image'] = $path;
-            } elseif ($request->filled('image_url')) {
-                // 2. Jika menggunakan URL eksternal
-                $data['image'] = $request->input('image_url');
+    DB::beginTransaction();
+    try {
+        // PROSES UPLOAD FILE MULTIPLE
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('addons', 'public');
+                $uploadedPaths[] = $path; // Simpan path untuk rollback
+                $imagePaths[] = $path;
             }
+        } 
+        
+        // Simpan array path ke kolom 'images'
+        $data['images'] = $imagePaths;
 
-            Addon::create($data);
+        Addon::create($data);
 
-            DB::commit();
+        DB::commit();
 
-            return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
-        } catch (\Exception $e) {
-            DB::rollBack();
+        return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
+    } catch (\Exception $e) {
+        DB::rollBack();
 
-            // 3. Hapus file yang baru ter-upload jika terjadi error
-            if (isset($path) && $path && Storage::disk('public')->exists($path)) {
+        // Hapus SEMUA file yang baru ter-upload jika terjadi error
+        foreach ($uploadedPaths as $path) {
+            if (Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }
-
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat addon: ' . $e->getMessage());
         }
-    }
 
+        return redirect()->back()->withInput()->with('error', 'Gagal membuat addon: ' . $e->getMessage());
+    }
+}
     /**
      * Memperbarui addon tertentu (Web/Blade View).
      */

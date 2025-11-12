@@ -20,8 +20,7 @@ class AddonController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        // 
-        $addons = Addon::with('vendor') // Memuat relasi vendor
+        $addons = Addon::with('vendor') 
             ->paginate($request->get('per_page', 10));
 
         return response()->json([

@@ -101,8 +101,8 @@ class DashboardController extends Controller
     
     public function packagesCreate()
     {
-        $products = Product::all();
-        $addons = Addon::all();
+    $products = Product::paginate(5); 
+    $addons = Addon::paginate(5);
         // Hanya mengirim produk dan addon yang diperlukan
         return view('admin.packages.create', compact('products', 'addons')); 
     }
@@ -110,115 +110,136 @@ class DashboardController extends Controller
     /**
      * Menyimpan paket baru dengan multi-select produk dan addon.
      */
-    public function store(Request $request)
-    {
-        // 1. Validasi Data
-        $validator = Validator::make($request->all(), [
-            'name_package' => 'required|string|max:255',
-            'products' => 'required|array|min:1', // Harus ada minimal 1 produk
-            'products.*' => 'uuid|exists:products,id', // Setiap item harus UUID valid
-            'addons' => 'nullable|array',
-            'addons.*' => 'uuid|exists:addons,id',
-            'product_pax' => 'required|array', // Menerima array PAX untuk produk
-            'addon_pax' => 'nullable|array', // Menerima array PAX untuk addon
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'price_publish' => 'required|numeric|min:0', // Harga yang diinput/override
-            'price_real' => 'required|numeric|min:0', // Harga akumulasi dari JS
-            'start_publish' => 'required|date',
-            'end_publish' => 'nullable|date|after_or_equal:start_publish',
-            'is_active' => 'boolean',
-        ]);
+// ... di dalam class DashboardController
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
-        }
 
-        $data = $validator->validated();
-        $productsIds = $data['products'];
-        $addonsIds = $data['addons'] ?? [];
+
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'name_package' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'images' => 'required|array|min:1|max:10', 
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', 
+        'price_publish_input' => 'nullable|numeric|min:0', 
+        'discount_percentage' => 'required|integer|min:0|max:100', 
         
-        // 2. Format Products dan Addons menjadi JSON
-        // Ambil data produk yang dipilih, beserta harga dan pax-nya
-        $selectedProducts = Product::whereIn('id', $productsIds)
-            ->get()
-            ->map(function ($product) use ($request) {
-                $pax = $request->input("product_pax.{$product->id}") ?? ($product->pax ?? 1);
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'pax' => (int) $pax,
-                    'sub_total' => $product->price * $pax,
-                ];
-            })->toArray();
+        'start_publish' => 'required|date',
+        'end_publish' => 'nullable|date|after_or_equal:start_publish',
+        'is_active' => 'required|boolean',
+
+        'products' => 'required|array|min:1',
+        'products.*' => 'uuid|exists:products,id',
+        'product_pax' => 'required|array',
+        'product_pax.*' => 'required|integer|min:1', 
         
-        // Ambil data addons yang dipilih
-        $selectedAddons = Addon::whereIn('id', $addonsIds)
-            ->get()
-            ->map(function ($addon) use ($request) {
-                $pax = $request->input("addon_pax.{$addon->id}") ?? ($addon->pax ?? 1);
-                return [
-                    'id' => $addon->id,
-                    'name' => $addon->addons,
-                    'price' => $addon->price,
-                    'pax' => (int) $pax,
-                    'sub_total' => $addon->price * $pax,
-                ];
-            })->toArray();
+        'addons' => 'nullable|array',
+        'addons.*' => 'uuid|exists:addons,id',
+        'addon_pax' => 'nullable|array',
+        'addon_pax.*' => 'nullable|integer|min:1',
+    ]);
 
-        // 3. Persiapkan data untuk disimpan
-        $packageData = [
-            'name_package' => $data['name_package'],
-            'description' => $data['description'],
-            'price_publish' => $data['price_publish'],
-            'price_real' => $data['price_real'],
-            'start_publish' => $data['start_publish'],
-            'end_publish' => $data['end_publish'] ?? null,
-            'is_active' => $data['is_active'],
-            // Simpan data Products dan Addons sebagai JSON string
-            'products_data' => json_encode($selectedProducts),
-            'addons_data' => json_encode($selectedAddons),
-        ];
+    if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
 
-        // 4. Tangani Pengunggahan Gambar
-        $uploadedPath = null;
-        if ($request->hasFile('image')) {
-            try {
-                $uploadedPath = $request->file('image')->store('packages', 'public');
-                $packageData['image'] = $uploadedPath;
-            } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'Gagal mengunggah gambar: ' . $e->getMessage())->withInput();
+    $data = $validator->validated();
+    $productsIds = $data['products'];
+    $addonsIds = $data['addons'] ?? []; 
+    $totalRealPrice = 0;
+    
+    $uploadedImagePaths = []; 
+
+    DB::beginTransaction();
+    try {
+        
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('packages', 'public');
+                $uploadedImagePaths[] = $path;
             }
         }
 
-        // 5. Buat Slug
-        $slug = Str::slug($packageData['name_package']);
+        $productsData = [];
+        $selectedProducts = Product::whereIn('id', $productsIds)->get(); 
+        foreach ($selectedProducts as $product) {
+            $pax = $data['product_pax'][$product->id] ?? 1;
+            $subTotal = $product->price * $pax;
+            $totalRealPrice += $subTotal;
+
+            $productsData[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'pax' => (int) $pax,
+                'sub_total' => $subTotal,
+            ];
+        }
+
+        $addonsData = [];
+        $selectedAddons = Addon::whereIn('id', $addonsIds)->get();
+        foreach ($selectedAddons as $addon) {
+            $pax = $data['addon_pax'][$addon->id] ?? 1;
+            $subTotal = $addon->price * $pax;
+            $totalRealPrice += $subTotal;
+
+            $addonsData[] = [
+                'id' => $addon->id,
+                'name' => $addon->addons,
+                'price' => $addon->price,
+                'pax' => (int) $pax,
+                'sub_total' => $subTotal,
+            ];
+        }
+        
+        $discount = $data['discount_percentage'];
+        $pricePublishCalculated = $totalRealPrice * (1 - $discount / 100);
+        
+        $finalPricePublish = $data['price_publish_input'] ?? $pricePublishCalculated;
+
+
+        $slug = Str::slug($data['name_package']);
         $originalSlug = $slug;
         $count = 1;
         while (Package::where('slug', $slug)->exists()) {
             $slug = $originalSlug . '-' . $count++;
         }
-        $packageData['slug'] = $slug;
 
-        try {
-            // 6. Simpan ke Database
-            Package::create($packageData);
-            return redirect()->route('admin.packages')->with('success', 'Paket berhasil ditambahkan!');
-        } catch (\Exception $e) {
-            // Jika penyimpanan gagal, hapus gambar yang sudah terunggah
-            if ($uploadedPath) {
-                Storage::disk('public')->delete($uploadedPath);
-            }
-            return redirect()->back()->with('error', 'Gagal menyimpan paket: ' . $e->getMessage())->withInput();
+        Package::create([
+            'name_package' => $data['name_package'],
+            'slug' => $slug,
+            'description' => $data['description'],
+            'images' => $uploadedImagePaths,             
+            'price_publish' => round($finalPricePublish), 
+            'price_real' => $totalRealPrice, 
+            'discount_percentage' => $discount, 
+            'start_publish' => $data['start_publish'],
+            'end_publish' => $data['end_publish'] ?? null,
+            'is_active' => $data['is_active'],
+            'products_data' => $productsData,
+            'addons_data' => $addonsData,
+        ]);
+
+        DB::commit();
+        return redirect()->route('admin.packages')->with('success', 'Paket berhasil ditambahkan!');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        if (!empty($uploadedImagePaths)) {
+            Storage::disk('public')->delete($uploadedImagePaths);
         }
+        
+        \Log::error('Package store failed: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Gagal menyimpan paket: ' . $e->getMessage())->withInput();
     }
+}
 
     public function packagesUpdate(Package $package)
     {
         // Ambil semua produk dan addon untuk opsi multi-select
-        $products = Product::all();
-        $addons = Addon::all();
+        $products = Product::paginate(5); 
+        $addons = Addon::paginate(5);
 
         // Ensure products_data and addons_data are arrays (handle JSON strings)
         $selectedProductsData = $package->products_data;
@@ -269,115 +290,134 @@ class DashboardController extends Controller
         ));
     }
 
-    public function update(Request $request, Package $package)
-    {
-        // 1. Validasi Data
-        $validator = Validator::make($request->all(), [
-            'name_package' => 'required|string|max:255', 
-            'products' => 'required|array|min:1', 
-            'products.*' => 'uuid|exists:products,id', 
-            'addons' => 'nullable|array',
-            'addons.*' => 'uuid|exists:addons,id',
-            'product_pax' => 'required|array', 
-            'addon_pax' => 'nullable|array', 
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
-            'price_publish' => 'required|numeric|min:0',
-            'price_real' => 'required|numeric|min:0', 
-            'start_publish' => 'required|date',
-            'end_publish' => 'nullable|date|after_or_equal:start_publish',
-            'is_active' => 'boolean',
-        ]);
+   // ... di dalam class DashboardController
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+public function update(Request $request, Package $package)
+{
+    // 1. Validasi Data
+    $validator = Validator::make($request->all(), [
+        'name_package' => 'required|string|max:255', 
+        'description' => 'nullable|string',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
+        
+        // Harga dan Diskon
+        'price_publish_input' => 'nullable|numeric|min:0', // Input harga publish optional/manual
+        'discount_percentage' => 'required|integer|min:0|max:100', // Wajib diisi (0-100)
+        
+        'start_publish' => 'required|date',
+        'end_publish' => 'nullable|date|after_or_equal:start_publish',
+        'is_active' => 'required|boolean', // Diubah dari 'boolean' ke 'required|boolean'
+        
+        // Produk dan PAX
+        'products' => 'required|array|min:1', 
+        'products.*' => 'uuid|exists:products,id', 
+        'product_pax' => 'required|array', 
+        'product_pax.*' => 'required|integer|min:1',
+        
+        // Addon dan PAX
+        'addons' => 'nullable|array',
+        'addons.*' => 'uuid|exists:addons,id',
+        'addon_pax' => 'nullable|array',
+        'addon_pax.*' => 'nullable|integer|min:1',
+    ]);
+
+    if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
+
+    $data = $validator->validated();
+    $productsIds = $data['products'];
+    $addonsIds = $data['addons'] ?? [];
+    $totalRealPrice = 0; 
+    
+    DB::beginTransaction();
+    try {
+        // --- 2. Proses Produk dan Hitung Harga Real ---
+        $productsData = [];
+        $selectedProducts = Product::whereIn('id', $productsIds)->get();
+        foreach ($selectedProducts as $product) {
+            $pax = $data['product_pax'][$product->id] ?? 1;
+            $subTotal = $product->price * $pax;
+            $totalRealPrice += $subTotal;
+
+            $productsData[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'pax' => (int) $pax,
+                'sub_total' => $subTotal,
+            ];
         }
 
-        $data = $validator->validated();
-        $productsIds = $data['products'];
-        $addonsIds = $data['addons'] ?? []; // Default array kosong
-        
-        // 2. Format Products dan Addons (Data PAX)
-        
-        // Ambil data produk yang dipilih, beserta harga dan pax-nya
-        $selectedProducts = Product::whereIn('id', $productsIds)
-            ->get()
-            ->map(function ($product) use ($request) {
-                // Ambil PAX dari input. Default 1 jika tidak ada.
-                $pax = $request->input("product_pax.{$product->id}") ?? 1;
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'pax' => (int) $pax,
-                    'sub_total' => $product->price * $pax,
-                ];
-            })->toArray();
-        
-        // Ambil data addons yang dipilih
-        $selectedAddons = Addon::whereIn('id', $addonsIds)
-            ->get()
-            ->map(function ($addon) use ($request) {
-                // Ambil PAX dari input. Default 1 jika tidak ada.
-                $pax = $request->input("addon_pax.{$addon->id}") ?? 1;
-                return [
-                    'id' => $addon->id,
-                    'name' => $addon->addons,
-                    'price' => $addon->price,
-                    'pax' => (int) $pax,
-                    'sub_total' => $addon->price * $pax,
-                ];
-            })->toArray();
+        // --- 3. Proses Addon dan Tambahkan ke Harga Real ---
+        $addonsData = [];
+        $selectedAddons = Addon::whereIn('id', $addonsIds)->get();
+        foreach ($selectedAddons as $addon) {
+            $pax = $data['addon_pax'][$addon->id] ?? 1;
+            $subTotal = $addon->price * $pax;
+            $totalRealPrice += $subTotal;
 
-        // 3. Persiapkan data untuk update
+            $addonsData[] = [
+                'id' => $addon->id,
+                'name' => $addon->addons,
+                'price' => $addon->price,
+                'pax' => (int) $pax,
+                'sub_total' => $subTotal,
+            ];
+        }
+
+        // --- 4. Hitung Harga Publish Berdasarkan Diskon ---
+        $discount = $data['discount_percentage'];
+        $pricePublishCalculated = $totalRealPrice * (1 - $discount / 100);
+        
+        // Gunakan harga kalkulasi, atau harga manual dari input jika diisi
+        $finalPricePublish = $data['price_publish_input'] ?? $pricePublishCalculated;
+
+        // --- 5. Persiapkan Data Update ---
         $packageData = [
             'name_package' => $data['name_package'],
             'description' => $data['description'],
-            'price_publish' => $data['price_publish'],
-            'price_real' => $data['price_real'],
+            'price_publish' => $finalPricePublish, // Hasil hitungan/input
+            'price_real' => $totalRealPrice,       // Hasil hitungan
+            'discount_percentage' => $discount,     // Dari input
             'start_publish' => $data['start_publish'],
             'end_publish' => $data['end_publish'] ?? null,
             'is_active' => $data['is_active'],
-            
-            // HAPUS json_encode(). Kirim array PHP karena Model Cast akan meng-encode-nya.
-            'products_data' => $selectedProducts,
-            'addons_data' => $selectedAddons,
+            'products_data' => $productsData,
+            'addons_data' => $addonsData,
         ];
-
-        // 4. Tangani Pengunggahan Gambar
+        
+        // --- 6. Tangani Pengunggahan Gambar ---
         if ($request->hasFile('image')) {
-            try {
-                // Hapus gambar lama jika ada
-                if ($package->image) {
-                    Storage::disk('public')->delete($package->image);
-                }
-                // Unggah gambar baru
-                $uploadedPath = $request->file('image')->store('packages', 'public');
-                $packageData['image'] = $uploadedPath;
-            } catch (\Exception $e) {
-                return redirect()->back()->with('error', 'Gagal mengunggah gambar: ' . $e->getMessage())->withInput();
+            // ... (Logika hapus gambar lama dan upload gambar baru seperti kode Anda)
+            if ($package->image) {
+                Storage::disk('public')->delete($package->image);
             }
+            $uploadedPath = $request->file('image')->store('packages', 'public');
+            $packageData['image'] = $uploadedPath;
         }
 
-        // 5. Buat atau perbarui Slug
+        // --- 7. Buat atau Perbarui Slug (Logika sama seperti kode Anda) ---
         $slug = Str::slug($packageData['name_package']);
         $originalSlug = $slug;
         $count = 1;
-        // Cek slug yang sama, KECUALI paket yang sedang diedit
         while (Package::where('slug', $slug)->where('id', '!=', $package->id)->exists()) {
             $slug = $originalSlug . '-' . $count++;
         }
         $packageData['slug'] = $slug;
 
-        try {
-            // 6. Simpan Pembaruan ke Database
-            $package->update($packageData);
+        // --- 8. Simpan Pembaruan ke Database ---
+        $package->update($packageData);
+        DB::commit();
 
-            return redirect()->route('admin.packages')->with('success', 'Paket berhasil diperbarui!');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memperbarui paket: ' . $e->getMessage())->withInput();
-        }
+        return redirect()->route('admin.packages')->with('success', 'Paket berhasil diperbarui!');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Package update failed: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Gagal memperbarui paket: ' . $e->getMessage())->withInput();
     }
+}
+// ...
 
     
     public function analytics()
