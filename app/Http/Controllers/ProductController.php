@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -43,7 +44,8 @@ class ProductController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'id_category' => 'required|exists:categories,id',
@@ -65,13 +67,17 @@ class ProductController extends Controller
         }
 
         $data = $request->all();
+        $imagePaths = [];
 
-        if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $imageName = time() . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('images', $imageName, 'public');
-            $data['image'] = 'storage/images/' . $imageName;
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('images', $imageName, 'public');
+                $imagePaths[] = 'storage/images/' . $imageName;
+            }
         }
+
+        $data['image'] = json_encode($imagePaths);
 
         $product = Product::create($data);
 
@@ -91,6 +97,8 @@ class ProductController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'id_category' => 'required|exists:categories,id',
@@ -107,15 +115,37 @@ class ProductController extends Controller
         }
 
         $data = $request->all();
+        $oldImages = $product->image ? json_decode($product->image, true) : [];
+        $imagePaths = $oldImages ?: [];
 
-        if ($request->hasFile('image')) {
-            if ($product->image && Storage::disk('public')->exists(str_replace('storage/', '', $product->image))) {
-                Storage::disk('public')->delete(str_replace('storage/', '', $product->image));
+        // Handle image removal
+        if ($request->has('remove_images') && is_array($request->remove_images)) {
+            foreach ($request->remove_images as $index) {
+                if (isset($imagePaths[$index])) {
+                    $imageToRemove = $imagePaths[$index];
+                    $path = str_replace('storage/', '', $imageToRemove);
+                    if (Storage::disk('public')->exists($path)) {
+                        Storage::disk('public')->delete($path);
+                    }
+                    unset($imagePaths[$index]);
+                }
             }
-            $file = $request->file('image');
-            $imageName = time() . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('images', $imageName, 'public');
-            $data['image'] = 'storage/images/' . $imageName;
+            // Reindex array
+            $imagePaths = array_values($imagePaths);
+        }
+
+        // Handle new image uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('images', $imageName, 'public');
+                $imagePaths[] = 'storage/images/' . $imageName;
+            }
+        }
+
+        // Update image field only if there are changes
+        if ($request->hasFile('images') || $request->has('remove_images')) {
+            $data['image'] = !empty($imagePaths) ? json_encode($imagePaths) : null;
         } else {
             unset($data['image']);
         }
@@ -136,8 +166,16 @@ class ProductController extends Controller
             return response()->json(['success' => false, 'message' => 'Product not found'], 404);
         }
 
-        if ($product->image && Storage::disk('public')->exists(str_replace('storage/', '', $product->image))) {
-            Storage::disk('public')->delete(str_replace('storage/', '', $product->image));
+        if ($product->image) {
+            $images = json_decode($product->image, true);
+            if (is_array($images)) {
+                foreach ($images as $image) {
+                    $path = str_replace('storage/', '', $image);
+                    if (Storage::disk('public')->exists($path)) {
+                        Storage::disk('public')->delete($path);
+                    }
+                }
+            }
         }
 
         $product->delete();
@@ -150,6 +188,15 @@ class ProductController extends Controller
         if (!$product) {
             abort(404, 'Product not found');
         }
-        return view('user.product_detail', compact('product'));
+
+        $isInWishlist = false;
+        if (Auth::check()) {
+            $isInWishlist = Auth::user()->wishlists()
+                ->where('wishable_type', Product::class)
+                ->where('wishable_id', $id)
+                ->exists();
+        }
+
+        return view('user.product_detail', compact('product', 'isInWishlist'));
     }
 }

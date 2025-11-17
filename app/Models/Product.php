@@ -81,4 +81,12 @@ class Product extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+
+    /**
+     * Get the wishlists for the product.
+     */
+    public function wishlists()
+    {
+        return $this->morphMany(\App\Models\Wishlist::class, 'wishable');
+    }
 }

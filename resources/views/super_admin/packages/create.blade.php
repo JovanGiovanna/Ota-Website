@@ -37,11 +37,14 @@ Add New Package
             </div>
 
             <div>
-                <label for="image" class="block text-sm font-medium text-gray-700">Package Image</label>
-                <input type="file" name="image" id="image" accept="image/*"
-                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('image') border-red-500 @enderror">
-                <p class="mt-1 text-sm text-gray-500">Upload a package image (JPEG, PNG, JPG, GIF, max 2MB)</p>
-                @error('image')
+                <label for="images" class="block text-sm font-medium text-gray-700">Package Images</label>
+                <input type="file" name="images[]" id="images" accept="image/*" multiple
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('images') border-red-500 @enderror">
+                <p class="mt-1 text-sm text-gray-500">Upload multiple package images (JPEG, PNG, JPG, GIF, max 2MB each)</p>
+                @error('images')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                @error('images.*')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>

@@ -17,35 +17,17 @@ Find your perfect packages, products, and add-ons!
         <div class="bg-white rounded-2xl p-6 shadow-xl">
             <form method="GET" action="{{ route('user.search') }}" class="space-y-6">
                 <!-- Basic Search Row -->
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search by City, Package, or Category</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-map-marker-alt text-gray-400"></i>
                             </div>
-                            <input type="text" name="destination" value="{{ request('destination') }}" placeholder="Where are you going?" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <input type="text" name="destination" value="{{ request('destination') }}" placeholder="Search cities, packages, categories..." class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-calendar-alt text-gray-400"></i>
-                            </div>
-                            <input type="date" name="checkin" value="{{ request('checkin') }}" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-calendar-alt text-gray-400"></i>
-                            </div>
-                            <input type="date" name="checkout" value="{{ request('checkout') }}" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    <div class="flex items-end">
+                    <div class="md:col-span-2 flex items-end">
                         <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
                             <i class="fas fa-search mr-2"></i>
                             Search
@@ -143,7 +125,7 @@ Find your perfect packages, products, and add-ons!
 </div>
 
 <!-- Search Results -->
-@if(request()->has('destination') || request()->has('checkin'))
+@if(request()->has('destination'))
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-2">Search Results</h2>
         @if($searchType == 'all' || $searchType == 'packages')
@@ -166,8 +148,29 @@ Find your perfect packages, products, and add-ons!
         @forelse($packages as $package)
             <a href="{{ route('user.package_detail', $package->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div class="relative">
-                    @if($package->image)
-                        <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name_package }}" class="w-full h-32 object-cover">
+                    @php
+                        $validImages = array_filter($package->images ?? [], function($img) {
+                            return is_string($img) && !empty($img);
+                        });
+                    @endphp
+                    @if($validImages && count($validImages) > 0)
+                        <div class="relative h-32 overflow-hidden">
+                            <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover">
+                            @if(count($validImages) > 1)
+                                <div class="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
+                                    <span class="text-white text-xs font-medium">{{ count($validImages) }} photos</span>
+                                </div>
+                                <!-- Image indicators -->
+                                <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                                    @for($i = 0; $i < min(count($validImages), 3); $i++)
+                                        <div class="w-1.5 h-1.5 rounded-full {{ $i === 0 ? 'bg-white' : 'bg-white/50' }}"></div>
+                                    @endfor
+                                    @if(count($validImages) > 3)
+                                        <span class="text-white text-xs ml-1">+</span>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
                     @else
                         <div class="w-full h-32 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
                             <i class="fas fa-box text-white text-2xl"></i>
@@ -212,8 +215,13 @@ Find your perfect packages, products, and add-ons!
         @forelse($products as $product)
             <a href="{{ route('user.product_detail', $product->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div class="relative">
-                    @if($product->image)
-                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-32 object-cover">
+                    @php
+                        $validImages = array_filter($product->images ?? [], function($img) {
+                            return is_string($img) && !empty($img);
+                        });
+                    @endphp
+                    @if($validImages && count($validImages) > 0)
+                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $product->name }}" class="w-full h-32 object-cover">
                     @else
                         <div class="w-full h-32 bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
                             <i class="fas fa-shopping-cart text-white text-2xl"></i>
@@ -258,8 +266,13 @@ Find your perfect packages, products, and add-ons!
         @forelse($addons as $addon)
             <a href="{{ route('user.addon_detail', $addon->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div class="relative">
-                    @if($addon->image)
-                        <img src="{{ asset('storage/' . $addon->image) }}" alt="{{ $addon->addons }}" class="w-full h-32 object-cover">
+                    @php
+                        $validImages = array_filter($addon->images ?? [], function($img) {
+                            return is_string($img) && !empty($img);
+                        });
+                    @endphp
+                    @if($validImages && count($validImages) > 0)
+                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $addon->addons }}" class="w-full h-32 object-cover">
                     @else
                         <div class="w-full h-32 bg-gradient-to-r from-orange-400 to-red-500 flex items-center justify-center">
                             <i class="fas fa-plus-circle text-white text-2xl"></i>

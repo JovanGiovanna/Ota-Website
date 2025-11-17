@@ -39,15 +39,29 @@
             </div>
 
             <div class="mb-4">
-                <label for="image" class="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+                <label for="images" class="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
                 @if($product->image)
-                    <div class="mb-2">
-                        <img src="{{ asset('storage/' . $product->image) }}" alt="Current Image" class="w-32 h-32 object-cover rounded-md">
-                    </div>
+                    @php $currentImages = json_decode($product->image, true); @endphp
+                    @if(is_array($currentImages) && count($currentImages) > 0)
+                        <div class="mb-2 grid grid-cols-3 gap-2">
+                            @foreach($currentImages as $index => $image)
+                                <div class="relative">
+                                    <img src="{{ asset('storage/' . $image) }}" alt="Current Image {{ $index + 1 }}" class="w-32 h-32 object-cover rounded-md border">
+                                    <label class="absolute top-0 right-0 m-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded cursor-pointer">
+                                        <input type="checkbox" name="remove_images[]" value="{{ $index }}" class="hidden"> Remove
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">Check images to remove them.</p>
+                    @endif
                 @endif
-                <input type="file" name="image" id="image" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <p class="text-sm text-gray-500 mt-1">Leave empty to keep current image</p>
-                @error('image')
+                <input type="file" name="images[]" id="images" accept="image/*" multiple class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-sm text-gray-500 mt-1">Select multiple images to add. Leave empty to keep current images.</p>
+                @error('images')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+                @error('images.*')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>

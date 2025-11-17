@@ -58,8 +58,13 @@ Book Your Package with Products and Add-ons!
             </h3>
             <div class="flex items-center space-x-4">
                 <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                    @if($preselectedPackageData->image)
-                        <img src="{{ asset('storage/' . $preselectedPackageData->image) }}" alt="{{ $preselectedPackageData->name_package }}" class="w-16 h-16 rounded-lg object-cover">
+                    @php
+                        $validImages = array_filter($preselectedPackageData->images ?? [], function($img) {
+                            return is_string($img) && !empty($img);
+                        });
+                    @endphp
+                    @if($validImages && count($validImages) > 0)
+                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $preselectedPackageData->name_package }}" class="w-16 h-16 rounded-lg object-cover">
                     @else
                         <i class="fas fa-box text-blue-600 text-2xl"></i>
                     @endif
@@ -182,8 +187,13 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-start space-x-2 mb-2">
                                 <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
-                                    @if($package->image)
-                                        <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name_package }}" class="w-8 h-8 rounded object-cover">
+                                    @php
+                                        $validImages = array_filter($package->images ?? [], function($img) {
+                                            return is_string($img) && !empty($img);
+                                        });
+                                    @endphp
+                                    @if($validImages && count($validImages) > 0)
+                                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-8 h-8 rounded object-cover">
                                     @else
                                         <i class="fas fa-bed text-blue-600 text-sm"></i>
                                     @endif
@@ -234,8 +244,13 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-start space-x-2 mb-2">
                                 <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center flex-shrink-0">
-                                    @if($product->image)
-                                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-8 h-8 rounded object-cover">
+                                    @php
+                                        $validImages = array_filter($product->images ?? [], function($img) {
+                                            return is_string($img) && !empty($img);
+                                        });
+                                    @endphp
+                                    @if($validImages && count($validImages) > 0)
+                                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $product->name }}" class="w-8 h-8 rounded object-cover">
                                     @else
                                         <i class="fas fa-shopping-cart text-green-600 text-sm"></i>
                                     @endif
@@ -290,8 +305,13 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-start space-x-2 mb-2">
                                 <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center flex-shrink-0">
-                                    @if($addon->image)
-                                        <img src="{{ asset('storage/' . $addon->image) }}" alt="{{ $addon->name }}" class="w-8 h-8 rounded object-cover">
+                                    @php
+                                        $validImages = array_filter($addon->images ?? [], function($img) {
+                                            return is_string($img) && !empty($img);
+                                        });
+                                    @endphp
+                                    @if($validImages && count($validImages) > 0)
+                                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $addon->name }}" class="w-8 h-8 rounded object-cover">
                                     @else
                                         <i class="fas fa-plus-circle text-orange-600 text-sm"></i>
                                     @endif

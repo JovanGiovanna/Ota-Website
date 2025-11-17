@@ -6,8 +6,9 @@ use App\Models\Package;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use App\Models\Product; 
+use App\Models\Product;
 use App\Models\Addon;
 
 class PackagesController extends Controller
@@ -78,7 +79,8 @@ class PackagesController extends Controller
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',
             'price_real' => 'nullable|numeric|min:0',
             'start_publish' => 'required|date',
@@ -104,10 +106,15 @@ class PackagesController extends Controller
         unset($data['products'], $data['addons']);
 
         // 3. Tangani Pengunggahan Gambar
-        if ($request->hasFile('image')) {
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
             try {
-                $path = $request->file('image')->store('packages', 'public');
-                $data['image'] = $path;
+                foreach ($request->file('images') as $file) {
+                    $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->storeAs('packages', $imageName, 'public');
+                    $imagePaths[] = 'packages/' . $imageName;
+                }
+                $data['image'] = json_encode($imagePaths);
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', 'Gagal mengunggah gambar: ' . $e->getMessage())->withInput();
             }
@@ -128,8 +135,10 @@ class PackagesController extends Controller
             return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil ditambahkan!');
         } catch (\Exception $e) {
             // Jika penyimpanan gagal, hapus gambar yang sudah terunggah
-            if (isset($data['image'])) {
-                Storage::disk('public')->delete($data['image']);
+            foreach ($imagePaths as $path) {
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
             }
             return redirect()->back()->with('error', 'Gagal menyimpan paket: ' . $e->getMessage())->withInput();
         }
@@ -150,7 +159,8 @@ class PackagesController extends Controller
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'price_publish' => 'required|numeric|min:0',
             'price_real' => 'nullable|numeric|min:0',
             'start_publish' => 'required|date',
@@ -169,7 +179,7 @@ class PackagesController extends Controller
         }
 
         $data = $validator->validated();
-        $oldImage = $package->image;
+        $oldImages = $package->image ? json_decode($package->image, true) : [];
 
         // 2. Prepare JSON data for products and addons
         $data['products_data'] = $data['products'];
@@ -177,23 +187,39 @@ class PackagesController extends Controller
         unset($data['products'], $data['addons']);
 
         // 3. Tangani Pengunggahan/Penggantian Gambar
-        if ($request->hasFile('image')) {
-            try {
-                // Hapus gambar lama jika ada
-                if ($oldImage) {
-                    Storage::disk('public')->delete($oldImage);
+        $imagePaths = $oldImages ?: [];
+
+        // Handle image removal
+        if ($request->has('remove_images') && is_array($request->remove_images)) {
+            foreach ($request->remove_images as $index) {
+                if (isset($imagePaths[$index])) {
+                    $imageToRemove = $imagePaths[$index];
+                    if (Storage::disk('public')->exists($imageToRemove)) {
+                        Storage::disk('public')->delete($imageToRemove);
+                    }
+                    unset($imagePaths[$index]);
                 }
-                // Simpan file baru
-                $path = $request->file('image')->store('packages', 'public');
-                $data['image'] = $path;
+            }
+            // Reindex array
+            $imagePaths = array_values($imagePaths);
+        }
+
+        // Handle new image uploads
+        if ($request->hasFile('images')) {
+            try {
+                foreach ($request->file('images') as $file) {
+                    $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->storeAs('packages', $imageName, 'public');
+                    $imagePaths[] = 'packages/' . $imageName;
+                }
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', 'Gagal mengunggah gambar baru: ' . $e->getMessage())->withInput();
             }
         }
-        // Logika untuk menghapus gambar tanpa mengganti (jika ada input 'clear_image')
-        elseif ($request->input('clear_image') && $oldImage) {
-            Storage::disk('public')->delete($oldImage);
-            $data['image'] = null;
+
+        // Update image field only if there are changes
+        if ($request->hasFile('images') || $request->has('remove_images')) {
+            $data['image'] = !empty($imagePaths) ? json_encode($imagePaths) : null;
         }
 
         // 4. Perbarui Slug jika nama paket berubah
@@ -213,8 +239,10 @@ class PackagesController extends Controller
             return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil diperbarui!');
         } catch (\Exception $e) {
             // Logika fallback: jika update DB gagal, hapus gambar baru yang mungkin terunggah
-            if (isset($data['image']) && $data['image'] !== $oldImage) {
-                Storage::disk('public')->delete($data['image']);
+            foreach ($imagePaths as $path) {
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
             }
             return redirect()->back()->with('error', 'Gagal memperbarui paket: ' . $e->getMessage())->withInput();
         }
@@ -233,7 +261,14 @@ class PackagesController extends Controller
         try {
             // Hapus file gambar terkait sebelum menghapus record dari database
             if ($package->image) {
-                Storage::disk('public')->delete($package->image);
+                $images = json_decode($package->image, true);
+                if (is_array($images)) {
+                    foreach ($images as $image) {
+                        if (Storage::disk('public')->exists($image)) {
+                            Storage::disk('public')->delete($image);
+                        }
+                    }
+                }
             }
 
             $package->delete();
@@ -253,6 +288,14 @@ class PackagesController extends Controller
     {
         $package->load(['vendorInfo', 'reviews.user']);
 
-        return view('user.package_detail', compact('package'));
+        $isInWishlist = false;
+        if (Auth::check()) {
+            $isInWishlist = Auth::user()->wishlists()
+                ->where('wishable_type', Package::class)
+                ->where('wishable_id', $package->id)
+                ->exists();
+        }
+
+        return view('user.package_detail', compact('package', 'isInWishlist'));
     }
 }

@@ -115,4 +115,12 @@ class Package extends Model
     {
         return $this->reviews()->avg('rating') ?? 0;
     }
+
+    /**
+     * Get the wishlists for the package.
+     */
+    public function wishlists()
+    {
+        return $this->morphMany(\App\Models\Wishlist::class, 'wishable');
+    }
 }

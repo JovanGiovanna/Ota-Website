@@ -11,10 +11,49 @@ Package Details
 <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-800 rounded-2xl p-8 mb-8 text-white shadow-2xl">
     <div class="max-w-6xl mx-auto">
         <div class="flex flex-col lg:flex-row items-start gap-8">
-            <!-- Package Image -->
+            <!-- Package Image Carousel -->
             <div class="lg:w-1/2">
-                @if($package->image)
-                    <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name_package }}" class="w-full h-96 object-cover rounded-2xl shadow-2xl">
+                @php
+                    $validImages = array_filter($package->images ?? [], function($img) {
+                        return is_string($img) && !empty($img);
+                    });
+                @endphp
+                @if($validImages && count($validImages) > 0)
+                    <div class="relative w-full h-96 rounded-2xl overflow-hidden shadow-2xl cursor-pointer" onclick="openGallery('package', 0)">
+                        <!-- Main Image Container -->
+                        <div id="package-carousel" class="relative w-full h-full">
+                            @foreach($validImages as $index => $image)
+                                <div class="carousel-slide absolute inset-0 transition-opacity duration-500 {{ $index === 0 ? 'opacity-100' : 'opacity-0' }}">
+                                    <img src="{{ asset('storage/' . $image) }}" alt="{{ $package->name_package }} - Image {{ $index + 1 }}" class="w-full h-full object-cover">
+                                </div>
+                            @endforeach
+                        </div>
+                        <!-- Gallery Icon Overlay -->
+                        <div class="absolute inset-0 bg-black/20 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <div class="bg-white/90 backdrop-blur-sm rounded-full p-4">
+                                <i class="fas fa-images text-gray-800 text-2xl"></i>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        @if(count($validImages) > 1)
+                            <button id="package-prev" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition-all duration-200">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button id="package-next" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full shadow-lg transition-all duration-200">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        @endif
+
+                        <!-- Image Indicators -->
+                        @if(count($validImages) > 1)
+                            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                                @foreach($validImages as $index => $image)
+                                    <button class="package-indicator w-3 h-3 rounded-full transition-all duration-200 {{ $index === 0 ? 'bg-white' : 'bg-white/50' }}" data-slide="{{ $index }}"></button>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 @else
                     <div class="w-full h-96 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-2xl">
                         <i class="fas fa-box text-white text-6xl"></i>
@@ -62,9 +101,9 @@ Package Details
                             Book Now
                         </a>
                     @endif
-                    <button class="flex-1 bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/30 transition-all duration-200 border border-white/30">
-                        <i class="fas fa-heart mr-2"></i>
-                        Save to Wishlist
+                    <button id="wishlist-btn" class="flex-1 bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/30 transition-all duration-200 border border-white/30" onclick="toggleWishlist('package', '{{ $package->id }}')">
+                        <i class="far fa-heart mr-2" id="wishlist-icon"></i>
+                        <span id="wishlist-text">Save to Wishlist</span>
                     </button>
                 </div>
             </div>
@@ -324,32 +363,337 @@ Package Details
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get all star rating containers
-        const starRatingContainers = document.querySelectorAll('.star-rating');
-
-        starRatingContainers.forEach(container => {
-            const stars = container.querySelectorAll('.star');
-            const radioButtons = container.querySelectorAll('input[type="radio"]');
-
-            function updateStars(rating) {
-                stars.forEach((star, index) => {
-                    if (index < rating) {
-                        star.classList.remove('text-gray-300');
-                        star.classList.add('text-yellow-400');
-                    } else {
-                        star.classList.remove('text-yellow-400');
-                        star.classList.add('text-gray-300');
-                    }
-                });
-            }
-
-            // Initialize with the checked radio button
-            const checkedRadio = container.querySelector('input[type="radio"]:checked');
-            if (checkedRadio) {
-                updateStars(parseInt(checkedRadio.value));
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize package carousel
+    @php
+        $validImages = array_filter($package->images ?? [], function($img) {
+            return is_string($img) && !empty($img);
         });
+    @endphp
+    @if($validImages && count($validImages) > 1)
+    initializeCarousel('package');
+    @endif
+
+    // Initialize wishlist button state
+    @if(Auth::check())
+        @if($isInWishlist)
+            document.getElementById('wishlist-icon').classList.remove('far');
+            document.getElementById('wishlist-icon').classList.add('fas');
+            document.getElementById('wishlist-text').textContent = 'Saved to Wishlist';
+        @else
+            document.getElementById('wishlist-icon').classList.remove('fas');
+            document.getElementById('wishlist-icon').classList.add('far');
+            document.getElementById('wishlist-text').textContent = 'Save to Wishlist';
+        @endif
+    @else
+        document.getElementById('wishlist-icon').classList.remove('fas');
+        document.getElementById('wishlist-icon').classList.add('far');
+        document.getElementById('wishlist-text').textContent = 'Save to Wishlist';
+    @endif
+
+    // Get all star rating containers
+    const starRatingContainers = document.querySelectorAll('.star-rating');
+
+    starRatingContainers.forEach(container => {
+        const stars = container.querySelectorAll('.star');
+        const radioButtons = container.querySelectorAll('input[type="radio"]');
+
+        function updateStars(rating) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-yellow-400');
+                } else {
+                    star.classList.remove('text-yellow-400');
+                    star.classList.add('text-gray-300');
+                }
+            });
+        }
+
+        // Initialize with the checked radio button
+        const checkedRadio = container.querySelector('input[type="radio"]:checked');
+        if (checkedRadio) {
+            updateStars(parseInt(checkedRadio.value));
+        }
     });
+});
+
+function toggleWishlist(type, id) {
+    @if(!Auth::check())
+        // Redirect to login if not authenticated
+        window.location.href = '{{ route("login") }}';
+        return;
+    @endif
+
+    fetch('{{ url("/wishlist/toggle") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            type: type,
+            id: id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const icon = document.getElementById('wishlist-icon');
+            const text = document.getElementById('wishlist-text');
+
+            if (data.action === 'added') {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                text.textContent = 'Saved to Wishlist';
+                // Show success message
+                showMessage('Added to wishlist!', 'success');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                text.textContent = 'Save to Wishlist';
+                // Show success message
+                showMessage('Removed from wishlist!', 'success');
+            }
+        } else {
+            showMessage(data.message || 'An error occurred', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('An error occurred', 'error');
+    });
+}
+
+function showMessage(message, type) {
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.className = `fixed top-4 right-4 px-6 py-3 rounded-lg font-semibold z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    messageEl.textContent = message;
+
+    // Add to page
+    document.body.appendChild(messageEl);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        messageEl.remove();
+    }, 3000);
+}
+
+function initializeCarousel(type) {
+    const carousel = document.getElementById(`${type}-carousel`);
+    const slides = carousel.querySelectorAll('.carousel-slide');
+    const prevBtn = document.getElementById(`${type}-prev`);
+    const nextBtn = document.getElementById(`${type}-next`);
+    const indicators = document.querySelectorAll(`.${type}-indicator`);
+
+    let currentSlide = 0;
+    const totalSlides = slides.length;
+
+    function showSlide(index) {
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('opacity-100', i === index);
+            slide.classList.toggle('opacity-0', i !== index);
+        });
+
+        indicators.forEach((indicator, i) => {
+            indicator.classList.toggle('bg-white', i === index);
+            indicator.classList.toggle('bg-white/50', i !== index);
+        });
+
+        currentSlide = index;
+    }
+
+    function nextSlide() {
+        const nextIndex = (currentSlide + 1) % totalSlides;
+        showSlide(nextIndex);
+    }
+
+    function prevSlide() {
+        const prevIndex = (currentSlide - 1 + totalSlides) % totalSlides;
+        showSlide(prevIndex);
+    }
+
+    // Event listeners
+    if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+    if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', () => showSlide(index));
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+            prevSlide();
+        } else if (e.key === 'ArrowRight') {
+            nextSlide();
+        }
+    });
+
+    // Touch/swipe support
+    let startX = 0;
+    let endX = 0;
+
+    carousel.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+    });
+
+    carousel.addEventListener('touchend', (e) => {
+        endX = e.changedTouches[0].clientX;
+        const diffX = startX - endX;
+
+        if (Math.abs(diffX) > 50) { // Minimum swipe distance
+            if (diffX > 0) {
+                nextSlide(); // Swipe left
+            } else {
+                prevSlide(); // Swipe right
+            }
+        }
+    });
+
+    // Auto-play (optional, commented out)
+    // setInterval(nextSlide, 5000);
+}
+
+// Gallery Popup Functions
+function openGallery(type, startIndex = 0) {
+    @php
+        $validImages = array_filter($package->images ?? [], function($img) {
+            return is_string($img) && !empty($img);
+        });
+    @endphp
+    @if($validImages && count($validImages) > 0)
+    const images = @json($validImages);
+    window.galleryImages = images; // Store globally for other functions
+    const galleryModal = createGalleryModal(images, startIndex, '{{ $package->name_package }}');
+    document.body.appendChild(galleryModal);
+    document.body.style.overflow = 'hidden';
+    @endif
+}
+
+function createGalleryModal(images, startIndex, title) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4';
+    modal.innerHTML = `
+        <div class="relative max-w-5xl max-h-full w-full">
+            <!-- Close Button -->
+            <button onclick="closeGallery()" class="absolute top-4 right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+
+            <!-- Main Image -->
+            <div class="relative bg-black rounded-lg overflow-hidden">
+                <img id="gallery-main-image" src="${images[startIndex]}" alt="${title}" class="w-full h-auto max-h-[80vh] object-contain">
+            </div>
+
+            <!-- Navigation Buttons -->
+            <button id="gallery-prev" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all">
+                <i class="fas fa-chevron-left text-xl"></i>
+            </button>
+            <button id="gallery-next" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-70 transition-all">
+                <i class="fas fa-chevron-right text-xl"></i>
+            </button>
+
+            <!-- Thumbnails -->
+            <div class="mt-4 flex justify-center space-x-2 overflow-x-auto max-w-full">
+                ${images.map((image, index) => `
+                    <button onclick="showGalleryImage(${index})" class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${index === startIndex ? 'border-white' : 'border-gray-600'} hover:border-gray-400 transition-all">
+                        <img src="${image}" alt="Thumbnail ${index + 1}" class="w-full h-full object-cover">
+                    </button>
+                `).join('')}
+            </div>
+
+            <!-- Image Counter -->
+            <div class="text-center mt-2 text-white">
+                <span id="gallery-counter">${startIndex + 1} / ${images.length}</span>
+            </div>
+        </div>
+    `;
+
+    // Add event listeners
+    let currentIndex = startIndex;
+
+    const mainImage = modal.querySelector('#gallery-main-image');
+    const prevBtn = modal.querySelector('#gallery-prev');
+    const nextBtn = modal.querySelector('#gallery-next');
+    const counter = modal.querySelector('#gallery-counter');
+
+    function updateImage(index) {
+        mainImage.src = images[index];
+        currentIndex = index;
+        counter.textContent = `${index + 1} / ${images.length}`;
+
+        // Update thumbnail borders
+        const thumbnails = modal.querySelectorAll('.flex-shrink-0');
+        thumbnails.forEach((thumb, i) => {
+            thumb.classList.toggle('border-white', i === index);
+            thumb.classList.toggle('border-gray-600', i !== index);
+        });
+    }
+
+    function showPrev() {
+        const newIndex = currentIndex > 0 ? currentIndex - 1 : images.length - 1;
+        updateImage(newIndex);
+    }
+
+    function showNext() {
+        const newIndex = currentIndex < images.length - 1 ? currentIndex + 1 : 0;
+        updateImage(newIndex);
+    }
+
+    prevBtn.addEventListener('click', showPrev);
+    nextBtn.addEventListener('click', showNext);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function galleryKeyHandler(e) {
+        if (e.key === 'ArrowLeft') showPrev();
+        if (e.key === 'ArrowRight') showNext();
+        if (e.key === 'Escape') closeGallery();
+
+        // Store reference for cleanup
+        modal._keyHandler = galleryKeyHandler;
+    });
+
+    // Click outside to close
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeGallery();
+    });
+
+    return modal;
+}
+
+function showGalleryImage(index) {
+    const modal = document.querySelector('.fixed.inset-0.bg-black');
+    if (modal) {
+        const images = window.galleryImages;
+        const mainImage = modal.querySelector('#gallery-main-image');
+        const counter = modal.querySelector('#gallery-counter');
+
+        mainImage.src = images[index];
+        counter.textContent = `${index + 1} / ${images.length}`;
+
+        // Update thumbnail borders
+        const thumbnails = modal.querySelectorAll('.flex-shrink-0');
+        thumbnails.forEach((thumb, i) => {
+            thumb.classList.toggle('border-white', i === index);
+            thumb.classList.toggle('border-gray-600', i !== index);
+        });
+    }
+}
+
+function closeGallery() {
+    const modal = document.querySelector('.fixed.inset-0.bg-black');
+    if (modal) {
+        // Remove keyboard event listener
+        if (modal._keyHandler) {
+            document.removeEventListener('keydown', modal._keyHandler);
+        }
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
 </script>
 @endsection

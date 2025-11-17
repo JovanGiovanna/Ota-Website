@@ -1,8 +1,9 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'User Dashboard')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -38,6 +39,9 @@
                     </a>
                     <a href="{{ route('user.history') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.history') ? 'bg-blue-50 text-blue-600' : '' }}">
                         <i class="fas fa-history mr-2"></i>History
+                    </a>
+                    <a href="{{ route('user.wishlist') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.wishlist') ? 'bg-blue-50 text-blue-600' : '' }}">
+                        <i class="fas fa-heart mr-2"></i>Wishlist
                     </a>
                 </div>
 
@@ -102,5 +106,51 @@
     </main>
 
     @stack('scripts')
+    <script>
+        function initializeCarousel(type) {
+            const carousel = document.getElementById(`${type}-carousel`);
+            const prevBtn = document.getElementById(`${type}-prev`);
+            const nextBtn = document.getElementById(`${type}-next`);
+            const indicators = document.querySelectorAll(`.${type}-indicator`);
+            const slides = carousel.querySelectorAll('.carousel-slide');
+
+            let currentSlide = 0;
+            const totalSlides = slides.length;
+
+            function updateCarousel() {
+                slides.forEach((slide, index) => {
+                    slide.style.opacity = index === currentSlide ? '1' : '0';
+                });
+                indicators.forEach((indicator, index) => {
+                    indicator.style.backgroundColor = index === currentSlide ? 'white' : 'rgba(255, 255, 255, 0.5)';
+                });
+            }
+
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % totalSlides;
+                updateCarousel();
+            }
+
+            function prevSlide() {
+                currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+                updateCarousel();
+            }
+
+            function goToSlide(slideIndex) {
+                currentSlide = slideIndex;
+                updateCarousel();
+            }
+
+            // Event listeners
+            if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+            if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+            indicators.forEach((indicator, index) => {
+                indicator.addEventListener('click', () => goToSlide(index));
+            });
+
+            // Auto-play (optional)
+            setInterval(nextSlide, 5000);
+        }
+    </script>
 </body>
 </html>

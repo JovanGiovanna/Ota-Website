@@ -74,8 +74,8 @@
                                 <div class="border border-gray-200 rounded-lg p-4">
                                     <div class="flex items-start space-x-4">
                                         <div class="w-20 h-20 flex-shrink-0">
-                                            @if($package->image)
-                                                <img src="{{ asset('storage/' . $package->image) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover rounded-lg">
+                                            @if($package->images && count($package->images) > 0)
+                                                <img src="{{ asset('storage/' . $package->images[0]) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover rounded-lg">
                                             @else
                                                 <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
                                                     <i class="fas fa-box text-gray-400 text-2xl"></i>

@@ -93,4 +93,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Review::class);
     }
+
+    /**
+     * Get the wishlist items for the user.
+     */
+    public function wishlists()
+    {
+        return $this->hasMany(\App\Models\Wishlist::class);
+    }
 }

@@ -25,6 +25,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -295,6 +296,13 @@ Route::middleware(['super_admin_access'])->group(function () {
     Route::post('/reviews/{bookingId}', [ReviewController::class, 'store'])->name('reviews.store');
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Wishlist routes
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('user.wishlist');
+    Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
+    Route::post('/wishlist/remove', [WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/wishlist/clear-all', [WishlistController::class, 'clearAll'])->name('wishlist.clear_all');
 });
 
 Route::middleware(['super_admin_access:vendor'])->group(function () {

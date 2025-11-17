@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Exception;
 
 class AddonController extends Controller
@@ -45,7 +46,8 @@ class AddonController extends Controller
         'price' => 'required|numeric|min:0',
         'publish' => 'sometimes|boolean',
         'pax' => 'sometimes|integer|min:1',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        'images' => 'nullable|array',
+        'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
     ]);
 
     if ($validator->fails()) {
@@ -53,13 +55,19 @@ class AddonController extends Controller
     }
 
     $data = $request->only(['id_vendor','addons','desc','status','price','publish','pax']);
+    $imagePaths = [];
 
     DB::beginTransaction();
     try {
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('addons', 'public'); // -> "addons/xxx.jpg"
-            $data['image'] = $path;
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('addons', $imageName, 'public');
+                $imagePaths[] = 'addons/' . $imageName;
+            }
         }
+
+        $data['image'] = json_encode($imagePaths);
 
         $addon = Addon::create($data);
 
@@ -71,8 +79,10 @@ class AddonController extends Controller
     } catch (\Exception $e) {
         DB::rollBack();
 
-        if (isset($path) && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        foreach ($imagePaths as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
         }
 
         return response()->json(['message' => 'Gagal menyimpan Addon','error' => $e->getMessage()], 500);
@@ -94,7 +104,9 @@ class AddonController extends Controller
             'status' => 'sometimes|string|in:available,unavailable,draft',
             'price' => 'sometimes|numeric|min:0',
             'publish' => 'sometimes|boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'pax' => 'sometimes|integer|min:1',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -103,18 +115,37 @@ class AddonController extends Controller
 
         DB::beginTransaction();
         try {
-            $data = $request->only(['id_vendor', 'addons', 'desc', 'status', 'price', 'publish']);
+            $data = $request->only(['id_vendor', 'addons', 'desc', 'status', 'price', 'publish', 'pax']);
+            $oldImages = $addon->image ? json_decode($addon->image, true) : [];
+            $imagePaths = $oldImages ?: [];
 
-            // Jika meng-upload gambar baru, simpan dan hapus gambar lama
-            if ($request->hasFile('image')) {
-                $newPath = $request->file('image')->store('addons', 'public');
-
-                // hapus file lama bila ada
-                if ($addon->image && Storage::disk('public')->exists($addon->image)) {
-                    Storage::disk('public')->delete($addon->image);
+            // Handle image removal
+            if ($request->has('remove_images') && is_array($request->remove_images)) {
+                foreach ($request->remove_images as $index) {
+                    if (isset($imagePaths[$index])) {
+                        $imageToRemove = $imagePaths[$index];
+                        if (Storage::disk('public')->exists($imageToRemove)) {
+                            Storage::disk('public')->delete($imageToRemove);
+                        }
+                        unset($imagePaths[$index]);
+                    }
                 }
+                // Reindex array
+                $imagePaths = array_values($imagePaths);
+            }
 
-                $data['image'] = $newPath;
+            // Handle new image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->storeAs('addons', $imageName, 'public');
+                    $imagePaths[] = 'addons/' . $imageName;
+                }
+            }
+
+            // Update image field only if there are changes
+            if ($request->hasFile('images') || $request->has('remove_images')) {
+                $data['image'] = !empty($imagePaths) ? json_encode($imagePaths) : null;
             }
 
             $addon->update($data);
@@ -130,8 +161,10 @@ class AddonController extends Controller
             DB::rollBack();
 
             // jika file baru telah dibuat namun update gagal, hapus file baru
-            if (isset($newPath) && Storage::disk('public')->exists($newPath)) {
-                Storage::disk('public')->delete($newPath);
+            foreach ($imagePaths as $path) {
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
             }
 
             return response()->json([
@@ -177,8 +210,19 @@ class AddonController extends Controller
         }
 
         try {
+            // Delete associated images
+            if ($addon->image) {
+                $images = json_decode($addon->image, true);
+                if (is_array($images)) {
+                    foreach ($images as $image) {
+                        if (Storage::disk('public')->exists($image)) {
+                            Storage::disk('public')->delete($image);
+                        }
+                    }
+                }
+            }
+
             $addon->delete(); // Soft delete
-            //
             return response()->json(['message' => 'Addon berhasil dihapus (soft deleted)']);
         } catch (Exception $e) {
             return response()->json([
@@ -194,6 +238,15 @@ class AddonController extends Controller
         if (!$addon) {
             abort(404, 'Addon not found');
         }
-        return view('user.addon_detail', compact('addon'));
+
+        $isInWishlist = false;
+        if (Auth::check()) {
+            $isInWishlist = Auth::user()->wishlists()
+                ->where('wishable_type', Addon::class)
+                ->where('wishable_id', $id)
+                ->exists();
+        }
+
+        return view('user.addon_detail', compact('addon', 'isInWishlist'));
     }
 }
