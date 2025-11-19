@@ -73,7 +73,7 @@ class ProductController extends Controller
             foreach ($request->file('images') as $file) {
                 $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $file->storeAs('images', $imageName, 'public');
-                $imagePaths[] = 'storage/images/' . $imageName;
+                $imagePaths[] = 'images/' . $imageName;
             }
         }
 
@@ -139,7 +139,7 @@ class ProductController extends Controller
             foreach ($request->file('images') as $file) {
                 $imageName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $file->storeAs('images', $imageName, 'public');
-                $imagePaths[] = 'storage/images/' . $imageName;
+                $imagePaths[] = 'images/' . $imageName;
             }
         }
 

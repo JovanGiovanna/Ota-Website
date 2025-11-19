@@ -14,7 +14,7 @@ Package Details
             <!-- Package Image Carousel -->
             <div class="lg:w-1/2">
                 @php
-                    $validImages = array_filter($package->images ?? [], function($img) {
+                    $validImages = array_filter((array) ($package->images ?? []), function($img) {
                         return is_string($img) && !empty($img);
                     });
                 @endphp
@@ -151,15 +151,20 @@ Package Details
                     <span class="text-sm font-medium text-gray-500">Publish End</span>
                     <p class="text-gray-800">{{ $package->end_publish ? $package->end_publish->format('d M Y H:i') : 'N/A' }}</p>
                 </div>
-                @if($package->products_data)
+                @if($package->products_data && count($package->products_data) > 0)
                 <div class="md:col-span-2">
                     <span class="text-sm font-medium text-gray-500">Products Included</span>
                     <div class="mt-2 space-y-2">
                         @foreach($package->products_data as $product)
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center space-x-3">
-                                    @if(isset($product['image']) && $product['image'])
-                                        <img src="{{ asset('storage/' . $product['image']) }}" alt="{{ $product['name'] ?? 'Product' }}" class="w-10 h-10 object-cover rounded-lg">
+                                    @php
+                                        $validImages = array_filter((array) ($product['images'] ?? []), function($img) {
+                                            return is_string($img) && !empty($img);
+                                        });
+                                    @endphp
+                                    @if($validImages && count($validImages) > 0)
+                                        <img src="{{ asset('storage/' . $validImages[0]) }}" alt="{{ $product['name'] ?? 'Product' }}" class="w-10 h-10 object-cover rounded-lg">
                                     @else
                                         <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
                                             <i class="fas fa-box text-gray-500 text-sm"></i>
@@ -167,27 +172,32 @@ Package Details
                                     @endif
                                     <div>
                                         <p class="font-medium text-gray-800">{{ $product['name'] ?? 'Unnamed Product' }}</p>
-                                        <p class="text-sm text-gray-500">{{ isset($product['description']) && $product['description'] ? Str::limit($product['description'], 50) : 'No description' }}</p>
+                                        <p class="text-sm text-gray-500">{{ isset($product['description']) && $product['description'] ? Str::limit($product['description'], 100) : 'No description' }}</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
                                     <p class="font-semibold text-gray-800">Rp {{ number_format($product['price'] ?? 0, 0, ',', '.') }}</p>
-                                    <p class="text-sm text-gray-500">{{ $product['quantity'] ?? 1 }} unit{{ ($product['quantity'] ?? 1) > 1 ? 's' : '' }}</p>
+                                    <p class="text-sm text-gray-500">{{ $product['pax'] ?? 1 }} pax</p>
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 </div>
                 @endif
-                @if($package->addons_data)
+                @if($package->addons_data && count($package->addons_data) > 0)
                 <div class="md:col-span-2">
-                    <span class="text-sm font-medium text-gray-500">Addons Included</span>
+                    <span class="text-sm font-medium text-gray-500">Add-ons Included</span>
                     <div class="mt-2 space-y-2">
                         @foreach($package->addons_data as $addon)
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center space-x-3">
-                                    @if(isset($addon['image']) && $addon['image'])
-                                        <img src="{{ asset('storage/' . $addon['image']) }}" alt="{{ $addon['addons'] ?? 'Addon' }}" class="w-10 h-10 object-cover rounded-lg">
+                                    @php
+                                        $validImages = array_filter((array) ($addon['images'] ?? []), function($img) {
+                                            return is_string($img) && !empty($img);
+                                        });
+                                    @endphp
+                                    @if($validImages && count($validImages) > 0)
+                                        <img src="{{ asset('storage/' . $validImages[0]) }}" alt="{{ $addon['addons'] ?? 'Addon' }}" class="w-10 h-10 object-cover rounded-lg">
                                     @else
                                         <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
                                             <i class="fas fa-plus-circle text-gray-500 text-sm"></i>
@@ -200,7 +210,7 @@ Package Details
                                 </div>
                                 <div class="text-right">
                                     <p class="font-semibold text-gray-800">Rp {{ number_format($addon['price'] ?? 0, 0, ',', '.') }}</p>
-                                    <p class="text-sm text-gray-500">{{ $addon['quantity'] ?? 1 }} unit{{ ($addon['quantity'] ?? 1) > 1 ? 's' : '' }}</p>
+                                    <p class="text-sm text-gray-500">{{ $addon['pax'] ?? 1 }} pax</p>
                                 </div>
                             </div>
                         @endforeach
@@ -366,7 +376,7 @@ Package Details
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize package carousel
     @php
-        $validImages = array_filter($package->images ?? [], function($img) {
+        $validImages = array_filter((array) ($package->images ?? []), function($img) {
             return is_string($img) && !empty($img);
         });
     @endphp
@@ -561,12 +571,15 @@ function initializeCarousel(type) {
 // Gallery Popup Functions
 function openGallery(type, startIndex = 0) {
     @php
-        $validImages = array_filter($package->images ?? [], function($img) {
+        $validImages = array_filter((array) ($package->images ?? []), function($img) {
             return is_string($img) && !empty($img);
         });
+        $imageUrls = array_map(function($img) {
+            return '/storage/' . $img;
+        }, $validImages);
     @endphp
     @if($validImages && count($validImages) > 0)
-    const images = @json($validImages);
+    const images = @json($imageUrls);
     window.galleryImages = images; // Store globally for other functions
     const galleryModal = createGalleryModal(images, startIndex, '{{ $package->name_package }}');
     document.body.appendChild(galleryModal);

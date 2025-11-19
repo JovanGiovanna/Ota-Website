@@ -177,7 +177,8 @@ Route::middleware(['super_admin_access:admin']) ->prefix('admin')
     Route::post('/packages/store', [DashboardController::class, 'store'])->name('packages.store');
     Route::get('/packages/create', [DashboardController::class, 'packagesCreate'])->name('packages.create');
     Route::get('/packages/{package}/edit', [DashboardController::class, 'packagesUpdate'])->name('packages.edit'); // Edit Form
-    Route::put('/packages/{package}', [DashboardController::class, 'update'])->name('packages.update'); // Update Data    // Admin analytics routes
+    Route::put('/packages/{package}', [DashboardController::class, 'update'])->name('packages.update'); // Update Data
+    Route::delete('/packages/{package}', [DashboardController::class, 'destroy'])->name('packages.destroy'); // Delete Data    // Admin analytics routes
     Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
 
     // Admin settings routes

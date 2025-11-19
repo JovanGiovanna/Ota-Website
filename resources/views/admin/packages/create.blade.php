@@ -146,7 +146,27 @@
                 @endif
             </div>
 
-            {{-- SECTION 4: PRICE CALCULATION & PUBLISH FIELDS (TIDAK BERUBAH) --}}
+            {{-- SECTION 4: VENDOR SELECTION --}}
+            <div class="space-y-4 border p-4 rounded-lg bg-yellow-50">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Select Vendor</h2>
+                
+                <div class="space-y-2">
+                    <label for="id_vendor_info" class="block text-sm font-medium text-gray-700">Vendor <span class="text-red-500">*</span></label>
+                    <select name="id_vendor_info" id="id_vendor_info" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('id_vendor_info') border-red-500 @enderror" required>
+                        <option value="">-- Choose Vendor --</option>
+                        @foreach($vendorInfos as $vendorInfo)
+                            <option value="{{ $vendorInfo->id }}" {{ old('id_vendor_info') == $vendorInfo->id ? 'selected' : '' }}>
+                                {{ $vendorInfo->name_corporate }} ({{ $vendorInfo->vendor->name ?? 'No Vendor Name' }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('id_vendor_info')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            {{-- SECTION 5: PRICE CALCULATION & PUBLISH FIELDS (TIDAK BERUBAH) --}}
             <div class="space-y-6 pt-4">
                 <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Pricing & Publishing</h2>
 

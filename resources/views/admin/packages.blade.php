@@ -80,7 +80,7 @@ Welcome, {{ Auth::guard('admin')->check() ? Auth::guard('admin')->user()->name :
                                     
                                     {{-- PERBAIKAN ROUTE DELETE --}}
                                     {{-- Menggunakan route('admin.packages.destroy', $package) untuk mendapatkan ID/slug --}}
-                                    <form method="POST" action="" class="inline" onsubmit="return confirm('Are you sure you want to delete this package? This action cannot be undone.');">
+                                    <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this package? This action cannot be undone.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-800 transition duration-150 ease-in-out" title="Delete">

@@ -59,7 +59,7 @@ Book Your Package with Products and Add-ons!
             <div class="flex items-center space-x-4">
                 <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
                     @php
-                        $validImages = array_filter($preselectedPackageData->images ?? [], function($img) {
+                        $validImages = array_filter((array) ($preselectedPackageData->images ?? []), function($img) {
                             return is_string($img) && !empty($img);
                         });
                     @endphp
@@ -188,7 +188,7 @@ Book Your Package with Products and Add-ons!
                             <div class="flex items-start space-x-2 mb-2">
                                 <div class="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
                                     @php
-                                        $validImages = array_filter($package->images ?? [], function($img) {
+                                        $validImages = array_filter((array) ($package->images ?? []), function($img) {
                                             return is_string($img) && !empty($img);
                                         });
                                     @endphp
@@ -245,7 +245,7 @@ Book Your Package with Products and Add-ons!
                             <div class="flex items-start space-x-2 mb-2">
                                 <div class="w-8 h-8 bg-green-100 rounded flex items-center justify-center flex-shrink-0">
                                     @php
-                                        $validImages = array_filter($product->images ?? [], function($img) {
+                                        $validImages = array_filter((array) ($product->images ?? []), function($img) {
                                             return is_string($img) && !empty($img);
                                         });
                                     @endphp
@@ -305,11 +305,11 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-start space-x-2 mb-2">
                                 <div class="w-8 h-8 bg-orange-100 rounded flex items-center justify-center flex-shrink-0">
-                                    @php
-                                        $validImages = array_filter($addon->images ?? [], function($img) {
+                @php
+                                        $validImages = array_filter((array) ($addon->images ?? []), function($img) {
                                             return is_string($img) && !empty($img);
                                         });
-                                    @endphp
+                @endphp
                                     @if($validImages && count($validImages) > 0)
                                         <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $addon->name }}" class="w-8 h-8 rounded object-cover">
                                     @else

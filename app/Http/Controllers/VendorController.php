@@ -389,8 +389,10 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
             'price' => 'required|numeric|min:0',
-            'images' => 'nullable|array|max:5', 
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', 
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'remove_images' => 'nullable|array',
+            'remove_images.*' => 'integer|min:0',
             'description' => 'nullable|string',
             'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:1',
@@ -399,36 +401,36 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
             'status' => 'nullable|in:available,unavailable,draft',
         ]);
 
-        $data = $request->except('images');
+        $data = $request->except(['images', 'remove_images']);
         $imagePaths = $product->images ?? [];
 
-        if ($request->hasFile('images')) {
-            // Hapus gambar lama (Tergantung Kebutuhan: Anda mungkin ingin menghapus semua
-            // gambar lama atau hanya yang diganti/dihapus oleh user di form)
-            
-            // CONTOH: Jika Anda ingin *menambah* gambar baru ke gambar yang sudah ada:
-            foreach ($request->file('images') as $image) {
-                $imagePaths[] = $image->store('products', 'public');
-            }
-            
-            // CATATAN: Jika Anda ingin gambar baru *menggantikan* gambar lama (seperti single image sebelumnya),
-            // Anda harus menghapus gambar lama dan mereset $imagePaths:
-            
-            /* if (is_array($product->images)) {
-                 foreach ($product->images as $oldImage) {
-                    if (Storage::disk('public')->exists($oldImage)) {
-                        Storage::disk('public')->delete($oldImage);
+        // Handle image removal
+        if ($request->has('remove_images') && is_array($request->remove_images)) {
+            $imagesToRemove = $request->remove_images;
+            $newImagePaths = [];
+
+            foreach ($imagePaths as $index => $imagePath) {
+                if (in_array($index, $imagesToRemove)) {
+                    // Delete the file from storage
+                    if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                        Storage::disk('public')->delete($imagePath);
                     }
-                 }
+                } else {
+                    // Keep the image
+                    $newImagePaths[] = $imagePath;
+                }
             }
-            $imagePaths = [];
+            $imagePaths = $newImagePaths;
+        }
+
+        // Handle new image uploads
+        if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $imagePaths[] = $image->store('products', 'public');
             }
-            */
         }
-        
-        $data['images'] = $imagePaths; // Simpan array paths (lama + baru)
+
+        $data['images'] = $imagePaths;
 
         $product->update($data);
 
@@ -441,14 +443,19 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $vendor = Auth::guard('vendor')->user();
         $product = \App\Models\Product::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
 
-        // Delete image if exists
-        if ($product->image && \Storage::disk('public')->exists($product->image)) {
-            \Storage::disk('public')->delete($product->image);
+        // Delete images if exist (multiple images)
+        if (is_array($product->images)) {
+            foreach ($product->images as $imagePath) {
+                if ($imagePath && \Storage::disk('public')->exists($imagePath)) {
+                    \Storage::disk('public')->delete($imagePath);
+                }
+            }
         }
 
+        // Lakukan soft delete (diperlukan Trait SoftDeletes di model Product)
         $product->delete();
 
-        return redirect()->route('vendor.products')->with('success', 'Product deleted successfully');
+        return redirect()->route('vendor.products')->with('success', 'Product deleted successfully (Soft Deleted)');
     }
 
     // Addon CRUD methods
@@ -459,24 +466,36 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
 
 public function storeAddon(Request $request)
 {
-    $request->validate([
+    $rules = [
         'addons'    => 'required|string|max:255',
         'price'     => 'required|numeric|min:0',
         'desc'      => 'nullable|string|max:500',
         'status'    => 'sometimes|string|in:available,unavailable,draft',
         'publish'   => 'sometimes|boolean',
         'pax'       => 'sometimes|integer|min:1',
-        
-        // Validasi untuk Multiple Images
-        'images'    => 'nullable|array|max:5', 
-        'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-    ]);
 
-    $vendor = Auth::guard('vendor')->user();
-    
+        // Validasi untuk Multiple Images
+        'images'    => 'nullable|array|max:5',
+        'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    ];
+
+    // If super_admin, require id_vendor
+    if (Auth::guard('super_admin')->check()) {
+        $rules['id_vendor'] = 'required|uuid|exists:vendor,id';
+    }
+
+    $request->validate($rules);
+
     // Ambil data non-file/non-image
     $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
-    $data['id_vendor'] = $vendor->id;
+
+    // Set id_vendor based on user type
+    if (Auth::guard('super_admin')->check()) {
+        $data['id_vendor'] = $request->id_vendor;
+    } else {
+        $vendor = Auth::guard('vendor')->user();
+        $data['id_vendor'] = $vendor->id;
+    }
     
     $imagePaths = [];
     $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
@@ -525,50 +544,75 @@ public function storeAddon(Request $request)
             'status'    => 'sometimes|string|in:available,unavailable,draft',
             'publish'   => 'sometimes|boolean',
             'pax'       => 'sometimes|integer|min:1',
+            // Validasi untuk Multiple Images
+            'images'    => 'nullable|array|max:5',
+            'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'remove_images' => 'nullable|array',
+            'remove_images.*' => 'integer|min:0',
         ];
 
-        // Only validate image if a file is actually uploaded
-        if ($request->hasFile('image')) {
-            $rules['image'] = 'image|mimes:jpeg,png,jpg,gif,svg|max:2048';
+        // If super_admin, require id_vendor
+        if (Auth::guard('super_admin')->check()) {
+            $rules['id_vendor'] = 'required|uuid|exists:vendor,id';
         }
 
         $request->validate($rules);
 
-        $vendor = Auth::guard('vendor')->user();
-        $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->first();
+        // Set vendor based on user type
+        if (Auth::guard('super_admin')->check()) {
+            $addon = Addon::findOrFail($id);
+        } else {
+            $vendor = Auth::guard('vendor')->user();
+            $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->first();
+        }
 
         if (!$addon) {
             return redirect()->route('vendor.addons')->with('error', 'Addon tidak ditemukan atau akses ditolak');
         }
 
         $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
-        $newPath = null;
-        $oldImagePath = $addon->image;
+
+        // Set id_vendor if super_admin
+        if (Auth::guard('super_admin')->check()) {
+            $data['id_vendor'] = $request->id_vendor;
+        }
+
+        $imagePaths = $addon->images ?? [];
+
+        // Handle image removal
+        if ($request->has('remove_images') && is_array($request->remove_images)) {
+            $imagesToRemove = $request->remove_images;
+            $newImagePaths = [];
+
+            foreach ($imagePaths as $index => $imagePath) {
+                if (in_array($index, $imagesToRemove)) {
+                    // Delete the file from storage
+                    if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                        Storage::disk('public')->delete($imagePath);
+                    }
+                } else {
+                    // Keep the image
+                    $newImagePaths[] = $imagePath;
+                }
+            }
+            $imagePaths = $newImagePaths;
+        }
+
+        $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
 
         DB::beginTransaction();
         try {
-            // 1. Logika Upload Gambar Baru
-            if ($request->hasFile('image')) {
-                $newPath = $request->file('image')->store('addons', 'public');
-                $data['image'] = $newPath;
-
-                // Hapus file lama jika ada dan file tersebut tersimpan di disk public (bukan URL)
-                if ($oldImagePath && !filter_var($oldImagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($oldImagePath)) {
-                    Storage::disk('public')->delete($oldImagePath);
+            // PROSES UPLOAD MULTIPLE IMAGES
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('addons', 'public');
+                    $uploadedPaths[] = $path; // Simpan path untuk rollback
+                    $imagePaths[] = $path;
                 }
-            } elseif ($request->filled('image_url')) {
-                // 2. Mengubah ke URL eksternal, hapus file lama jika ada
-                if ($oldImagePath && !filter_var($oldImagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($oldImagePath)) {
-                    Storage::disk('public')->delete($oldImagePath);
-                }
-                $data['image'] = $request->input('image_url');
-            } elseif ($request->boolean('remove_image')) {
-                 // 3. Logika opsional: Jika user ingin menghapus gambar yang ada
-                if ($oldImagePath && !filter_var($oldImagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($oldImagePath)) {
-                    Storage::disk('public')->delete($oldImagePath);
-                }
-                $data['image'] = null;
             }
+
+            // Simpan array path ke kolom 'images'
+            $data['images'] = $imagePaths;
 
             $addon->update($data);
 
@@ -578,9 +622,11 @@ public function storeAddon(Request $request)
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // 4. Hapus file baru jika dibuat tapi terjadi error
-            if (isset($newPath) && $newPath && Storage::disk('public')->exists($newPath)) {
-                Storage::disk('public')->delete($newPath);
+            // Hapus SEMUA file yang baru ter-upload jika terjadi error
+            foreach ($uploadedPaths as $path) {
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
             }
 
             return redirect()->back()->withInput()->with('error', 'Gagal memperbarui addon: ' . $e->getMessage());
@@ -592,8 +638,13 @@ public function storeAddon(Request $request)
      */
     public function editAddon($id)
     {
-        $vendor = Auth::guard('vendor')->user();
-        $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        // Allow super_admin to edit any addon, vendor only their own
+        if (Auth::guard('super_admin')->check()) {
+            $addon = Addon::findOrFail($id);
+        } else {
+            $vendor = Auth::guard('vendor')->user();
+            $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        }
 
         return view('vendor.addons.edit', compact('addon'));
     }
@@ -603,13 +654,21 @@ public function storeAddon(Request $request)
      */
     public function destroyAddon($id)
     {
-        $vendor = Auth::guard('vendor')->user();
-        $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        // Allow super_admin to delete any addon, vendor only their own
+        if (Auth::guard('super_admin')->check()) {
+            $addon = Addon::findOrFail($id);
+        } else {
+            $vendor = Auth::guard('vendor')->user();
+            $addon = Addon::where('id', $id)->where('id_vendor', $vendor->id)->firstOrFail();
+        }
 
-        // Cek apakah ada file gambar, dan hapus dari storage sebelum soft delete
-        $imagePath = $addon->image;
-        if ($imagePath && !filter_var($imagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($imagePath)) {
-            Storage::disk('public')->delete($imagePath);
+        // Cek apakah ada file gambar (multiple images), dan hapus dari storage sebelum soft delete
+        if (is_array($addon->images)) {
+            foreach ($addon->images as $imagePath) {
+                if ($imagePath && !filter_var($imagePath, FILTER_VALIDATE_URL) && Storage::disk('public')->exists($imagePath)) {
+                    Storage::disk('public')->delete($imagePath);
+                }
+            }
         }
 
         // Lakukan soft delete (diperlukan Trait SoftDeletes di model Addon)

@@ -14,7 +14,7 @@ Product Details
             <!-- Product Image Carousel -->
             <div class="lg:w-1/2">
                 @php
-                    $validImages = array_filter($product->images ?? [], function($img) {
+                    $validImages = array_filter((array) ($product->images ?? []), function($img) {
                         return is_string($img) && !empty($img);
                     });
                 @endphp
@@ -324,7 +324,7 @@ Product Details
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize product carousel
     @php
-        $validImages = array_filter($product->images ?? [], function($img) {
+        $validImages = array_filter((array) ($product->images ?? []), function($img) {
             return is_string($img) && !empty($img);
         });
     @endphp
@@ -417,12 +417,13 @@ function showMessage(message, type) {
 // Gallery Popup Functions
 function openGallery(type, startIndex = 0) {
     @php
-        $validImages = array_filter($product->images ?? [], function($img) {
+        $validImages = array_filter((array) ($product->images ?? []), function($img) {
             return is_string($img) && !empty($img);
         });
     @endphp
     @if($validImages && count($validImages) > 0)
-    const images = @json($validImages);
+    const images = @json($validImages).map(img => '{{ asset("storage/") }}/' + img);
+    window.galleryImages = images; // Store globally for other functions
     const galleryModal = createGalleryModal(images, startIndex, '{{ $product->name }}');
     document.body.appendChild(galleryModal);
     document.body.style.overflow = 'hidden';

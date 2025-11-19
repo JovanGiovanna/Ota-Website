@@ -13,10 +13,18 @@ Welcome back, {{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')
         <div>
             <h1 class="text-3xl font-bold mb-2">Discover Amazing Packages</h1>
             <p class="text-blue-100">Find and book the best packages with products and add-ons for your perfect experience.</p>
-            <a href="{{ route('user.search') }}" class="inline-flex items-center mt-4 bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg">
-                <i class="fas fa-search mr-2"></i>
-                Start Exploring
-            </a>
+            <div class="flex flex-col sm:flex-row gap-4 mt-6">
+                <a href="{{ route('user.search') }}" class="inline-flex items-center bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg">
+                    <i class="fas fa-search mr-2"></i>
+                    Start Exploring
+                </a>
+                @auth
+                    <a href="{{ route('user.wishlist') }}" class="inline-flex items-center bg-gradient-to-r from-pink-500 to-red-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-red-600 transition-all duration-200 shadow-lg">
+                        <i class="fas fa-heart mr-2"></i>
+                        My Wishlist
+                    </a>
+                @endauth
+            </div>
         </div>
         <div class="hidden md:block">
             <div class="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center">

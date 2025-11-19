@@ -14,7 +14,7 @@ Addon Details
             <!-- Addon Image Carousel -->
             <div class="lg:w-1/2">
                 @php
-                    $validImages = array_filter($addon->images ?? [], function($img) {
+                    $validImages = array_filter((array) ($addon->images ?? []), function($img) {
                         return is_string($img) && !empty($img);
                     });
                 @endphp
@@ -305,7 +305,7 @@ Addon Details
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize addon carousel
     @php
-        $validImages = array_filter($addon->images ?? [], function($img) {
+        $validImages = array_filter((array) ($addon->images ?? []), function($img) {
             return is_string($img) && !empty($img);
         });
     @endphp
@@ -398,12 +398,12 @@ function showMessage(message, type) {
 // Gallery Popup Functions
 function openGallery(type, startIndex = 0) {
     @php
-        $validImages = array_filter($addon->images ?? [], function($img) {
+        $validImages = array_filter((array) ($addon->images ?? []), function($img) {
             return is_string($img) && !empty($img);
         });
     @endphp
     @if($validImages && count($validImages) > 0)
-    const images = @json($validImages);
+    const images = @json($validImages).map(img => '{{ asset('storage/') }}/' + img);
     window.galleryImages = images;
     const galleryModal = createGalleryModal(images, startIndex, '{{ $addon->addons }}');
     document.body.appendChild(galleryModal);

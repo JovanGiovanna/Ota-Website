@@ -33,7 +33,7 @@ class Package extends Model
 
     /**
      * Kolom-kolom yang dapat diisi secara massal (mass assignable).
-     * Menambahkan 'discount_percentage'.
+     * Menambahkan 'discount_percentage' dan 'id_vendor_info'.
      * @var array<int, string>
      */
     protected $fillable = [
@@ -47,8 +47,9 @@ class Package extends Model
         'start_publish',
         'end_publish',
         'is_active',
-        'products_data', 
+        'products_data',
         'addons_data',
+        'id_vendor_info',
     ];
 
     /**
@@ -58,8 +59,8 @@ class Package extends Model
      */
     protected $casts = [
         'price_publish' => 'decimal:2',
-        'price_real' => 'decimal:2', 
-        'discount_percentage' => 'integer', 
+        'price_real' => 'decimal:2',
+        'discount_percentage' => 'integer',
         'start_publish' => 'datetime',
         'end_publish' => 'datetime',
         'is_active' => 'boolean',

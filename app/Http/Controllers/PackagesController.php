@@ -34,7 +34,8 @@ class PackagesController extends Controller
     {
         $products = Product::all();
         $addons = Addon::all();
-        return view('super_admin.packages.create', compact('products', 'addons'));    
+        $vendorInfos = \App\Models\VendorInfo::with('vendor')->get();
+        return view('super_admin.packages.create', compact('products', 'addons', 'vendorInfos'));
     }
     
     /**
@@ -62,7 +63,46 @@ class PackagesController extends Controller
     {
         $products = Product::all();
         $addons = Addon::all();
-        return view('super_admin.packages.edit', compact('package', 'products', 'addons'));
+        $vendorInfos = \App\Models\VendorInfo::with('vendor')->get();
+
+        // Ensure products_data and addons_data are arrays (handle JSON strings)
+        $selectedProductsData = $package->products_data;
+        if (is_string($selectedProductsData)) {
+            $selectedProductsData = json_decode($selectedProductsData, true) ?: [];
+        }
+        $selectedProductsData = $selectedProductsData ?? [];
+
+        $selectedAddonsData = $package->addons_data;
+        if (is_string($selectedAddonsData)) {
+            $selectedAddonsData = json_decode($selectedAddonsData, true) ?: [];
+        }
+        $selectedAddonsData = $selectedAddonsData ?? [];
+
+        // Normalize the products data to ensure 'name' key exists
+        $selectedProductsData = collect($selectedProductsData)->map(function ($product) {
+            return [
+                'id' => $product['id'] ?? '',
+                'name' => $product['name'] ?? 'Unknown Product',
+                'price' => $product['price'] ?? 0,
+                'pax' => $product['pax'] ?? 1,
+            ];
+        })->toArray();
+
+        // Normalize the addons data to ensure 'name' key exists
+        $selectedAddonsData = collect($selectedAddonsData)->map(function ($addon) {
+            return [
+                'id' => $addon['id'] ?? '',
+                'name' => $addon['name'] ?? $addon['addons'] ?? 'Unknown Addon',
+                'price' => $addon['price'] ?? 0,
+                'pax' => $addon['pax'] ?? 1,
+            ];
+        })->toArray();
+
+        // Ambil ID produk dan addon yang sudah terpilih untuk pre-select di form
+        $selectedProductIds = collect($selectedProductsData)->pluck('id')->toArray();
+        $selectedAddonIds = collect($selectedAddonsData)->pluck('id')->toArray();
+
+        return view('super_admin.packages.edit', compact('package', 'products', 'addons', 'vendorInfos', 'selectedProductIds', 'selectedAddonIds', 'selectedProductsData', 'selectedAddonsData'));
     }
 
     // ------------------------------------------------------------------
@@ -81,17 +121,21 @@ class PackagesController extends Controller
             'description' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'price_publish' => 'required|numeric|min:0',
+            'price_publish_input' => 'required|numeric|min:0',
             'price_real' => 'nullable|numeric|min:0',
+            'discount_percentage' => 'required|numeric|min:0|max:100',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
+            'id_vendor_info' => 'required|uuid|exists:vendor_info,id',
             'is_active' => 'boolean',
             'products' => 'required|array|min:1',
-            'products.*.id' => 'required|uuid|exists:products,id',
-            'products.*.amount' => 'required|integer|min:1',
+            'products.*' => 'uuid|exists:products,id',
+            'product_pax' => 'required|array',
+            'product_pax.*' => 'required|integer|min:1',
             'addons' => 'required|array|min:1',
-            'addons.*.id' => 'required|uuid|exists:addons,id',
-            'addons.*.quantity' => 'required|integer|min:1',
+            'addons.*' => 'uuid|exists:addons,id',
+            'addon_pax' => 'required|array',
+            'addon_pax.*' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -101,9 +145,28 @@ class PackagesController extends Controller
         $data = $validator->validated();
 
         // 2. Prepare JSON data for products and addons
-        $data['products_data'] = $data['products'];
-        $data['addons_data'] = $data['addons'];
-        unset($data['products'], $data['addons']);
+        $productsData = [];
+        foreach ($data['products'] as $productId) {
+            $productsData[] = [
+                'id' => $productId,
+                'pax' => $data['product_pax'][$productId] ?? 1,
+            ];
+        }
+        $data['products_data'] = $productsData;
+
+        $addonsData = [];
+        foreach ($data['addons'] as $addonId) {
+            $addonsData[] = [
+                'id' => $addonId,
+                'pax' => $data['addon_pax'][$addonId] ?? 1,
+            ];
+        }
+        $data['addons_data'] = $addonsData;
+
+        // Set price_publish from input
+        $data['price_publish'] = $data['price_publish_input'];
+
+        unset($data['products'], $data['product_pax'], $data['addons'], $data['addon_pax'], $data['price_publish_input']);
 
         // 3. Tangani Pengunggahan Gambar
         $imagePaths = [];
@@ -114,7 +177,7 @@ class PackagesController extends Controller
                     $file->storeAs('packages', $imageName, 'public');
                     $imagePaths[] = 'packages/' . $imageName;
                 }
-                $data['image'] = json_encode($imagePaths);
+                $data['images'] = $imagePaths;
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', 'Gagal mengunggah gambar: ' . $e->getMessage())->withInput();
             }
@@ -161,17 +224,23 @@ class PackagesController extends Controller
             'description' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'price_publish' => 'required|numeric|min:0',
+            'remove_images' => 'nullable|array',
+            'remove_images.*' => 'string',
+            'price_publish_input' => 'required|numeric|min:0',
             'price_real' => 'nullable|numeric|min:0',
+            'discount_percentage' => 'required|numeric|min:0|max:100',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
+            'id_vendor_info' => 'required|uuid|exists:vendor_info,id',
             'is_active' => 'boolean',
             'products' => 'required|array|min:1',
-            'products.*.id' => 'required|uuid|exists:products,id',
-            'products.*.amount' => 'required|integer|min:1',
+            'products.*' => 'uuid|exists:products,id',
+            'product_pax' => 'required|array',
+            'product_pax.*' => 'required|integer|min:1',
             'addons' => 'required|array|min:1',
-            'addons.*.id' => 'required|uuid|exists:addons,id',
-            'addons.*.quantity' => 'required|integer|min:1',
+            'addons.*' => 'uuid|exists:addons,id',
+            'addon_pax' => 'required|array',
+            'addon_pax.*' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -179,23 +248,42 @@ class PackagesController extends Controller
         }
 
         $data = $validator->validated();
-        $oldImages = $package->image ? json_decode($package->image, true) : [];
+        $oldImages = $package->images ?: [];
 
         // 2. Prepare JSON data for products and addons
-        $data['products_data'] = $data['products'];
-        $data['addons_data'] = $data['addons'];
-        unset($data['products'], $data['addons']);
+        $productsData = [];
+        foreach ($data['products'] as $productId) {
+            $productsData[] = [
+                'id' => $productId,
+                'pax' => $data['product_pax'][$productId] ?? 1,
+            ];
+        }
+        $data['products_data'] = $productsData;
+
+        $addonsData = [];
+        foreach ($data['addons'] as $addonId) {
+            $addonsData[] = [
+                'id' => $addonId,
+                'pax' => $data['addon_pax'][$addonId] ?? 1,
+            ];
+        }
+        $data['addons_data'] = $addonsData;
+
+        // Set price_publish from input
+        $data['price_publish'] = $data['price_publish_input'];
+
+        unset($data['products'], $data['product_pax'], $data['addons'], $data['addon_pax'], $data['price_publish_input']);
 
         // 3. Tangani Pengunggahan/Penggantian Gambar
         $imagePaths = $oldImages ?: [];
 
         // Handle image removal
         if ($request->has('remove_images') && is_array($request->remove_images)) {
-            foreach ($request->remove_images as $index) {
-                if (isset($imagePaths[$index])) {
-                    $imageToRemove = $imagePaths[$index];
-                    if (Storage::disk('public')->exists($imageToRemove)) {
-                        Storage::disk('public')->delete($imageToRemove);
+            foreach ($request->remove_images as $imagePathToRemove) {
+                $index = array_search($imagePathToRemove, $imagePaths);
+                if ($index !== false) {
+                    if (Storage::disk('public')->exists($imagePathToRemove)) {
+                        Storage::disk('public')->delete($imagePathToRemove);
                     }
                     unset($imagePaths[$index]);
                 }
@@ -217,9 +305,9 @@ class PackagesController extends Controller
             }
         }
 
-        // Update image field only if there are changes
+        // Update images field only if there are changes
         if ($request->hasFile('images') || $request->has('remove_images')) {
-            $data['image'] = !empty($imagePaths) ? json_encode($imagePaths) : null;
+            $data['images'] = !empty($imagePaths) ? $imagePaths : null;
         }
 
         // 4. Perbarui Slug jika nama paket berubah
@@ -260,13 +348,10 @@ class PackagesController extends Controller
     {
         try {
             // Hapus file gambar terkait sebelum menghapus record dari database
-            if ($package->image) {
-                $images = json_decode($package->image, true);
-                if (is_array($images)) {
-                    foreach ($images as $image) {
-                        if (Storage::disk('public')->exists($image)) {
-                            Storage::disk('public')->delete($image);
-                        }
+            if ($package->images && is_array($package->images)) {
+                foreach ($package->images as $image) {
+                    if (Storage::disk('public')->exists($image)) {
+                        Storage::disk('public')->delete($image);
                     }
                 }
             }

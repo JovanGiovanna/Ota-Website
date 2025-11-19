@@ -148,8 +148,8 @@ Find your perfect packages, products, and add-ons!
         @forelse($packages as $package)
             <a href="{{ route('user.package_detail', $package->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div class="relative">
-                    @php
-                        $validImages = array_filter($package->images ?? [], function($img) {
+                @php
+                        $validImages = array_filter((array) ($package->images ?? []), function($img) {
                             return is_string($img) && !empty($img);
                         });
                     @endphp
@@ -216,7 +216,7 @@ Find your perfect packages, products, and add-ons!
             <a href="{{ route('user.product_detail', $product->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div class="relative">
                     @php
-                        $validImages = array_filter($product->images ?? [], function($img) {
+                        $validImages = array_filter((array) ($product->images ?? []), function($img) {
                             return is_string($img) && !empty($img);
                         });
                     @endphp
@@ -267,7 +267,7 @@ Find your perfect packages, products, and add-ons!
             <a href="{{ route('user.addon_detail', $addon->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 <div class="relative">
                     @php
-                        $validImages = array_filter($addon->images ?? [], function($img) {
+                        $validImages = array_filter((array) ($addon->images ?? []), function($img) {
                             return is_string($img) && !empty($img);
                         });
                     @endphp

@@ -45,16 +45,44 @@
 
                     {{-- Gambar --}}
                     <div class="mb-4">
-                        <label for="image" class="block text-sm font-semibold text-gray-700 mb-2">Package Image</label>
-                        @if($package->image)
-                            <div class="mb-2 p-2 border border-gray-300 rounded-lg bg-white shadow-sm">
-                                <p class="text-xs text-gray-500 mb-1">Current Image:</p>
-                                <img src="{{ asset('storage/' . $package->image) }}" alt="Current Image" class="w-full h-40 object-cover rounded-md border border-gray-200">
+                        <label for="images" class="block text-sm font-semibold text-gray-700 mb-2">Package Images</label>
+                        @php
+                            $hasImages = $package->images && is_array($package->images) && count($package->images) > 0;
+                        @endphp
+                        @if($hasImages)
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600 mb-2">Current Images (Check individual images to remove):</p>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="images_grid">
+                                    @foreach($package->images as $index => $img)
+                                        <div class="relative">
+                                            <img src="{{ asset('storage/' . $img) }}" alt="Current Image" class="w-full h-20 object-cover rounded-md border border-gray-200">
+                                            <input type="checkbox" name="remove_images[]" value="{{ $img }}" id="remove_image_{{ $index }}" class="remove_image_checkbox absolute top-1 right-1 w-4 h-4 text-red-600 bg-white border-gray-300 rounded focus:ring-red-500 z-10">
+                                            <label for="remove_image_{{ $index }}" class="absolute top-1 right-1 text-xs text-white bg-red-500 px-1 py-0.5 rounded cursor-pointer z-20">Remove</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div class="mb-4">
+                                <div class="flex items-center mb-2">
+                                    <input type="checkbox" id="select_all_images" class="w-4 h-4 text-red-600 bg-white border-gray-300 rounded focus:ring-red-500" disabled>
+                                    <label for="select_all_images" class="ml-2 text-sm text-gray-400 cursor-not-allowed">Select All Images to Remove (No images to remove)</label>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">No current images.</p>
                             </div>
                         @endif
-                        <input type="file" name="image" id="image" accept="image/*" class="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition duration-150">
-                        <p class="text-xs text-gray-500 mt-1">Leave empty to keep current image. Max 2MB.</p>
-                        @error('image')
+                        <input type="file" name="images[]" id="images" accept="image/*" multiple class="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition duration-150">
+                        <p class="text-xs text-gray-500 mt-1">Leave empty to keep current images. Max 10 images, each 2MB.</p>
+                        @error('images')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                        @error('images.*')
+                            <p class="text-red-500 text-sm mt-1">One or more images failed to upload: {{ $message }}</p>
+                        @enderror
+                        @error('remove_images')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                        @error('remove_images.*')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
@@ -135,7 +163,27 @@
                 </div>
             </div>
 
-            {{-- Bagian 3: Products dan Addons (Menggunakan Checkbox) --}}
+            {{-- Bagian 3: Vendor Selection --}}
+            <div class="mb-8 p-6 bg-yellow-50/50 rounded-lg border border-yellow-100">
+                <h2 class="text-2xl font-semibold text-yellow-700 mb-4">Vendor Selection</h2>
+
+                <div class="space-y-2">
+                    <label for="id_vendor_info" class="block text-sm font-semibold text-gray-700 mb-2">Select Vendor <span class="text-red-500">*</span></label>
+                    <select name="id_vendor_info" id="id_vendor_info" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition duration-150" required>
+                        <option value="">-- Choose Vendor --</option>
+                        @foreach($vendorInfos as $vendorInfo)
+                            <option value="{{ $vendorInfo->id }}" {{ old('id_vendor_info', $package->id_vendor_info) == $vendorInfo->id ? 'selected' : '' }}>
+                                {{ $vendorInfo->name_corporate }} ({{ $vendorInfo->vendor->name ?? 'No Vendor Name' }})
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('id_vendor_info')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            {{-- Bagian 4: Products dan Addons (Menggunakan Checkbox) --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 
                 {{-- Pemilihan Products (Checkbox Style) --}}
@@ -359,25 +407,25 @@
         const priceRealInput = document.getElementById('price_real');
 
         // --- 1. LOGIC CHECKBOX & PAX ---
-        
+
         // Event listener untuk semua checkbox (Product dan Addon)
         document.querySelectorAll('.product-checkbox, .addon-checkbox').forEach(checkbox => {
             const paxInput = checkbox.closest('.flex').querySelector('.pax-input');
-            const initialPaxValue = paxInput.value; 
+            const initialPaxValue = paxInput.value;
 
             // Event saat checkbox berubah
             checkbox.addEventListener('change', function() {
                 paxInput.disabled = !this.checked;
                 if (this.checked) {
-                    paxInput.value = initialPaxValue; 
+                    paxInput.value = initialPaxValue;
                     paxInput.focus();
                 } else {
-                    paxInput.value = paxInput.min; 
+                    paxInput.value = paxInput.min;
                 }
-                calculatePrices(); 
+                calculatePrices();
             });
         });
-        
+
         // Event listener untuk semua input Pax
         document.querySelectorAll('.pax-input').forEach(paxInput => {
             paxInput.addEventListener('input', function() {
@@ -387,8 +435,8 @@
                 if (currentValue < minValue) {
                     this.value = minValue;
                 }
-                
-                calculatePrices(); 
+
+                calculatePrices();
             });
         });
 
@@ -402,7 +450,7 @@
             const totalRealPrice = parseFloat(priceRealInput.value) || 0;
             const discountPercentage = parseFloat(discountPercentageInput.value) || 0;
             const autoCalculatedValue = Math.round(totalRealPrice * (1 - discountPercentage / 100));
-            
+
             // Bandingkan dengan nilai input user
             if (parseFloat(this.value) != autoCalculatedValue) {
                 pricePublishNote.innerHTML = 'Anda **memasukkan harga jual secara manual**. Perhitungan diskon otomatis diabaikan.';
@@ -410,6 +458,39 @@
                 pricePublishNote.classList.add('text-red-500');
             } else {
                  calculatePrices(); // Jika dikembalikan ke harga hasil hitungan
+            }
+        });
+
+
+
+        // --- 4. INDIVIDUAL IMAGE REMOVAL VISUAL FEEDBACK ---
+        document.querySelectorAll('.remove_image_checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                toggleImageVisibility(this);
+            });
+        });
+
+        function toggleImageVisibility(checkbox) {
+            const imageContainer = checkbox.closest('.relative');
+            if (checkbox.checked) {
+                imageContainer.style.opacity = '0.3';
+                imageContainer.style.filter = 'grayscale(100%)';
+            } else {
+                imageContainer.style.opacity = '1';
+                imageContainer.style.filter = 'none';
+            }
+        }
+
+        // --- 5. FORM SUBMISSION CONFIRMATION ---
+        document.getElementById('package-form').addEventListener('submit', function(e) {
+            const checkedBoxes = document.querySelectorAll('.remove_image_checkbox:checked');
+            if (checkedBoxes.length > 0) {
+                const count = checkedBoxes.length;
+                const confirmMessage = `Are you sure you want to remove ${count} image${count > 1 ? 's' : ''}? This action cannot be undone.`;
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
             }
         });
 
