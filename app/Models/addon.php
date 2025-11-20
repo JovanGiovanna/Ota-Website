@@ -22,14 +22,18 @@ class Addon extends Model
         'addons',
         'desc',
         'status',
-        'price',
+        'basic_price', 
+        'nta',         
+        'tax_rate',    
         'pax',
         'publish',
         'images', 
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'basic_price' => 'decimal:2', 
+        'nta' => 'decimal:2',         
+        'tax_rate' => 'decimal:2',    
         'pax' => 'integer',
         'publish' => 'boolean',
         'deleted_at' => 'datetime',

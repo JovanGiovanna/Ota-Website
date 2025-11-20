@@ -8,6 +8,7 @@
         <form action="{{ route('vendor.products.store') }}" method="POST" enctype="multipart/form-data" class="bg-white shadow-md rounded-lg p-6">
             @csrf
 
+            {{-- ... (Bagian Name dan Category tetap sama) ... --}}
             <div class="mb-4">
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
                 <input type="text" name="name" id="name" value="{{ old('name') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -28,15 +29,36 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
+            
+            {{-- Bagian Harga yang Disesuaikan --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="mb-4 md:mb-0">
+                    <label for="basic_price" class="block text-sm font-medium text-gray-700 mb-2">Basic Price (Harga Jual)</label>
+                    <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('basic_price')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            <div class="mb-4">
-                <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                <input type="number" name="price" id="price" value="{{ old('price') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                @error('price')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+                <div class="mb-4 md:mb-0">
+                    <label for="nta" class="block text-sm font-medium text-gray-700 mb-2">NTA (Net Transaction Amount)</label>
+                    <input type="number" name="nta" id="nta" value="{{ old('nta') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('nta')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                <div class="mb-4 md:mb-0">
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
+                    <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('tax_rate')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
+            {{-- Akhir Bagian Harga yang Disesuaikan --}}
 
+            {{-- ... (Sisa form tetap sama) ... --}}
             <div class="mb-4">
                 <label for="images" class="block text-sm font-medium text-gray-700 mb-2">Product Images (Multiple)</label>
                 <input 
@@ -44,7 +66,7 @@
                     name="images[]"             
                     id="images" 
                     accept="image/*" 
-                    multiple                    
+                    multiple                      
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                 @error('images')
@@ -114,4 +136,30 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const basicPriceInput = document.getElementById('basic_price');
+    const taxRateInput = document.getElementById('tax_rate');
+    const ntaInput = document.getElementById('nta');
+    
+    function calculateNta() {
+        const basicPrice = parseFloat(basicPriceInput.value) || 0;
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+
+        let nta = basicPrice; 
+
+        if (basicPrice >= 0 && taxRate >= 0) {
+            const multiplier = 1 + (taxRate / 100);
+            nta = basicPrice * multiplier;
+        }
+        ntaInput.value = nta.toFixed(2); 
+    }
+
+    basicPriceInput.addEventListener('input', calculateNta);
+    taxRateInput.addEventListener('input', calculateNta);
+
+    calculateNta();
+});
+</script>
 @endsection

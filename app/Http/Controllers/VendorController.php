@@ -11,7 +11,7 @@ use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\Addon; 
-
+use App\Models\Category; // Tambahkan use Category jika diperlukan di Product/Addon CRUD
 
 class VendorController extends Controller
 {
@@ -232,6 +232,7 @@ class VendorController extends Controller
         return view('super_admin.vendors.addons', compact('vendor', 'addons'));
     }
 
+    // DISESUAIKAN: Mengubah 'price' menjadi 'basic_price', 'nta', 'tax_rate'
     public function vendorAddonDetails($vendorId, $addonId)
     {
         $vendor = Vendor::findOrFail($vendorId);
@@ -239,7 +240,9 @@ class VendorController extends Controller
 
         return response()->json([
             'addons' => $addon->addons,
-            'price' => $addon->price,
+            'basic_price' => $addon->basic_price, // BARU
+            'nta' => $addon->nta,               // BARU
+            'tax_rate' => $addon->tax_rate,     // BARU
             'status' => $addon->status,
             'publish' => $addon->publish,
             'desc' => $addon->desc,
@@ -294,7 +297,7 @@ class VendorController extends Controller
     // Vendor-specific methods for vendor dashboard
     public function vendorProductsDashboard()
     {
-$vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
+        $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $products = \App\Models\Product::where('id_vendor', $vendor->id)->with('category')->paginate(10);
 
         return view('vendor.products', compact('products'));
@@ -302,7 +305,7 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
 
     public function vendorAddonsDashboard()
     {
-$vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
+        $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $addons = \App\Models\Addon::where('id_vendor', $vendor->id)->paginate(10);
 
         return view('vendor.addons', compact('addons'));
@@ -333,12 +336,16 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         return view('vendor.products.create', compact('categories'));
     }
 
-   public function storeProduct(Request $request)
+    public function storeProduct(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
-            'price' => 'required|numeric|min:0',
+            // Perubahan Validasi Harga dan Pajak (sudah benar)
+            'basic_price' => 'required|numeric|min:0', // Mengganti 'price'
+            'nta' => 'required|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100', // Kolom baru
+            
             // VALIDASI UNTUK MULTIPLE IMAGES
             'images' => 'nullable|array|max:5', // Maksimal 5 gambar
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk setiap file
@@ -353,7 +360,8 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
 
         $vendor = Auth::guard('vendor')->user();
 
-        $data = $request->except('images'); // Ambil semua data kecuali 'images'
+        // Ambil semua data kecuali 'images'
+        $data = $request->except('images'); 
         $data['id_vendor'] = $vendor->id;
         $imagePaths = [];
 
@@ -365,6 +373,9 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         }
         
         $data['images'] = $imagePaths; // Simpan array paths ke kolom 'images'
+        
+        // Pastikan kolom tax_rate memiliki nilai default jika null
+        $data['tax_rate'] = $request->input('tax_rate', 0.00); 
 
         Product::create($data);
 
@@ -388,7 +399,11 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         $request->validate([
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
-            'price' => 'required|numeric|min:0',
+            // Perubahan Validasi Harga dan Pajak (sudah benar)
+            'basic_price' => 'required|numeric|min:0', // Mengganti 'price'
+            'nta' => 'required|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100', // Kolom baru
+            
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'remove_images' => 'nullable|array',
@@ -431,6 +446,9 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         }
 
         $data['images'] = $imagePaths;
+        
+        // Pastikan kolom tax_rate memiliki nilai default jika null
+        $data['tax_rate'] = $request->input('tax_rate', 0.00); 
 
         $product->update($data);
 
@@ -464,82 +482,92 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         return view('vendor.addons.create');
     }
 
-public function storeAddon(Request $request)
-{
-    $rules = [
-        'addons'    => 'required|string|max:255',
-        'price'     => 'required|numeric|min:0',
-        'desc'      => 'nullable|string|max:500',
-        'status'    => 'sometimes|string|in:available,unavailable,draft',
-        'publish'   => 'sometimes|boolean',
-        'pax'       => 'sometimes|integer|min:1',
+    // DISESUAIKAN: Mengganti 'price' dengan 'basic_price', 'nta', 'tax_rate'
+    public function storeAddon(Request $request)
+    {
+        $rules = [
+            'addons'    => 'required|string|max:255',
+            'basic_price' => 'required|numeric|min:0', // DIGANTI
+            'nta'       => 'required|numeric|min:0', // BARU
+            'tax_rate'  => 'nullable|numeric|min:0|max:100', // BARU
+            'desc'      => 'nullable|string|max:500',
+            'status'    => 'sometimes|string|in:available,unavailable,draft',
+            'publish'   => 'sometimes|boolean',
+            'pax'       => 'sometimes|integer|min:1',
 
-        // Validasi untuk Multiple Images
-        'images'    => 'nullable|array|max:5',
-        'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-    ];
+            // Validasi untuk Multiple Images
+            'images'    => 'nullable|array|max:5',
+            'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ];
 
-    // If super_admin, require id_vendor
-    if (Auth::guard('super_admin')->check()) {
-        $rules['id_vendor'] = 'required|uuid|exists:vendor,id';
-    }
-
-    $request->validate($rules);
-
-    // Ambil data non-file/non-image
-    $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
-
-    // Set id_vendor based on user type
-    if (Auth::guard('super_admin')->check()) {
-        $data['id_vendor'] = $request->id_vendor;
-    } else {
-        $vendor = Auth::guard('vendor')->user();
-        $data['id_vendor'] = $vendor->id;
-    }
-    
-    $imagePaths = [];
-    $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
-
-    DB::beginTransaction();
-    try {
-        // PROSES UPLOAD FILE MULTIPLE
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('addons', 'public');
-                $uploadedPaths[] = $path; // Simpan path untuk rollback
-                $imagePaths[] = $path;
-            }
-        } 
-        
-        // Simpan array path ke kolom 'images'
-        $data['images'] = $imagePaths;
-
-        Addon::create($data);
-
-        DB::commit();
-
-        return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        // Hapus SEMUA file yang baru ter-upload jika terjadi error
-        foreach ($uploadedPaths as $path) {
-            if (Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
+        // If super_admin, require id_vendor
+        if (Auth::guard('super_admin')->check()) {
+            $rules['id_vendor'] = 'required|uuid|exists:vendor,id';
         }
 
-        return redirect()->back()->withInput()->with('error', 'Gagal membuat addon: ' . $e->getMessage());
+        $request->validate($rules);
+
+        // Ambil data non-file/non-image (menggunakan kolom baru)
+        $data = $request->only(['addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax']);
+
+        // Set id_vendor based on user type
+        if (Auth::guard('super_admin')->check()) {
+            $data['id_vendor'] = $request->id_vendor;
+        } else {
+            $vendor = Auth::guard('vendor')->user();
+            $data['id_vendor'] = $vendor->id;
+        }
+        
+        $imagePaths = [];
+        $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
+
+        DB::beginTransaction();
+        try {
+            // PROSES UPLOAD FILE MULTIPLE
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('addons', 'public');
+                    $uploadedPaths[] = $path; // Simpan path untuk rollback
+                    $imagePaths[] = $path;
+                }
+            } 
+            
+            // Simpan array path ke kolom 'images'
+            $data['images'] = $imagePaths;
+            
+            // Pastikan kolom tax_rate memiliki nilai default jika null
+            $data['tax_rate'] = $request->input('tax_rate', 0.00); 
+
+            Addon::create($data);
+
+            DB::commit();
+
+            return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            // Hapus SEMUA file yang baru ter-upload jika terjadi error
+            foreach ($uploadedPaths as $path) {
+                if (Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat addon: ' . $e->getMessage());
+        }
     }
-}
+
     /**
      * Memperbarui addon tertentu (Web/Blade View).
      */
+    // DISESUAIKAN: Mengganti 'price' dengan 'basic_price', 'nta', 'tax_rate'
     public function updateAddon(Request $request, $id)
     {
         $rules = [
             'addons'    => 'sometimes|required|string|max:255',
-            'price'     => 'sometimes|required|numeric|min:0',
+            'basic_price' => 'sometimes|required|numeric|min:0', // DIGANTI
+            'nta'       => 'sometimes|required|numeric|min:0', // BARU
+            'tax_rate'  => 'nullable|numeric|min:0|max:100', // BARU
             'desc'      => 'nullable|string|max:500',
             'status'    => 'sometimes|string|in:available,unavailable,draft',
             'publish'   => 'sometimes|boolean',
@@ -570,10 +598,11 @@ public function storeAddon(Request $request)
             return redirect()->route('vendor.addons')->with('error', 'Addon tidak ditemukan atau akses ditolak');
         }
 
-        $data = $request->only(['addons', 'price', 'desc', 'status', 'publish', 'pax']);
+        // Ambil data non-file/non-image (menggunakan kolom baru)
+        $data = $request->only(['addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax']);
 
         // Set id_vendor if super_admin
-        if (Auth::guard('super_admin')->check()) {
+        if (Auth::guard('super_admin')->check() && $request->filled('id_vendor')) {
             $data['id_vendor'] = $request->id_vendor;
         }
 
@@ -613,6 +642,9 @@ public function storeAddon(Request $request)
 
             // Simpan array path ke kolom 'images'
             $data['images'] = $imagePaths;
+            
+            // Pastikan kolom tax_rate memiliki nilai default jika null
+            $data['tax_rate'] = $request->input('tax_rate', $addon->tax_rate ?? 0.00); 
 
             $addon->update($data);
 

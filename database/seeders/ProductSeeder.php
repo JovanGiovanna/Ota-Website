@@ -18,6 +18,7 @@ class ProductSeeder extends Seeder
             'Wellness Activities',
         ])->pluck('id', 'categories')->toArray();
 
+        // Ambil vendor pertama atau buat vendor jika belum ada (hanya sebagai fallback)
         $vendor = Vendor::first();
 
         if (count($categories) < 5 || !$vendor) {
@@ -29,7 +30,11 @@ class ProductSeeder extends Seeder
             [
                 'name' => 'Comfort Travel Pillow',
                 'description' => 'Bantal ergonomis untuk perjalanan yang nyaman dan dukungan leher maksimal.',
-                'price' => 50000,
+                // Perubahan Harga
+                'basic_price' => 50000, 
+                'nta' => 45000, // Contoh NTA
+                'tax_rate' => 11.00, // Contoh Tax Rate 11%
+                // ---
                 'jumlah' => 10,
                 'pax' => 1,
                 'max_adults' => 1,
@@ -44,7 +49,11 @@ class ProductSeeder extends Seeder
             [
                 'name' => 'Luxury Spa Session',
                 'description' => 'Perawatan spa relaksasi selama 90 menit untuk kenyamanan total, termasuk pijat aromaterapi.',
-                'price' => 150000,
+                // Perubahan Harga
+                'basic_price' => 150000,
+                'nta' => 135000,
+                'tax_rate' => 10.00,
+                // ---
                 'jumlah' => 5,
                 'pax' => 1,
                 'max_adults' => 1,
@@ -60,7 +69,11 @@ class ProductSeeder extends Seeder
             [
                 'name' => 'Premium Bus Service',
                 'description' => 'Layanan transportasi bus mewah dengan kursi yang dapat direbahkan dan Wi-Fi cepat.',
-                'price' => 75000,
+                // Perubahan Harga
+                'basic_price' => 75000,
+                'nta' => 70000,
+                'tax_rate' => 0.00,
+                // ---
                 'jumlah' => 15,
                 'pax' => 1,
                 'max_adults' => 1,
@@ -74,7 +87,11 @@ class ProductSeeder extends Seeder
             [
                 'name' => 'Comfortable Hotel Suite',
                 'description' => 'Suite hotel yang luas dan nyaman dengan pemandangan kota, ideal untuk keluarga kecil.',
-                'price' => 300000,
+                // Perubahan Harga
+                'basic_price' => 300000,
+                'nta' => 280000,
+                'tax_rate' => 10.00,
+                // ---
                 'jumlah' => 3,
                 'pax' => 3, 
                 'max_adults' => 2,
@@ -90,7 +107,11 @@ class ProductSeeder extends Seeder
             [
                 'name' => 'Guided Relaxation Tour',
                 'description' => 'Tur berpemandu yang berfokus pada meditasi dan relaksasi di alam terbuka.',
-                'price' => 100000,
+                // Perubahan Harga
+                'basic_price' => 100000,
+                'nta' => 90000,
+                'tax_rate' => 11.00,
+                // ---
                 'jumlah' => 7,
                 'pax' => 1,
                 'max_adults' => 1,

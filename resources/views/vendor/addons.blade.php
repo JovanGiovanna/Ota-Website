@@ -13,7 +13,7 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-900">My Add-ons</h1>
         <a href="{{ route('vendor.addons.create') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium">
-                            Add New Add-on
+            Add New Add-on
         </a>
     </div>
 
@@ -26,7 +26,9 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add-on</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                {{-- KOLOM HARGA BARU --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
+                                {{-- END KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3">
                                     <span class="sr-only">Actions</span>
@@ -50,16 +52,39 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                         </div>
                                     @else
                                         <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
                                         </div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $addon->addons ?? 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {{ number_format($addon->price ?? 0, 0, ',', '.') }}</td>
+                                
+                                {{-- ISI KOLOM HARGA BARU --}}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {{-- Asumsi kolom nta tersedia, atau fallback ke price lama --}}
+                                    <div class="font-bold text-gray-900">
+                                        NTA: Rp {{ number_format($addon->nta ?? $addon->price ?? 0, 0, ',', '.') }}
+                                    </div>
+                                    {{-- Asumsi kolom basic_price dan tax_rate tersedia --}}
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Basic: Rp {{ number_format($addon->basic_price ?? 0, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        Tax: {{ number_format($addon->tax_rate ?? 0, 2, ',', '.') }}%
+                                    </div>
+                                </td>
+                                {{-- END ISI KOLOM HARGA BARU --}}
+
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    {{-- Asumsi addon memiliki kolom status, jika tidak, pakai logic default yang ada --}}
+                                    @if(isset($addon->status) && $addon->status == 'active')
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    @elseif(isset($addon->status) && $addon->status == 'draft')
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
+                                    @else
+                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <a href="{{ route('vendor.addons.edit', $addon->id) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>

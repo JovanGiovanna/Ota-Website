@@ -207,7 +207,7 @@ Welcome back, {{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')
                         <i class="fas fa-calendar-check text-blue-600"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="text-sm font-medium text-gray-800">Booking #{{ $booking->id }}</p>
+                        <p class="text-sm font-medium text-gray-800">Booking #{{ $booking->booking_code }}</p>
                         <p class="text-xs text-gray-500">{{ $booking->created_at->format('M d, Y') }}</p>
                     </div>
                     <div class="text-right">

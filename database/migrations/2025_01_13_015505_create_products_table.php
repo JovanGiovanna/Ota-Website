@@ -15,8 +15,11 @@ return new class extends Migration
             $table->json('images')->nullable(); 
             $table->text('description'); 
 
-            $table->decimal('price', 10, 2); 
+            $table->decimal('basic_price', 10, 2); 
+            $table->decimal('nta', 10, 2); 
 
+            $table->decimal('tax_rate', 5, 2)->default(0.00)->comment('Persentase Pajak'); 
+            
             $table->foreignUuid('id_category')
                   ->constrained('categories') 
                   ->onDelete('cascade');

@@ -49,13 +49,39 @@
                 @enderror
             </div>
 
-            <div class="mb-4">
-                <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                <input type="number" name="price" id="price" value="{{ old('price', $product->price) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                @error('price')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+            {{-- START: Kolom Harga Baru (Mengganti Price) --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {{-- 1. Basic Price (Harga Dasar) --}}
+                <div>
+                    <label for="basic_price" class="block text-sm font-medium text-gray-700 mb-2">Basic Price (Harga Dasar)</label>
+                    {{-- Asumsi kolom di model/database adalah basic_price, dan price lama diubah ke basic_price --}}
+                    <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price', $product->basic_price ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('basic_price')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                {{-- 2. Tax Rate (%) --}}
+                <div>
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
+                    {{-- Asumsi kolom di model/database adalah tax_rate --}}
+                    <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $product->tax_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('tax_rate')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- 3. NTA (Net Transaction Amount) - Otomatis --}}
+                <div>
+                    <label for="nta" class="block text-sm font-medium text-gray-700 mb-2">NTA (Harga Jual Final)</label>
+                    {{-- Asumsi kolom di model/database adalah nta, atau menggunakan price jika nta belum ada --}}
+                    <input type="number" name="nta" id="nta" value="{{ old('nta', $product->nta ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('nta')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
+            {{-- END: Kolom Harga Baru --}}
 
             <div class="mb-4">
                 <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -132,7 +158,8 @@
                                     <img src="{{ asset('storage/' . $image) }}" alt="Current Image {{ $index + 1 }}" class="w-full h-24 object-cover rounded-md border-2 border-gray-200">
                                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-md flex items-center justify-center">
                                         <label class="flex items-center space-x-2 bg-white bg-opacity-90 px-2 py-1 rounded cursor-pointer hover:bg-opacity-100 transition-all">
-                                            <input type="checkbox" name="remove_images[]" value="{{ $index }}" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500">
+                                            <input type="checkbox" name="remove_images[]" value="{{ $index }}" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
+                                                {{ in_array($index, old('remove_images', [])) ? 'checked' : '' }}>
                                             <span class="text-xs font-medium text-gray-700">Delete</span>
                                         </label>
                                     </div>
@@ -170,10 +197,42 @@
         </form>
     </div>
 </div>
-@endsection
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Script Perhitungan Harga Baru ---
+    const basicPriceInput = document.getElementById('basic_price');
+    const taxRateInput = document.getElementById('tax_rate');
+    const ntaInput = document.getElementById('nta');
+
+    /**
+     * Fungsi untuk menghitung NTA (asumsi NTA = Basic Price + Tax).
+     * Rumus: NTA = Basic Price * (1 + Tax Rate%)
+     */
+    function calculateNta() {
+        const basicPrice = parseFloat(basicPriceInput.value) || 0;
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+
+        let nta = basicPrice; 
+
+        if (basicPrice >= 0 && taxRate >= 0) {
+            // Hitung NTA dengan asumsi Basic Price EKSKLUSIF Pajak
+            const multiplier = 1 + (taxRate / 100);
+            nta = basicPrice * multiplier;
+        }
+
+        // Tampilkan NTA, bulatkan ke 2 desimal
+        ntaInput.value = nta.toFixed(2); 
+    }
+
+    // Panggil fungsi hitung saat ada perubahan pada Basic Price atau Tax Rate
+    basicPriceInput.addEventListener('input', calculateNta);
+    taxRateInput.addEventListener('input', calculateNta);
+
+    // Hitung NTA saat halaman dimuat (untuk old() value atau $product->value)
+    calculateNta();
+
+    // --- Script untuk Hapus Gambar (dari kode asli Anda) ---
     // Handle checkbox changes for visual feedback
     document.querySelectorAll('input[name="remove_images[]"]').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
@@ -185,12 +244,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 overlay.classList.remove('bg-opacity-20');
             }
         });
+        // Pastikan overlay diinisialisasi dengan benar jika ada 'old' value
+        checkbox.dispatchEvent(new Event('change'));
     });
 
     // Make the entire image container clickable to toggle checkbox
     document.querySelectorAll('.relative.group.cursor-pointer').forEach(function(container) {
         container.addEventListener('click', function(e) {
-            // Prevent triggering if clicking on the checkbox itself
+            // Prevent triggering if clicking on the checkbox itself or related labels/spans
             if (e.target.type === 'checkbox' || e.target.tagName === 'LABEL' || e.target.tagName === 'SPAN') return;
 
             const checkbox = container.querySelector('input[name="remove_images[]"]');
@@ -201,5 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    // --- Akhir Script untuk Hapus Gambar ---
 });
 </script>
+@endsection

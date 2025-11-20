@@ -28,7 +28,9 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                {{-- KOLOM HARGA BARU --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
+                                {{-- END KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3">
                                     <span class="sr-only">Actions</span>
@@ -61,7 +63,21 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $product->name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($product->description ?? 'N/A', 50) }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $product->category->categories ?? 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {{ number_format($product->price ?? 0, 0, ',', '.') }}</td>
+                                
+                                {{-- ISI KOLOM HARGA BARU --}}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="font-bold text-gray-900">
+                                        NTA: Rp {{ number_format($product->nta ?? $product->basic_price ?? 0, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Basic: Rp {{ number_format($product->basic_price ?? 0, 0, ',', '.') }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        Tax: {{ number_format($product->tax_rate ?? 0, 2, ',', '.') }}%
+                                    </div>
+                                </td>
+                                {{-- END ISI KOLOM HARGA BARU --}}
+                                
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($product->status == 'available')
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Available</span>

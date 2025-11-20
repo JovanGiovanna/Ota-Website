@@ -29,7 +29,7 @@
                     <h3 class="text-lg font-semibold mb-1 truncate">
                         @if($booking->packages->count() > 0) Package Booking @elseif($booking->products->count() > 0) Product Booking @elseif($booking->addons->count() > 0) Addon Booking @else Mixed Booking @endif
                     </h3>
-                    <p class="text-gray-600 mb-1">Booking ID : #{{ $booking->id }}</p>
+                    <p class="text-gray-600 mb-1">Booking ID : #{{ $booking->booking_code }}</p>
                     
                     {{-- Info User --}}
                     <p class="text-sm text-gray-700 mb-2">

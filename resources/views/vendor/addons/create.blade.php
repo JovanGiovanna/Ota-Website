@@ -33,13 +33,36 @@
             </div>
             @endif
 
-            <div class="mb-4">
-                <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                <input type="number" name="price" id="price" value="{{ old('price') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                @error('price')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+            {{-- START: Kolom Harga Baru --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {{-- 1. Basic Price (Harga Dasar) --}}
+                <div>
+                    <label for="basic_price" class="block text-sm font-medium text-gray-700 mb-2">Basic Price (Harga Dasar)</label>
+                    <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('basic_price')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                
+                {{-- 2. Tax Rate (%) --}}
+                <div>
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
+                    <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('tax_rate')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- 3. NTA (Net Transaction Amount) - Otomatis --}}
+                <div>
+                    <label for="nta" class="block text-sm font-medium text-gray-700 mb-2">NTA (Harga Jual Final)</label>
+                    <input type="number" name="nta" id="nta" value="{{ old('nta') }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('nta')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
+            {{-- END: Kolom Harga Baru --}}
             
             <div class="mb-4">
                 <label for="pax" class="block text-sm font-medium text-gray-700 mb-2">Pax / Capacity</label>
@@ -93,7 +116,7 @@
                 @error('images')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
-                 @error('images.*')
+                @error('images.*')
                     <p class="text-red-500 text-sm mt-1">Satu atau lebih file gambar tidak valid.</p>
                 @enderror
                 <p class="text-xs text-gray-500 mt-1">File yang diizinkan: jpeg, png, jpg, gif, svg (Max 2MB per file)</p>
@@ -106,4 +129,41 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const basicPriceInput = document.getElementById('basic_price');
+    const taxRateInput = document.getElementById('tax_rate');
+    const ntaInput = document.getElementById('nta');
+
+    /**
+     * Fungsi untuk menghitung NTA (asumsi NTA = Basic Price + Tax).
+     * Basic Price dianggap harga eksklusif pajak.
+     * Rumus: NTA = Basic Price * (1 + Tax Rate%)
+     */
+    function calculateNta() {
+        // Ambil nilai dan ubah ke float. Jika kosong, anggap 0.
+        const basicPrice = parseFloat(basicPriceInput.value) || 0;
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+
+        let nta = basicPrice; 
+
+        if (basicPrice >= 0 && taxRate >= 0) {
+            // Hitung NTA dengan asumsi Basic Price EKSKLUSIF Pajak
+            const multiplier = 1 + (taxRate / 100);
+            nta = basicPrice * multiplier;
+        }
+
+        // Tampilkan NTA, bulatkan ke 2 desimal
+        ntaInput.value = nta.toFixed(2); 
+    }
+
+    // Panggil fungsi hitung saat ada perubahan pada Basic Price atau Tax Rate
+    basicPriceInput.addEventListener('input', calculateNta);
+    taxRateInput.addEventListener('input', calculateNta);
+
+    // Hitung NTA saat halaman dimuat (untuk old() value)
+    calculateNta();
+});
+</script>
 @endsection
