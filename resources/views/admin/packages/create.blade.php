@@ -6,7 +6,6 @@
     <div class="max-w-4xl mx-auto">
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Create New Packages</h1>
 
-        {{-- Pastikan enctype="multipart/form-data" ada --}}
         <form action="{{ route('admin.packages.store') }}" method="POST" enctype="multipart/form-data" class="bg-white shadow-xl rounded-xl p-8 space-y-8">
             @csrf
 
@@ -14,7 +13,7 @@
             <div class="space-y-6">
                 <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Package Information</h2>
                 
-                {{-- **name_package** field (TIDAK BERUBAH) --}}
+                {{-- **name_package** field --}}
                 <div class="space-y-2">
                     <label for="name_package" class="block text-sm font-medium text-gray-700">Package Name</label>
                     <input type="text" name="name_package" id="name_package" value="{{ old('name_package') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('name_package') border-red-500 @enderror" required>
@@ -23,7 +22,7 @@
                     @enderror
                 </div>
 
-                {{-- **SLUG** field (TIDAK BERUBAH) --}}
+                {{-- **SLUG** field --}}
                 <div class="space-y-2">
                     <label for="slug" class="block text-sm font-medium text-gray-700">Slug (URL Friendly Name)</label>
                     <input type="text" name="slug" id="slug" value="{{ old('slug') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50 focus:ring-blue-500 focus:border-blue-500 @error('slug') border-red-500 @enderror">
@@ -33,7 +32,7 @@
                     @enderror
                 </div>
                 
-                {{-- **description** field (TIDAK BERUBAH) --}}
+                {{-- **description** field --}}
                 <div class="space-y-2">
                     <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
                     <textarea name="description" id="description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
@@ -42,27 +41,25 @@
                     @enderror
                 </div>
 
-                {{-- **images** field (MODIFIKASI: Menggunakan multiple file input) --}}
+                {{-- **images** field --}}
                 <div class="space-y-2">
                     <label for="images" class="block text-sm font-medium text-gray-700">Package Images (Multiple)</label>
                     
-                    {{-- Ganti name="image" menjadi name="images[]" dan tambahkan multiple --}}
                     <input type="file" name="images[]" id="images" multiple accept="image/*" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 @error('images') border-red-500 @enderror @error('images.*') border-red-500 @enderror">
                     
                     <p class="text-xs text-gray-500">Pilih **satu atau lebih** gambar. Max 2MB per file. Format: JPEG, PNG, JPG, GIF.</p>
                     
-                    {{-- Error untuk validasi array secara keseluruhan (misal: min:1) --}}
                     @error('images')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                     
-                    {{-- Error untuk validasi per item (misal: ukuran, tipe mime) --}}
                     @error('images.*')
                         <p class="text-red-500 text-xs mt-1">Satu atau lebih file gambar gagal diunggah: {{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
+            ---
 
             {{-- SECTION 2: PRODUCTS (Multi-Select) --}}
             <div class="space-y-4 border p-4 rounded-lg bg-gray-50">
@@ -70,16 +67,17 @@
                 
                 <div class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto"> 
                     @forelse ($products as $product)
-                        {{-- Cek apakah produk ini terpilih dari nilai old() --}}
                         @php
                             $isProductChecked = is_array(old('products')) && in_array($product->id, old('products'));
                             $paxValue = old('product_pax.' . $product->id, $product->pax ?? 1);
+                            // Ambil NTA atau fallback ke price
+                            $productNTA = $product->nta ?? $product->price ?? 0; 
                         @endphp
                         
-                        <div class="flex items-start space-x-3 product-item" data-price="{{ $product->price ?? 0 }}" data-pax-min="{{ $product->pax ?? 1 }}">
+                        <div class="flex items-start space-x-3 product-item" data-nta="{{ $productNTA }}" data-pax-min="{{ $product->pax ?? 1 }}">
                             <input type="checkbox" id="product_{{ $product->id }}" name="products[]" value="{{ $product->id }}" class="mt-1 product-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isProductChecked ? 'checked' : '' }}>
                             <label for="product_{{ $product->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
-                                {{ $product->name }} (Rp{{ number_format($product->price ?? 0, 0, ',', '.') }} / Min Pax: {{ $product->pax ?? 1 }})
+                                {{ $product->name }} (<span class="font-bold text-green-700">NTA: Rp{{ number_format($productNTA, 0, ',', '.') }}</span> / Pax: {{ $product->pax ?? 1 }})
                             </label>
                             
                             {{-- Input Pax untuk Produk --}}
@@ -106,6 +104,7 @@
                 @endif
             </div>
             
+            ---
             
             {{-- SECTION 3: ADDONS (Multi-Select) --}}
             <div class="space-y-4 border p-4 rounded-lg bg-gray-50">
@@ -113,16 +112,17 @@
                 
                 <div class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto">
                     @forelse ($addons as $addon)
-                        {{-- Cek apakah addon ini terpilih dari nilai old() --}}
                         @php
                             $isAddonChecked = is_array(old('addons')) && in_array($addon->id, old('addons'));
                             $paxValue = old('addon_pax.' . $addon->id, $addon->pax ?? 1);
+                            // Ambil NTA atau fallback ke price
+                            $addonNTA = $addon->nta ?? $addon->price ?? 0; 
                         @endphp
 
-                        <div class="flex items-start space-x-3 addon-item" data-price="{{ $addon->price ?? 0 }}" data-pax-min="{{ $addon->pax ?? 1 }}">
+                        <div class="flex items-start space-x-3 addon-item" data-nta="{{ $addonNTA }}" data-pax-min="{{ $addon->pax ?? 1 }}">
                             <input type="checkbox" id="addon_{{ $addon->id }}" name="addons[]" value="{{ $addon->id }}" class="mt-1 addon-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isAddonChecked ? 'checked' : '' }}>
                             <label for="addon_{{ $addon->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
-                                {{ $addon->addons }} (Rp{{ number_format($addon->price ?? 0, 0, ',', '.') }} / Min Pax: {{ $addon->pax ?? 1 }})
+                                {{ $addon->addons }} (<span class="font-bold text-green-700">NTA: Rp{{ number_format($addonNTA, 0, ',', '.') }}</span> / Pax: {{ $addon->pax ?? 1 }})
                             </label>
                             
                             {{-- Input Pax untuk Addon --}}
@@ -146,63 +146,34 @@
                 @endif
             </div>
 
-            {{-- SECTION 4: VENDOR SELECTION --}}
-            <div class="space-y-4 border p-4 rounded-lg bg-yellow-50">
-                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Select Vendor</h2>
-                
-                <div class="space-y-2">
-                    <label for="id_vendor_info" class="block text-sm font-medium text-gray-700">Vendor <span class="text-red-500">*</span></label>
-                    <select name="id_vendor_info" id="id_vendor_info" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('id_vendor_info') border-red-500 @enderror" required>
-                        <option value="">-- Choose Vendor --</option>
-                        @foreach($vendorInfos as $vendorInfo)
-                            <option value="{{ $vendorInfo->id }}" {{ old('id_vendor_info') == $vendorInfo->id ? 'selected' : '' }}>
-                                {{ $vendorInfo->name_corporate }} ({{ $vendorInfo->vendor->name ?? 'No Vendor Name' }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('id_vendor_info')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            {{-- SECTION 5: PRICE CALCULATION & PUBLISH FIELDS (TIDAK BERUBAH) --}}
+            ---
+            
+            {{-- SECTION 5: PRICE CALCULATION & PUBLISH FIELDS (Diskon Dihapus) --}}
             <div class="space-y-6 pt-4">
                 <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Pricing & Publishing</h2>
 
+                {{-- NTA (Nett Total Package Price) - Display --}}
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Real Price (Total Akumulasi Produk & Addon)</label>
+                    <label class="block text-sm font-medium text-gray-700">Nett Total Package Price (NTA) - Total Harga Pokok</label>
                     <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
-                        <span class="text-lg font-bold text-green-700" id="real_price_display">Rp0</span>
-                        <input type="hidden" name="price_real" id="price_real" value="{{ old('price_real', 0) }}">
+                        <span class="text-lg font-bold text-green-700" id="nta_display">Rp0</span>
+                        {{-- Input hidden NTA --}}
+                        <input type="hidden" name="nta" id="nta" value="{{ old('nta', 0) }}">
                     </div>
-                </div>
-                
-                <div class="space-y-2">
-                    <label for="discount_percentage" class="block text-sm font-medium text-gray-700">Discount Percentage (%)</label>
-                    <div class="relative rounded-lg shadow-sm">
-                        <input type="number" name="discount_percentage" id="discount_percentage" value="{{ old('discount_percentage', 0) }}" min="0" max="100" class="w-full pr-6 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('discount_percentage') border-red-500 @enderror" oninput="calculateRealPrice()">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500 sm:text-sm">%</span>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500">Masukkan nilai diskon dari 0 hingga 100. Harga Publish akan otomatis disesuaikan.</p>
-                    @error('discount_percentage')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
                 </div>
 
+                {{-- Price (Pax Paid) - Harga Jual Per Pax Final --}}
                 <div class="space-y-2">
-                    <label for="price_publish_input" class="block text-sm font-medium text-gray-700">Price (Publish) - *Harga Final setelah Diskon*</label>
+                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Price (Pax Paid) - Harga Jual Per Pax Final</label>
                     <div class="relative rounded-lg shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">Rp</span>
                         </div>
-                        {{-- Menggunakan price_publish_input sebagai nama input sesuai Controller --}}
-                        <input type="number" name="price_publish_input" id="price_publish" value="{{ old('price_publish_input') }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('price_publish_input') border-red-500 @enderror" required>
+                        {{-- Input field disesuaikan dengan 'pax_paid_input' --}}
+                        <input type="number" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input') }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('pax_paid_input') border-red-500 @enderror">
                     </div>
-                    <p class="text-xs text-gray-500">Harga ini dihitung dari Real Price dikurangi Diskon Persentase, namun dapat diubah secara manual.</p>
-                    @error('price_publish_input')
+                    <p class="text-xs text-gray-500">Harga ini dihitung dari Total Harga Pokok (NTA) dibagi total Pax, namun dapat diubah secara manual.</p>
+                    @error('pax_paid_input')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
@@ -246,176 +217,102 @@
     </div>
 </div>
 
-{{-- Skrip JavaScript tidak perlu diubah, kecuali jika Anda ingin menyesuaikan nilai old() yang dikembalikan --}}
 @push('scripts')
 
 <script>
-
     function slugify(text) {
-
         return text.toLowerCase()
-
             .trim()
-
             .replace(/[^a-z0-9\s-]/g, '')
-
             .replace(/[\s-]+/g, '-')
-
             .replace(/^-+|-+$/g, '');
-
     }
-
-
 
     function formatRupiah(number) {
-
         return new Intl.NumberFormat('id-ID', {
-
             style: 'currency',
-
             currency: 'IDR',
-
             minimumFractionDigits: 0
-
         }).format(number);
-
     }
 
+    // Fungsi utama untuk menghitung total NTA dan Harga Jual Per Pax
+    function calculatePrice() {
+        let totalNTA = 0;
+        let totalPaxCount = 0;
 
-
-    // Fungsi utama untuk menghitung total harga nyata (Real Price) dan harga publik (Price Publish)
-
-    function calculateRealPrice() {
-
-        let totalRealPrice = 0;
-
-
-
-        // 1. Hitung Total dari Products
-
+        // 1. Hitung Total NTA dan Total Pax dari Products
         document.querySelectorAll('.product-item').forEach(item => {
-
             const checkbox = item.querySelector('.product-checkbox');
-
             const paxInput = item.querySelector('.pax-input');
-
-           
-
+            
             if (checkbox.checked) {
-
-                const price = parseFloat(item.dataset.price) || 0;
-
+                const nta = parseFloat(item.dataset.nta) || 0;
                 const pax = parseInt(paxInput.value) || 1;
-
-               
-
-                totalRealPrice += price * pax;
-
+                
+                totalNTA += nta * pax;
+                totalPaxCount += pax; // Tambahkan jumlah pax produk
             }
-
         });
 
-
-
-        // 2. Hitung Total dari Addons
-
+        // 2. Hitung Total NTA dari Addons
         document.querySelectorAll('.addon-item').forEach(item => {
-
             const checkbox = item.querySelector('.addon-checkbox');
-
             const paxInput = item.querySelector('.pax-input');
 
-
-
             if (checkbox.checked) {
-
-                const price = parseFloat(item.dataset.price) || 0;
-
+                const nta = parseFloat(item.dataset.nta) || 0;
                 const pax = parseInt(paxInput.value) || 1;
 
-
-
-                totalRealPrice += price * pax;
-
+                totalNTA += nta * pax;
+                // Addons tidak dihitung ke Total Pax paket
             }
-
         });
 
+        // Update display dan hidden field NTA
+        document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
+        document.getElementById('nta').value = totalNTA;
+        
+        // 3. Hitung Harga Jual Per Pax (Pax Paid)
+        const paxPaidInput = document.getElementById('pax_paid_input'); 
+        
+        // Karena diskon dihapus, Total Harga Jual = Total NTA
+        const totalPricePublish = totalNTA; 
+        
+        let paxPaidCalculated = 0;
+        if (totalPaxCount > 0) {
+            // Harga Per Pax = Total NTA / Total Pax
+            paxPaidCalculated = totalPricePublish / totalPaxCount;
+        } else {
+            // Jika tidak ada pax, harga per pax dianggap 0
+            paxPaidCalculated = 0; 
+        }
 
-
-        // Update display dan hidden field Real Price
-
-        document.getElementById('real_price_display').textContent = formatRupiah(totalRealPrice);
-
-        document.getElementById('price_real').value = totalRealPrice;
-
-       
-
-        // 3. Hitung Price Publish berdasarkan Real Price dan Diskon
-
-        const discountInput = document.getElementById('discount_percentage');
-
-        const pricePublishInput = document.getElementById('price_publish');
-
-       
-
-        // Ambil nilai diskon, pastikan antara 0-100
-
-        let discountPercentage = parseFloat(discountInput.value) || 0;
-
-        discountPercentage = Math.min(100, Math.max(0, discountPercentage)); // Batasi antara 0 dan 100
-
-
-
-        // Hitung harga setelah diskon
-
-        const pricePublishFinal = totalRealPrice * (1 - (discountPercentage / 100));
-
-
-
-        // Update Price Publish
-
-        pricePublishInput.value = Math.round(pricePublishFinal);
-
+        // Update Pax Paid Input HANYA jika nilainya 0 atau kosong (otomatis)
+        if (parseInt(paxPaidInput.value) === 0 || paxPaidInput.value === "") {
+            paxPaidInput.value = Math.round(paxPaidCalculated);
+        }
     }
-
-
 
     document.addEventListener('DOMContentLoaded', function () {
-
         const namePackageInput = document.getElementById('name_package');
-
         const slugInput = document.getElementById('slug');
-
         const itemsContainer = document.querySelector('.container');
-
-        const discountInput = document.getElementById('discount_percentage');
-
-       
-
+        const paxPaidInput = document.getElementById('pax_paid_input'); 
+        
         // --- 1. SLUG AUTOGENERATION ---
-
         namePackageInput.addEventListener('keyup', function () {
-
             if (slugInput.value === '') {
-
                 slugInput.value = slugify(namePackageInput.value);
-
             }
-
         });
-
         namePackageInput.addEventListener('blur', function () {
-
             if (slugInput.value === '') {
-
                 slugInput.value = slugify(namePackageInput.value);
-
             }
-
         });
 
-
+        // --- 2. CHECKBOX AND PAX LOGIC ---
         itemsContainer.querySelectorAll('.product-checkbox, .addon-checkbox').forEach(checkbox => {
             const paxInput = checkbox.closest('.flex').querySelector('.pax-input');
             paxInput.disabled = !checkbox.checked;
@@ -425,16 +322,12 @@
                     paxInput.value = paxInput.min;
                     paxInput.focus();
                 } else {
-
                     paxInput.value = paxInput.min;
-
                 }
-                calculateRealPrice(); 
-
+                document.getElementById('pax_paid_input').value = 0; // Reset agar dihitung ulang
+                calculatePrice();
             });
-
         });
-
 
         itemsContainer.querySelectorAll('.pax-input').forEach(paxInput => {
             paxInput.addEventListener('input', function() {
@@ -444,16 +337,25 @@
                 if (currentValue < minValue) {
                     this.value = minValue;
                 }
-                calculateRealPrice(); 
-
+                document.getElementById('pax_paid_input').value = 0; // Reset agar dihitung ulang
+                calculatePrice();
             });
-
+            paxInput.addEventListener('change', function() {
+                 document.getElementById('pax_paid_input').value = 0; 
+            });
+        });
+        
+        // Hanya hitung otomatis jika user belum mengubahnya secara manual (nilai 0 atau kosong)
+        paxPaidInput.addEventListener('change', function() {
+            // Biarkan nilai manual
+        });
+        paxPaidInput.addEventListener('keyup', function() {
+            // Biarkan nilai manual
         });
 
-        discountInput.addEventListener('input', calculateRealPrice);
 
-        calculateRealPrice();
-
+        // Hitung harga saat halaman dimuat
+        calculatePrice();
     });
 
 </script>

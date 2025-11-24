@@ -24,7 +24,10 @@ class Product extends Model
         'description',
         'basic_price',
         'nta',
-        'tax_rate', 
+        'tax_rate',
+        'discount_type',
+        'discount_value',
+        'discount_expires_at', 
         'id_category',
         'id_vendor',
         'pax',
@@ -42,6 +45,8 @@ class Product extends Model
         'basic_price'  => 'decimal:2',
         'nta'          => 'decimal:2',
         'tax_rate'     => 'decimal:2',
+        'discount_value'      => 'decimal:2',
+        'discount_expires_at' => 'datetime',
         'pax'          => 'integer',
         'max_adults'   => 'integer',
         'max_children' => 'integer',
@@ -50,7 +55,7 @@ class Product extends Model
         'images'       => 'array',
     ];
 
-    // --- Relasi ---
+   // --- Relasi ---
 
     /**
      * Mendapatkan kategori yang dimiliki produk ini.
@@ -92,20 +97,60 @@ class Product extends Model
         return $this->morphMany(\App\Models\Wishlist::class, 'wishable');
     }
     
-    // --- Accessor/Mutator (Opsional tapi Direkomendasikan) ---
+    // ------------------------------------------------------------------
+    // --- Accessor/Mutator (Menggunakan sintaks Laravel 9/10/11) ---
+    // ------------------------------------------------------------------
     
     /**
-     * Hitung total harga (NTA + Pajak).
-     * Ini adalah Accessor, digunakan seperti $product->total_price
+     * Hitung total harga (NTA + Pajak) SEBELUM diskon.
+     * Digunakan seperti $product->total_price_before_discount
      */
-    public function getTotalPriceAttribute(): float
+    protected function totalPriceBeforeDiscount(): Attribute
     {
-        $nta = $this->attributes['nta'];
-        $taxRate = $this->attributes['tax_rate'];
-        
-        // Perhitungan: Total = NTA + (NTA * (Tax Rate / 100))
-        $taxAmount = $nta * ($taxRate / 100);
-        
-        return round($nta + $taxAmount, 2);
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                $nta = $attributes['nta'];
+                $taxRate = $attributes['tax_rate'];
+                
+                // Perhitungan: Total = NTA + (NTA * (Tax Rate / 100))
+                $taxAmount = $nta * ($taxRate / 100);
+                
+                return round($nta + $taxAmount, 2);
+            },
+        );
+    }
+
+    /**
+     * Hitung harga akhir SETELAH diskon (jika ada dan belum kadaluarsa).
+     * Digunakan seperti $product->final_price
+     */
+    protected function finalPrice(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                $totalPrice = $this->totalPriceBeforeDiscount; // Ambil total harga sebelum diskon
+                $discountType = $attributes['discount_type'];
+                $discountValue = (float) $attributes['discount_value'];
+                $expiry = $attributes['discount_expires_at'];
+                
+                // Cek kadaluarsa diskon
+                if ($expiry && strtotime($expiry) < time()) {
+                    return $totalPrice; // Diskon kadaluarsa, kembalikan harga penuh
+                }
+
+                $discountAmount = 0.00;
+
+                if ($discountType === 'percentage' && $discountValue > 0) {
+                    $discountAmount = $totalPrice * ($discountValue / 100);
+                } elseif ($discountType === 'fixed' && $discountValue > 0) {
+                    $discountAmount = $discountValue;
+                }
+                
+                $finalPrice = $totalPrice - $discountAmount;
+                
+                // Pastikan harga tidak menjadi negatif
+                return round(max(0, $finalPrice), 2);
+            },
+        );
     }
 }

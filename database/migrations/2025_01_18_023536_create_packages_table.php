@@ -17,12 +17,11 @@ return new class extends Migration
             $table->string('slug')->unique(); 
             $table->text('description')->nullable();
             $table->json('images')->nullable();      
-            $table->decimal('price_real', 15, 2); 
+            $table->decimal('nta', 15, 2); 
             $table->json('products_data')->nullable(); 
             $table->json('addons_data')->nullable();
-            $table->decimal('price_publish', 15, 2);
-            $table->unsignedTinyInteger('discount_percentage')->default(0); 
-            $table->dateTime('start_publish');
+            $table->decimal('pax_paid', 15, 2);
+            $table->dateTime('start_publish');  
             $table->dateTime('end_publish')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

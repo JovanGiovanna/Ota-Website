@@ -30,6 +30,8 @@ class CategorySeeder extends Seeder
             ['categories' => 'Comfort Transportation',   'type_id_name' => 'Premium'],
             ['categories' => 'Comfort Accommodation',    'type_id_name' => 'Premium'],
             ['categories' => 'Wellness Activities',      'type_id_name' => 'Wellness'],
+            ['categories' => 'Luxury Travel',            'type_id_name' => 'Wellness'],
+            ['categories' => 'Food & Beverages',         'type_id_name' => 'Wellness'],
         ];
 
         foreach ($categoriesData as $categoryData) {

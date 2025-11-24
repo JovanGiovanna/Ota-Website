@@ -24,6 +24,9 @@ return new class extends Migration
             $table->decimal('basic_price', 10, 2); 
             $table->decimal('nta', 10, 2)->nullable();
             $table->decimal('tax_rate', 5, 2)->default(0.00); 
+            $table->enum('discount_type', ['percentage', 'fixed'])->nullable();
+            $table->decimal('discount_value', 8, 2)->nullable();
+            $table->timestamp('discount_expires_at')->nullable();
             $table->boolean('publish')->default(false); 
             
             $table->json('images')->nullable(); 

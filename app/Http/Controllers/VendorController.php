@@ -11,7 +11,7 @@ use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\Addon; 
-use App\Models\Category; // Tambahkan use Category jika diperlukan di Product/Addon CRUD
+use App\Models\Category;
 
 class VendorController extends Controller
 {
@@ -232,7 +232,7 @@ class VendorController extends Controller
         return view('super_admin.vendors.addons', compact('vendor', 'addons'));
     }
 
-    // DISESUAIKAN: Mengubah 'price' menjadi 'basic_price', 'nta', 'tax_rate'
+    // DISESUAIKAN: Menambahkan kolom diskon
     public function vendorAddonDetails($vendorId, $addonId)
     {
         $vendor = Vendor::findOrFail($vendorId);
@@ -240,12 +240,17 @@ class VendorController extends Controller
 
         return response()->json([
             'addons' => $addon->addons,
-            'basic_price' => $addon->basic_price, // BARU
-            'nta' => $addon->nta,               // BARU
-            'tax_rate' => $addon->tax_rate,     // BARU
+            'basic_price' => $addon->basic_price, 
+            'nta' => $addon->nta,           
+            'tax_rate' => $addon->tax_rate,      
             'status' => $addon->status,
             'publish' => $addon->publish,
             'desc' => $addon->desc,
+            // --- KOLOM DISKON BARU ---
+            'discount_type' => $addon->discount_type,
+            'discount_value' => $addon->discount_value,
+            'discount_expires_at' => $addon->discount_expires_at,
+            // --------------------------
         ]);
     }
 
@@ -329,7 +334,7 @@ class VendorController extends Controller
         return view('vendor.transaction_addons', compact('transactions'));
     }
 
-    // Product CRUD methods
+    // Product CRUD methods (sudah disesuaikan di code asli Anda)
     public function createProduct()
     {
         $categories = \App\Models\Category::all();
@@ -341,15 +346,18 @@ class VendorController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
-            // Perubahan Validasi Harga dan Pajak (sudah benar)
-            'basic_price' => 'required|numeric|min:0', // Mengganti 'price'
+            'basic_price' => 'required|numeric|min:0', 
             'nta' => 'required|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100', // Kolom baru
+            'tax_rate' => 'nullable|numeric|min:0|max:100', 
             
-            // VALIDASI UNTUK MULTIPLE IMAGES
-            'images' => 'nullable|array|max:5', // Maksimal 5 gambar
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Validasi untuk setiap file
+            // --- VALIDASI DISKON BARU (PRODUCT) ---
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date|after:today',
+            // ---------------------------
             
+            'images' => 'nullable|array|max:5', 
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', 
             'description' => 'nullable|string',
             'pax' => 'required|integer|min:1',
             'jumlah' => 'required|integer|min:1',
@@ -360,7 +368,6 @@ class VendorController extends Controller
 
         $vendor = Auth::guard('vendor')->user();
 
-        // Ambil semua data kecuali 'images'
         $data = $request->except('images'); 
         $data['id_vendor'] = $vendor->id;
         $imagePaths = [];
@@ -372,10 +379,12 @@ class VendorController extends Controller
             }
         }
         
-        $data['images'] = $imagePaths; // Simpan array paths ke kolom 'images'
+        $data['images'] = $imagePaths; 
+        $data['tax_rate'] = $request->input('tax_rate', 0.00);
         
-        // Pastikan kolom tax_rate memiliki nilai default jika null
-        $data['tax_rate'] = $request->input('tax_rate', 0.00); 
+        if (!$request->filled('discount_expires_at')) {
+            $data['discount_expires_at'] = null;
+        }
 
         Product::create($data);
 
@@ -399,10 +408,15 @@ class VendorController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'id_category' => 'required|exists:categories,id',
-            // Perubahan Validasi Harga dan Pajak (sudah benar)
-            'basic_price' => 'required|numeric|min:0', // Mengganti 'price'
+            'basic_price' => 'required|numeric|min:0', 
             'nta' => 'required|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100', // Kolom baru
+            'tax_rate' => 'nullable|numeric|min:0|max:100', 
+            
+            // --- VALIDASI DISKON BARU (PRODUCT) ---
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date|after:today',
+            // ---------------------------
             
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -419,26 +433,24 @@ class VendorController extends Controller
         $data = $request->except(['images', 'remove_images']);
         $imagePaths = $product->images ?? [];
 
-        // Handle image removal
+        // Handle image removal (logic sudah benar)
         if ($request->has('remove_images') && is_array($request->remove_images)) {
             $imagesToRemove = $request->remove_images;
             $newImagePaths = [];
 
             foreach ($imagePaths as $index => $imagePath) {
-                if (in_array($index, $imagesToRemove)) {
-                    // Delete the file from storage
-                    if ($imagePath && Storage::disk('public')->exists($imagePath)) {
-                        Storage::disk('public')->delete($imagePath);
-                    }
-                } else {
-                    // Keep the image
+                if (!in_array($index, $imagesToRemove)) {
                     $newImagePaths[] = $imagePath;
+                } else {
+                    if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                         Storage::disk('public')->delete($imagePath);
+                    }
                 }
             }
             $imagePaths = $newImagePaths;
         }
 
-        // Handle new image uploads
+        // Handle new image uploads (logic sudah benar)
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $imagePaths[] = $image->store('products', 'public');
@@ -446,15 +458,16 @@ class VendorController extends Controller
         }
 
         $data['images'] = $imagePaths;
+        $data['tax_rate'] = $request->input('tax_rate', $product->tax_rate ?? 0.00);
         
-        // Pastikan kolom tax_rate memiliki nilai default jika null
-        $data['tax_rate'] = $request->input('tax_rate', 0.00); 
+        if (!$request->filled('discount_expires_at')) {
+            $data['discount_expires_at'] = null;
+        }
 
         $product->update($data);
 
         return redirect()->route('vendor.products')->with('success', 'Product updated successfully');
     }
-
 
     public function destroyProduct($id)
     {
@@ -470,7 +483,6 @@ class VendorController extends Controller
             }
         }
 
-        // Lakukan soft delete (diperlukan Trait SoftDeletes di model Product)
         $product->delete();
 
         return redirect()->route('vendor.products')->with('success', 'Product deleted successfully (Soft Deleted)');
@@ -482,33 +494,42 @@ class VendorController extends Controller
         return view('vendor.addons.create');
     }
 
-    // DISESUAIKAN: Mengganti 'price' dengan 'basic_price', 'nta', 'tax_rate'
+    /**
+     * Menyimpan addon baru. (DISESUAIKAN UNTUK DISKON)
+     */
     public function storeAddon(Request $request)
     {
         $rules = [
-            'addons'    => 'required|string|max:255',
-            'basic_price' => 'required|numeric|min:0', // DIGANTI
-            'nta'       => 'required|numeric|min:0', // BARU
-            'tax_rate'  => 'nullable|numeric|min:0|max:100', // BARU
-            'desc'      => 'nullable|string|max:500',
-            'status'    => 'sometimes|string|in:available,unavailable,draft',
-            'publish'   => 'sometimes|boolean',
-            'pax'       => 'sometimes|integer|min:1',
+            'addons'        => 'required|string|max:255',
+            'basic_price'   => 'required|numeric|min:0', 
+            'nta'           => 'required|numeric|min:0', 
+            'tax_rate'      => 'nullable|numeric|min:0|max:100', 
+            'desc'          => 'nullable|string|max:500',
+            'status'        => 'sometimes|string|in:available,unavailable,draft',
+            'publish'       => 'sometimes|boolean',
+            'pax'           => 'sometimes|integer|min:1',
+            
+            // --- VALIDASI DISKON BARU (ADDON) ---
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date|after:today',
+            // -------------------------------------
 
-            // Validasi untuk Multiple Images
-            'images'    => 'nullable|array|max:5',
-            'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'images'        => 'nullable|array|max:5',
+            'images.*'      => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
 
-        // If super_admin, require id_vendor
         if (Auth::guard('super_admin')->check()) {
             $rules['id_vendor'] = 'required|uuid|exists:vendor,id';
         }
 
         $request->validate($rules);
 
-        // Ambil data non-file/non-image (menggunakan kolom baru)
-        $data = $request->only(['addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax']);
+        // Ambil semua data yang relevan, termasuk diskon
+        $data = $request->only([
+            'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
+            'discount_type', 'discount_value', 'discount_expires_at' // KOLOM DISKON BARU
+        ]);
 
         // Set id_vendor based on user type
         if (Auth::guard('super_admin')->check()) {
@@ -519,7 +540,7 @@ class VendorController extends Controller
         }
         
         $imagePaths = [];
-        $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
+        $uploadedPaths = []; 
 
         DB::beginTransaction();
         try {
@@ -527,16 +548,18 @@ class VendorController extends Controller
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('addons', 'public');
-                    $uploadedPaths[] = $path; // Simpan path untuk rollback
+                    $uploadedPaths[] = $path; 
                     $imagePaths[] = $path;
                 }
             } 
             
-            // Simpan array path ke kolom 'images'
             $data['images'] = $imagePaths;
-            
-            // Pastikan kolom tax_rate memiliki nilai default jika null
             $data['tax_rate'] = $request->input('tax_rate', 0.00); 
+
+            // Handle tanggal kadaluarsa diskon yang mungkin kosong
+            if (!$request->filled('discount_expires_at')) {
+                $data['discount_expires_at'] = null;
+            }
 
             Addon::create($data);
 
@@ -546,7 +569,6 @@ class VendorController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // Hapus SEMUA file yang baru ter-upload jika terjadi error
             foreach ($uploadedPaths as $path) {
                 if (Storage::disk('public')->exists($path)) {
                     Storage::disk('public')->delete($path);
@@ -558,28 +580,32 @@ class VendorController extends Controller
     }
 
     /**
-     * Memperbarui addon tertentu (Web/Blade View).
+     * Memperbarui addon tertentu (Web/Blade View). (DISESUAIKAN UNTUK DISKON)
      */
-    // DISESUAIKAN: Mengganti 'price' dengan 'basic_price', 'nta', 'tax_rate'
     public function updateAddon(Request $request, $id)
     {
         $rules = [
-            'addons'    => 'sometimes|required|string|max:255',
-            'basic_price' => 'sometimes|required|numeric|min:0', // DIGANTI
-            'nta'       => 'sometimes|required|numeric|min:0', // BARU
-            'tax_rate'  => 'nullable|numeric|min:0|max:100', // BARU
-            'desc'      => 'nullable|string|max:500',
-            'status'    => 'sometimes|string|in:available,unavailable,draft',
-            'publish'   => 'sometimes|boolean',
-            'pax'       => 'sometimes|integer|min:1',
-            // Validasi untuk Multiple Images
-            'images'    => 'nullable|array|max:5',
-            'images.*'  => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'addons'        => 'sometimes|required|string|max:255',
+            'basic_price'   => 'sometimes|required|numeric|min:0', 
+            'nta'           => 'sometimes|required|numeric|min:0', 
+            'tax_rate'      => 'nullable|numeric|min:0|max:100', 
+            'desc'          => 'nullable|string|max:500',
+            'status'        => 'sometimes|string|in:available,unavailable,draft',
+            'publish'       => 'sometimes|boolean',
+            'pax'           => 'sometimes|integer|min:1',
+            
+            // --- VALIDASI DISKON BARU (ADDON) ---
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date|after:today',
+            // -------------------------------------
+
+            'images'        => 'nullable|array|max:5',
+            'images.*'      => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'remove_images' => 'nullable|array',
             'remove_images.*' => 'integer|min:0',
         ];
 
-        // If super_admin, require id_vendor
         if (Auth::guard('super_admin')->check()) {
             $rules['id_vendor'] = 'required|uuid|exists:vendor,id';
         }
@@ -598,53 +624,53 @@ class VendorController extends Controller
             return redirect()->route('vendor.addons')->with('error', 'Addon tidak ditemukan atau akses ditolak');
         }
 
-        // Ambil data non-file/non-image (menggunakan kolom baru)
-        $data = $request->only(['addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax']);
+        // Ambil semua data yang relevan, termasuk diskon
+        $data = $request->only([
+            'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
+            'discount_type', 'discount_value', 'discount_expires_at' // KOLOM DISKON BARU
+        ]);
 
-        // Set id_vendor if super_admin
         if (Auth::guard('super_admin')->check() && $request->filled('id_vendor')) {
             $data['id_vendor'] = $request->id_vendor;
         }
 
         $imagePaths = $addon->images ?? [];
-
-        // Handle image removal
-        if ($request->has('remove_images') && is_array($request->remove_images)) {
-            $imagesToRemove = $request->remove_images;
-            $newImagePaths = [];
-
-            foreach ($imagePaths as $index => $imagePath) {
-                if (in_array($index, $imagesToRemove)) {
-                    // Delete the file from storage
-                    if ($imagePath && Storage::disk('public')->exists($imagePath)) {
-                        Storage::disk('public')->delete($imagePath);
-                    }
-                } else {
-                    // Keep the image
-                    $newImagePaths[] = $imagePath;
-                }
-            }
-            $imagePaths = $newImagePaths;
-        }
-
-        $uploadedPaths = []; // Untuk melacak file yang diupload (diperlukan untuk rollback)
+        $uploadedPaths = []; 
 
         DB::beginTransaction();
         try {
+            // Handle image removal (logic sudah benar)
+            if ($request->has('remove_images') && is_array($request->remove_images)) {
+                 $imagesToRemove = $request->remove_images;
+                 $newImagePaths = [];
+                 foreach ($imagePaths as $index => $imagePath) {
+                     if (!in_array($index, $imagesToRemove)) {
+                         $newImagePaths[] = $imagePath;
+                     } else {
+                         if ($imagePath && Storage::disk('public')->exists($imagePath)) {
+                              Storage::disk('public')->delete($imagePath);
+                         }
+                     }
+                 }
+                 $imagePaths = $newImagePaths;
+            }
+
             // PROSES UPLOAD MULTIPLE IMAGES
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('addons', 'public');
-                    $uploadedPaths[] = $path; // Simpan path untuk rollback
+                    $uploadedPaths[] = $path; 
                     $imagePaths[] = $path;
                 }
             }
 
-            // Simpan array path ke kolom 'images'
             $data['images'] = $imagePaths;
-            
-            // Pastikan kolom tax_rate memiliki nilai default jika null
             $data['tax_rate'] = $request->input('tax_rate', $addon->tax_rate ?? 0.00); 
+            
+            // Handle tanggal kadaluarsa diskon yang mungkin kosong
+            if (!$request->filled('discount_expires_at')) {
+                $data['discount_expires_at'] = null;
+            }
 
             $addon->update($data);
 
@@ -654,7 +680,6 @@ class VendorController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // Hapus SEMUA file yang baru ter-upload jika terjadi error
             foreach ($uploadedPaths as $path) {
                 if (Storage::disk('public')->exists($path)) {
                     Storage::disk('public')->delete($path);
@@ -703,7 +728,6 @@ class VendorController extends Controller
             }
         }
 
-        // Lakukan soft delete (diperlukan Trait SoftDeletes di model Addon)
         $addon->delete();
 
         return redirect()->route('vendor.addons')->with('success', 'Addon deleted successfully (Soft Deleted)');

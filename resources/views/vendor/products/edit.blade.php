@@ -9,6 +9,7 @@
             @csrf
             @method('PUT')
 
+
             <div class="mb-4">
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
                 <input type="text" name="name" id="name" value="{{ old('name', $product->name) }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -49,12 +50,12 @@
                 @enderror
             </div>
 
-            {{-- START: Kolom Harga Baru (Mengganti Price) --}}
+
+            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {{-- 1. Basic Price (Harga Dasar) --}}
                 <div>
                     <label for="basic_price" class="block text-sm font-medium text-gray-700 mb-2">Basic Price (Harga Dasar)</label>
-                    {{-- Asumsi kolom di model/database adalah basic_price, dan price lama diubah ke basic_price --}}
                     <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price', $product->basic_price ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     @error('basic_price')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -64,33 +65,78 @@
                 {{-- 2. Tax Rate (%) --}}
                 <div>
                     <label for="tax_rate" class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
-                    {{-- Asumsi kolom di model/database adalah tax_rate --}}
                     <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $product->tax_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     @error('tax_rate')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- 3. NTA (Net Transaction Amount) - Otomatis --}}
+                {{-- 3. NTA (Net Transaction Amount) - Otomatis & Readonly --}}
                 <div>
                     <label for="nta" class="block text-sm font-medium text-gray-700 mb-2">NTA (Harga Jual Final)</label>
-                    {{-- Asumsi kolom di model/database adalah nta, atau menggunakan price jika nta belum ada --}}
-                    <input type="number" name="nta" id="nta" value="{{ old('nta', $product->nta ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    {{-- DIUBAH: Ditambahkan readonly dan styling bg-gray-100 --}}
+                    <input type="number" name="nta" id="nta" value="{{ old('nta', $product->nta ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
                     @error('nta')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
-            {{-- END: Kolom Harga Baru --}}
 
+            {{-- **BAGIAN DISKON BARU: Fixed vs Percentage** --}}
+            <h4 class="text-md font-semibold text-gray-800 mb-3 mt-4">Pilih Tipe Diskon</h4>
+            
+            @php
+                // Logika untuk menentukan tipe diskon saat ini
+                $currentDiscountType = 'none';
+                if (($product->discount_rate ?? 0) > 0 || old('discount_rate') > 0) {
+                    $currentDiscountType = 'percentage';
+                } elseif (($product->discount_fixed ?? 0) > 0 || old('discount_fixed') > 0) {
+                    $currentDiscountType = 'fixed';
+                }
+            @endphp
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
+                {{-- Pilihan Tipe Diskon --}}
+                <div>
+                    <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-2">Tipe Diskon</label>
+                    <select id="discount_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="none" {{ $currentDiscountType == 'none' ? 'selected' : '' }}>Tidak Ada Diskon</option>
+                        <option value="percentage" {{ $currentDiscountType == 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
+                        <option value="fixed" {{ $currentDiscountType == 'fixed' ? 'selected' : '' }}>Fixed Price (Rp)</option>
+                    </select>
+                </div>
+                
+                {{-- 4a. Discount Rate (%) - Input --}}
+                <div id="discount_rate_wrapper" class="{{ $currentDiscountType == 'percentage' ? '' : 'hidden' }}">
+                    <label for="discount_rate" class="block text-sm font-medium text-gray-700 mb-2">Discount Rate (%)</label>
+                    <input type="number" name="discount_rate" id="discount_rate" value="{{ old('discount_rate', $product->discount_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_rate')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- 4b. Discount Fixed (Rp) - Input --}}
+                <div id="discount_fixed_wrapper" class="{{ $currentDiscountType == 'fixed' ? '' : 'hidden' }}">
+                    <label for="discount_fixed" class="block text-sm font-medium text-gray-700 mb-2">Discount Fixed (Rp)</label>
+                    <input type="number" name="discount_fixed" id="discount_fixed" value="{{ old('discount_fixed', $product->discount_fixed ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_fixed')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            {{-- 5. Discount Price (Nilai rupiah yang digunakan) - Otomatis & Readonly --}}
             <div class="mb-4">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea name="description" id="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description', $product->description) }}</textarea>
-                @error('description')
+                <label for="discount_price" class="block text-sm font-medium text-gray-700 mb-2">Potongan Harga (Rp)</label>
+                {{-- Asumsi kolom ini ada di database untuk ditampilkan, jika tidak ada, akan dihitung JS --}}
+                <input type="number" name="discount_price" id="discount_price" value="{{ old('discount_price', $product->discount_price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
+                <p class="text-xs text-gray-500 mt-1">Nilai potongan harga ini akan dihitung otomatis dari tipe diskon yang dipilih.</p>
+                @error('discount_price')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-
+            
+            
             <div class="mb-4">
                 <label for="pax" class="block text-sm font-medium text-gray-700 mb-2">Pax (Capacity / Min Quantity)</label>
                 <input type="number" name="pax" id="pax" value="{{ old('pax', $product->pax) }}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -122,6 +168,7 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
+
 
             <div class="mb-4">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -200,38 +247,97 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Script Perhitungan Harga Baru ---
+    // --- Elemen Harga & Diskon ---
     const basicPriceInput = document.getElementById('basic_price');
     const taxRateInput = document.getElementById('tax_rate');
     const ntaInput = document.getElementById('nta');
 
+    // Elemen Diskon
+    const discountTypeSelect = document.getElementById('discount_type');
+    const discountRateInput = document.getElementById('discount_rate');
+    const discountFixedInput = document.getElementById('discount_fixed');
+    const discountPriceInput = document.getElementById('discount_price');
+    const discountRateWrapper = document.getElementById('discount_rate_wrapper');
+    const discountFixedWrapper = document.getElementById('discount_fixed_wrapper');
+
     /**
-     * Fungsi untuk menghitung NTA (asumsi NTA = Basic Price + Tax).
-     * Rumus: NTA = Basic Price * (1 + Tax Rate%)
+     * Mengatur tampilan input diskon berdasarkan tipe yang dipilih.
+     */
+    function toggleDiscountInput() {
+        const type = discountTypeSelect.value;
+        
+        // Sembunyikan semua wrapper
+        discountRateWrapper.classList.add('hidden');
+        discountFixedWrapper.classList.add('hidden');
+        
+        // Reset nilai input yang disembunyikan dan nonaktifkan pengiriman data yang tidak relevan
+        discountRateInput.setAttribute('disabled', 'disabled');
+        discountFixedInput.setAttribute('disabled', 'disabled');
+
+        if (type === 'percentage') {
+            discountRateWrapper.classList.remove('hidden');
+            discountRateInput.removeAttribute('disabled');
+        } else if (type === 'fixed') {
+            discountFixedWrapper.classList.remove('hidden');
+            discountFixedInput.removeAttribute('disabled');
+        } else {
+            // Tipe 'none'
+            discountRateInput.value = 0.00;
+            discountFixedInput.value = 0.00;
+        }
+        
+        calculateNta(); // Hitung ulang NTA setelah ganti tipe
+    }
+    
+    /**
+     * Fungsi untuk menghitung NTA, menggunakan Basic Price, Diskon, dan Tax Rate.
      */
     function calculateNta() {
-        const basicPrice = parseFloat(basicPriceInput.value) || 0;
-        const taxRate = parseFloat(taxRateInput.value) || 0;
-
-        let nta = basicPrice; 
-
-        if (basicPrice >= 0 && taxRate >= 0) {
-            // Hitung NTA dengan asumsi Basic Price EKSKLUSIF Pajak
-            const multiplier = 1 + (taxRate / 100);
-            nta = basicPrice * multiplier;
+        // Ambil nilai dan pastikan tidak negatif
+        const basicPrice = Math.max(0, parseFloat(basicPriceInput.value) || 0);
+        const taxRate = Math.max(0, parseFloat(taxRateInput.value) || 0);
+        const discountType = discountTypeSelect.value;
+        
+        let discountPrice = 0; 
+        
+        // 1. Tentukan Discount Price berdasarkan tipe input
+        if (discountType === 'percentage') {
+            const discountRate = Math.max(0, parseFloat(discountRateInput.value) || 0);
+            const validDiscountRate = Math.min(100, discountRate); 
+            discountPrice = basicPrice * (validDiscountRate / 100);
+        } else if (discountType === 'fixed') {
+            const fixedDiscount = Math.max(0, parseFloat(discountFixedInput.value) || 0);
+            discountPrice = fixedDiscount;
         }
 
-        // Tampilkan NTA, bulatkan ke 2 desimal
+        // Batasi Discount Price agar tidak melebihi Basic Price
+        discountPrice = Math.min(discountPrice, basicPrice);
+
+        // Tampilkan Discount Price (nilai rupiah diskon final)
+        discountPriceInput.value = discountPrice.toFixed(2);
+        
+        // 2. Hitung Harga Setelah Diskon (Net Price sebelum Pajak)
+        const netPriceBeforeTax = basicPrice - discountPrice;
+        
+        // 3. Hitung NTA (Harga Final dengan Pajak)
+        const validTaxRate = Math.min(100, taxRate); 
+        const multiplier = 1 + (validTaxRate / 100);
+        const nta = netPriceBeforeTax * multiplier;
+
+        // Tampilkan NTA
         ntaInput.value = nta.toFixed(2); 
     }
 
-    // Panggil fungsi hitung saat ada perubahan pada Basic Price atau Tax Rate
+    // Event Listeners
     basicPriceInput.addEventListener('input', calculateNta);
     taxRateInput.addEventListener('input', calculateNta);
+    discountRateInput.addEventListener('input', calculateNta);
+    discountFixedInput.addEventListener('input', calculateNta);
+    discountTypeSelect.addEventListener('change', toggleDiscountInput);
 
-    // Hitung NTA saat halaman dimuat (untuk old() value atau $product->value)
-    calculateNta();
-
+    // --- Inisialisasi pada load ---
+    toggleDiscountInput();
+    
     // --- Script untuk Hapus Gambar (dari kode asli Anda) ---
     // Handle checkbox changes for visual feedback
     document.querySelectorAll('input[name="remove_images[]"]').forEach(function(checkbox) {

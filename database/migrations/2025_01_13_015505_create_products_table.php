@@ -20,6 +20,10 @@ return new class extends Migration
 
             $table->decimal('tax_rate', 5, 2)->default(0.00)->comment('Persentase Pajak'); 
             
+            $table->enum('discount_type', ['percentage', 'fixed'])->nullable()->comment('Tipe Diskon');
+            $table->decimal('discount_value', 10, 2)->nullable()->comment('Nilai Diskon');
+            $table->timestamp('discount_expires_at')->nullable()->comment('Kadaluarsa Diskon');
+            
             $table->foreignUuid('id_category')
                   ->constrained('categories') 
                   ->onDelete('cascade');

@@ -10,30 +10,14 @@ class Package extends Model
 {
     use HasFactory, SoftDeletes; // Menggunakan SoftDeletes
 
-    /**
-     * Nama tabel yang terkait dengan model.
-     *
-     * @var string
-     */
     protected $table = 'packages';
-
-    /**
-     * Tipe kunci primer (UUID).
-     *
-     * @var string
-     */
     protected $keyType = 'string';
-
-    /**
-     * Menunjukkan apakah ID otomatis bertambah.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
     /**
      * Kolom-kolom yang dapat diisi secara massal (mass assignable).
-     * Menambahkan 'discount_percentage' dan 'id_vendor_info'.
+     * Telah Disesuaikan dengan kolom Migrasi: nta, pax_paid, discount_percentage, products_data, addons_data.
+     * Dihapus: price_real, price_publish, id_vendor_info (karena tidak ada di migrasi).
      * @var array<int, string>
      */
     protected $fillable = [
@@ -41,26 +25,22 @@ class Package extends Model
         'slug',
         'description',
         'images',
-        'price_real',
-        'price_publish',
-        'discount_percentage',
+        'nta',           // ⬅️ Ditambahkan
+        'pax_paid',      // ⬅️ Ditambahkan
         'start_publish',
         'end_publish',
         'is_active',
         'products_data',
         'addons_data',
-        'id_vendor_info',
     ];
 
     /**
      * Kolom-kolom yang harus di-cast ke tipe data asli.
-     * Menambahkan 'discount_percentage'.
      * @var array<string, string>
      */
     protected $casts = [
-        'price_publish' => 'decimal:2',
-        'price_real' => 'decimal:2',
-        'discount_percentage' => 'integer',
+        'nta' => 'decimal:2',           // ⬅️ Ditambahkan/Diubah
+        'pax_paid' => 'decimal:2',      // ⬅️ Ditambahkan/Diubah
         'start_publish' => 'datetime',
         'end_publish' => 'datetime',
         'is_active' => 'boolean',
@@ -82,26 +62,26 @@ class Package extends Model
         });
     }
 
-    // --- Relasi (Relasi product() dan addon() dihapus karena sudah diganti data JSON) ---
+    // --- Relasi (Relasi yang tidak memiliki foreign key di Migrasi dinonaktifkan/dihapus) ---
 
-    /**
-     * Get the vendor info for the package.
-     */
+    // ❌ Relasi 'vendorInfo' dinonaktifkan karena 'id_vendor_info' TIDAK ada di Migrasi
+    /*
     public function vendorInfo()
     {
         return $this->belongsTo(\App\Models\VendorInfo::class, 'id_vendor_info');
     }
+    */
 
-    /**
-     * Get the type for the package.
-     */
+    // ❌ Relasi 'type' dinonaktifkan karena 'id_type' TIDAK ada di Migrasi
+    /*
     public function type()
     {
         return $this->belongsTo(\App\Models\Type::class, 'id_type');
     }
+    */
 
     /**
-     * Get the reviews for the package.
+     * Get the reviews for the package. (Asumsi ini masih relevan dengan tabel lain)
      */
     public function reviews()
     {

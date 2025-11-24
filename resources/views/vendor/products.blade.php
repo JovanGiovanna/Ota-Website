@@ -30,6 +30,8 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 {{-- KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
+                                {{-- KOLOM DISKON BARU --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
                                 {{-- END KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3">
@@ -75,6 +77,19 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                     <div class="text-xs text-gray-500">
                                         Tax: {{ number_format($product->tax_rate ?? 0, 2, ',', '.') }}%
                                     </div>
+                                </td>
+                                {{-- KOLOM DISKON BARU (Menampilkan Rupiah Diskon Final) --}}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    @if(($product->discount_value ?? 0) > 0)
+                                        <span class="text-red-600 font-semibold">
+                                            - Rp {{ number_format($product->discount_value, 0, ',', '.') }}
+                                        </span>
+                                        <div class="text-xs text-gray-500">
+                                            ({{ ($product->discount_rate ?? 0) > 0 ? number_format($product->discount_value, 2) . '%' : 'Fixed' }})
+                                        </div>
+                                    @else
+                                        <span class="text-gray-500">None</span>
+                                    @endif
                                 </td>
                                 {{-- END ISI KOLOM HARGA BARU --}}
                                 

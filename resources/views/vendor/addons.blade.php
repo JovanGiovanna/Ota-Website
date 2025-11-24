@@ -26,9 +26,10 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add-on</th>
-                                {{-- KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
-                                {{-- END KOLOM HARGA BARU --}}
+                                {{-- KOLOM DISKON BARU --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                                {{-- END KOLOM DISKON BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3">
                                     <span class="sr-only">Actions</span>
@@ -60,13 +61,11 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $addon->addons ?? 'N/A' }}</td>
                                 
-                                {{-- ISI KOLOM HARGA BARU --}}
+                                {{-- KOLOM HARGA --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    {{-- Asumsi kolom nta tersedia, atau fallback ke price lama --}}
                                     <div class="font-bold text-gray-900">
                                         NTA: Rp {{ number_format($addon->nta ?? $addon->price ?? 0, 0, ',', '.') }}
                                     </div>
-                                    {{-- Asumsi kolom basic_price dan tax_rate tersedia --}}
                                     <div class="text-xs text-gray-500 mt-1">
                                         Basic: Rp {{ number_format($addon->basic_price ?? 0, 0, ',', '.') }}
                                     </div>
@@ -74,16 +73,30 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                         Tax: {{ number_format($addon->tax_rate ?? 0, 2, ',', '.') }}%
                                     </div>
                                 </td>
-                                {{-- END ISI KOLOM HARGA BARU --}}
+
+                                {{-- KOLOM DISKON DENGAN HANYA MENAMPILKAN discount_fixed --}}
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    @if(($addon->discount_value ?? 0) > 0)
+                                        <span class="text-red-600 font-semibold">
+                                            - Rp {{ number_format($addon->discount_value, 0, ',', '.') }}
+                                        </span>
+                                        <div class="text-xs text-gray-500">
+                                            (Fixed Discount) 
+                                        </div>
+                                    @else
+                                        <span class="text-gray-500">None</span>
+                                    @endif
+                                </td>
+                                {{-- END KOLOM DISKON --}}
 
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    {{-- Asumsi addon memiliki kolom status, jika tidak, pakai logic default yang ada --}}
+                                    {{-- Status Add-on --}}
                                     @if(isset($addon->status) && $addon->status == 'active')
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
                                     @elseif(isset($addon->status) && $addon->status == 'draft')
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Draft</span>
                                     @else
-                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

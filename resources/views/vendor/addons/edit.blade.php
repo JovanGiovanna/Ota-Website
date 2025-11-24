@@ -33,13 +33,13 @@
                 @enderror
             </div>
             @endif
-
-            {{-- START: Kolom Harga Baru --}}
+            
+            
+            {{-- START: Kolom Harga Dasar & Pajak --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {{-- 1. Basic Price (Harga Dasar) --}}
                 <div>
                     <label for="basic_price" class="block text-sm font-medium text-gray-700 mb-2">Basic Price (Harga Dasar)</label>
-                    {{-- Asumsi kolom di model/database adalah basic_price --}}
                     <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price', $addon->basic_price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     @error('basic_price')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -49,25 +49,79 @@
                 {{-- 2. Tax Rate (%) --}}
                 <div>
                     <label for="tax_rate" class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
-                    {{-- Asumsi kolom di model/database adalah tax_rate --}}
                     <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $addon->tax_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     @error('tax_rate')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- 3. NTA (Net Transaction Amount) - Otomatis --}}
+                {{-- 3. NTA (Net Transaction Amount) - Otomatis dan Readonly --}}
                 <div>
                     <label for="nta" class="block text-sm font-medium text-gray-700 mb-2">NTA (Harga Jual Final)</label>
-                    {{-- Asumsi kolom di model/database adalah nta --}}
-                    <input type="number" name="nta" id="nta" value="{{ old('nta', $addon->nta ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="number" name="nta" id="nta" value="{{ old('nta', $addon->nta ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
                     @error('nta')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
-            {{-- END: Kolom Harga Baru --}}
+            {{-- END: Kolom Harga Dasar & Pajak --}}
 
+            {{-- **BAGIAN DISKON BARU: Fixed vs Percentage** --}}
+            <h4 class="text-md font-semibold text-gray-800 mb-3 mt-4">Pilih Tipe Diskon</h4>
+            
+            @php
+                // Logika untuk menentukan tipe diskon saat ini (untuk Edit)
+                $currentDiscountType = 'none';
+                if (($addon->discount_rate ?? 0) > 0 || old('discount_rate') > 0) {
+                    $currentDiscountType = 'percentage';
+                } elseif (($addon->discount_fixed ?? 0) > 0 || old('discount_fixed') > 0) {
+                    $currentDiscountType = 'fixed';
+                }
+            @endphp
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
+                {{-- Pilihan Tipe Diskon --}}
+                <div>
+                    <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-2">Tipe Diskon</label>
+                    <select id="discount_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="none" {{ $currentDiscountType == 'none' ? 'selected' : '' }}>Tidak Ada Diskon</option>
+                        <option value="percentage" {{ $currentDiscountType == 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
+                        <option value="fixed" {{ $currentDiscountType == 'fixed' ? 'selected' : '' }}>Fixed Price (Rp)</option>
+                    </select>
+                </div>
+                
+                {{-- 4a. Discount Rate (%) - Input --}}
+                <div id="discount_rate_wrapper" class="{{ $currentDiscountType == 'percentage' ? '' : 'hidden' }}">
+                    <label for="discount_rate" class="block text-sm font-medium text-gray-700 mb-2">Discount Rate (%)</label>
+                    <input type="number" name="discount_rate" id="discount_rate" value="{{ old('discount_rate', $addon->discount_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_rate')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- 4b. Discount Fixed (Rp) - Input --}}
+                <div id="discount_fixed_wrapper" class="{{ $currentDiscountType == 'fixed' ? '' : 'hidden' }}">
+                    <label for="discount_fixed" class="block text-sm font-medium text-gray-700 mb-2">Discount Fixed (Rp)</label>
+                    <input type="number" name="discount_fixed" id="discount_fixed" value="{{ old('discount_fixed', $addon->discount_fixed ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_fixed')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            {{-- 5. Discount Price (Nilai rupiah yang digunakan) - Otomatis & Readonly --}}
+            <div class="mb-4">
+                <label for="discount_price" class="block text-sm font-medium text-gray-700 mb-2">Potongan Harga (Rp)</label>
+                {{-- Asumsi kolom discount_price tidak ada di database, akan dihitung JS, tapi old-nya bisa diisi --}}
+                <input type="number" name="discount_price" id="discount_price" value="{{ old('discount_price', $addon->discount_price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
+                <p class="text-xs text-gray-500 mt-1">Nilai potongan harga ini akan dihitung otomatis dari tipe diskon yang dipilih.</p>
+                @error('discount_price')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+
+            
             {{-- Bidang Pax (Kapasitas/Jumlah) --}}
             <div class="mb-4">
                 <label for="pax" class="block text-sm font-medium text-gray-700 mb-2">Pax / Capacity</label>
@@ -76,7 +130,7 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-
+            
             <div class="mb-4">
                 <label for="desc" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <textarea name="desc" id="desc" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('desc', $addon->desc) }}</textarea>
@@ -106,11 +160,11 @@
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-
+            
             <div class="mb-4">
                 <label for="images" class="block text-sm font-medium text-gray-700 mb-2">Addon Images</label>
 
-                {{-- Current Images with Delete Selection (Tetap menggunakan kode asli) --}}
+                {{-- Current Images with Delete Selection --}}
                 @if($addon->images && is_array($addon->images) && count($addon->images) > 0)
                     <div class="mb-4">
                         <h4 class="text-sm font-medium text-gray-700 mb-2">Current Images (Select to Delete)</h4>
@@ -120,7 +174,6 @@
                                     <img src="{{ asset('storage/' . $image) }}" alt="Current Image {{ $index + 1 }}" class="w-full h-24 object-cover rounded-md border-2 border-gray-200">
                                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-md flex items-center justify-center">
                                         <label class="flex items-center space-x-2 bg-white bg-opacity-90 px-2 py-1 rounded cursor-pointer hover:bg-opacity-100 transition-all">
-                                            {{-- Pastikan nilai old('remove_images', []) berfungsi untuk mempertahankan pilihan setelah validasi gagal --}}
                                             <input type="checkbox" name="remove_images[]" value="{{ $index }}" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
                                                 {{ in_array($index, old('remove_images', [])) ? 'checked' : '' }}>
                                             <span class="text-xs font-medium text-gray-700">Delete</span>
@@ -131,22 +184,22 @@
                                 </div>
                             @endforeach
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">Click on images you want to remove. Selected images will be highlighted in red.</p>
+                        <p class="text-xs text-gray-500 mt-2">Click pada gambar yang ingin Anda hapus. Gambar yang dipilih akan ditandai merah.</p>
                     </div>
                 @endif
 
                 {{-- Upload New Images --}}
                 <div class="mb-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Add New Images</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Add New Images (Multiple)</label>
                     <input type="file" name="images[]" id="images" accept="image/*" multiple class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <p class="text-xs text-gray-500 mt-1">Select multiple images to add. Leave empty to keep current images only.</p>
+                    <p class="text-xs text-gray-500 mt-1">Pilih beberapa gambar untuk ditambahkan. Biarkan kosong untuk tidak menambah gambar baru.</p>
                 </div>
 
                 @error('images')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
                 @error('images.*')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    <p class="text-red-500 text-sm mt-1">Satu atau lebih file gambar tidak valid.</p>
                 @enderror
                 @error('remove_images')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -163,69 +216,130 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Elemen Harga & Diskon ---
     const basicPriceInput = document.getElementById('basic_price');
     const taxRateInput = document.getElementById('tax_rate');
     const ntaInput = document.getElementById('nta');
 
+    // Elemen Diskon
+    const discountTypeSelect = document.getElementById('discount_type');
+    const discountRateInput = document.getElementById('discount_rate');
+    const discountFixedInput = document.getElementById('discount_fixed');
+    const discountPriceInput = document.getElementById('discount_price');
+    const discountRateWrapper = document.getElementById('discount_rate_wrapper');
+    const discountFixedWrapper = document.getElementById('discount_fixed_wrapper');
+
     /**
-     * Fungsi untuk menghitung NTA (asumsi NTA = Basic Price + Tax).
-     * Rumus: NTA = Basic Price * (1 + Tax Rate%)
+     * Mengatur tampilan input diskon berdasarkan tipe yang dipilih.
+     */
+    function toggleDiscountInput() {
+        const type = discountTypeSelect.value;
+        
+        // Sembunyikan semua wrapper
+        discountRateWrapper.classList.add('hidden');
+        discountFixedWrapper.classList.add('hidden');
+        
+        // Nonaktifkan pengiriman data yang tidak relevan
+        discountRateInput.setAttribute('disabled', 'disabled');
+        discountFixedInput.setAttribute('disabled', 'disabled');
+
+        // Reset input yang disembunyikan
+        if (type !== 'percentage') {
+             discountRateInput.value = 0.00;
+        }
+        if (type !== 'fixed') {
+             discountFixedInput.value = 0.00;
+        }
+
+        if (type === 'percentage') {
+            discountRateWrapper.classList.remove('hidden');
+            discountRateInput.removeAttribute('disabled');
+        } else if (type === 'fixed') {
+            discountFixedWrapper.classList.remove('hidden');
+            discountFixedInput.removeAttribute('disabled');
+        }
+        
+        calculateNta(); // Hitung ulang NTA setelah ganti tipe
+    }
+    
+    /**
+     * Fungsi untuk menghitung NTA, menggunakan Basic Price, Diskon, dan Tax Rate.
      */
     function calculateNta() {
-        // Ambil nilai dan ubah ke float. Jika kosong, anggap 0.
-        const basicPrice = parseFloat(basicPriceInput.value) || 0;
-        const taxRate = parseFloat(taxRateInput.value) || 0;
-
-        let nta = basicPrice; 
-
-        if (basicPrice >= 0 && taxRate >= 0) {
-            // Hitung NTA dengan asumsi Basic Price EKSKLUSIF Pajak
-            const multiplier = 1 + (taxRate / 100);
-            nta = basicPrice * multiplier;
+        // Ambil nilai dan pastikan tidak negatif
+        const basicPrice = Math.max(0, parseFloat(basicPriceInput.value) || 0);
+        const taxRate = Math.max(0, parseFloat(taxRateInput.value) || 0);
+        const discountType = discountTypeSelect.value;
+        
+        let discountPrice = 0; 
+        
+        // 1. Tentukan Discount Price berdasarkan tipe input
+        if (discountType === 'percentage') {
+            const discountRate = Math.max(0, parseFloat(discountRateInput.value) || 0);
+            const validDiscountRate = Math.min(100, discountRate); 
+            discountPrice = basicPrice * (validDiscountRate / 100);
+        } else if (discountType === 'fixed') {
+            const fixedDiscount = Math.max(0, parseFloat(discountFixedInput.value) || 0);
+            discountPrice = fixedDiscount;
         }
+
+        // Batasi Discount Price agar tidak melebihi Basic Price
+        discountPrice = Math.min(discountPrice, basicPrice);
+
+        // Tampilkan Discount Price (nilai rupiah diskon final)
+        discountPriceInput.value = discountPrice.toFixed(2);
+        
+        // 2. Hitung Harga Setelah Diskon (Net Price sebelum Pajak)
+        const netPriceBeforeTax = basicPrice - discountPrice;
+        
+        // 3. Hitung NTA (Harga Final dengan Pajak)
+        const validTaxRate = Math.min(100, taxRate); 
+        const multiplier = 1 + (validTaxRate / 100);
+        const nta = netPriceBeforeTax * multiplier;
 
         // Tampilkan NTA, bulatkan ke 2 desimal
         ntaInput.value = nta.toFixed(2); 
     }
 
-    // Panggil fungsi hitung saat ada perubahan pada Basic Price atau Tax Rate
+    // Event Listeners
     basicPriceInput.addEventListener('input', calculateNta);
     taxRateInput.addEventListener('input', calculateNta);
+    discountRateInput.addEventListener('input', calculateNta);
+    discountFixedInput.addEventListener('input', calculateNta);
+    discountTypeSelect.addEventListener('change', toggleDiscountInput);
 
-    // Hitung NTA saat halaman dimuat (untuk old() value atau $addon->value)
-    calculateNta();
-
-    // --- Script untuk Hapus Gambar (dari kode asli Anda) ---
+    // --- Inisialisasi pada load ---
+    toggleDiscountInput();
+    
+    // --- Script untuk Hapus Gambar ---
     // Handle checkbox changes for visual feedback
     document.querySelectorAll('input[name="remove_images[]"]').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {
             const index = this.value;
             const overlay = document.getElementById('overlay-' + index);
-            if (this.checked) {
-                overlay.classList.add('bg-opacity-20');
-            } else {
-                overlay.classList.remove('bg-opacity-20');
+            if (overlay) {
+                if (this.checked) {
+                    overlay.classList.add('bg-opacity-20');
+                } else {
+                    overlay.classList.remove('bg-opacity-20');
+                }
             }
         });
-        // Pastikan overlay diinisialisasi dengan benar jika ada 'old' value
         checkbox.dispatchEvent(new Event('change'));
     });
 
     // Make the entire image container clickable to toggle checkbox
     document.querySelectorAll('.relative.group.cursor-pointer').forEach(function(container) {
         container.addEventListener('click', function(e) {
-            // Prevent triggering if clicking on the checkbox itself or related labels/spans
             if (e.target.type === 'checkbox' || e.target.tagName === 'LABEL' || e.target.tagName === 'SPAN') return;
 
             const checkbox = container.querySelector('input[name="remove_images[]"]');
             if (checkbox) {
                 checkbox.checked = !checkbox.checked;
-                // Trigger change event
                 checkbox.dispatchEvent(new Event('change'));
             }
         });
     });
-    // --- Akhir Script untuk Hapus Gambar ---
 });
 </script>
 @endsection
