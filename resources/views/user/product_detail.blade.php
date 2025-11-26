@@ -84,7 +84,7 @@ Product Details
                 <p class="text-green-100 text-lg mb-6">{{ Str::limit($product->description, 200) }}</p>
 
                 <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
-                    <div class="text-3xl font-bold text-white mb-2">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
+                    <div class="text-3xl font-bold text-white mb-2">Rp {{ number_format($product->finalPrice, 0, ',', '.') }}</div>
                     <div class="text-green-100">per unit</div>
                 </div>
 

@@ -20,7 +20,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p class="text-sm text-gray-600">Booking ID</p>
-                            <p class="font-semibold">{{ $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)) }}</p>
+                            <p class="font-semibold">{{ $booking->booking_code ?? '#' . strtoupper(substr((string)$booking->id, 0, 8)) }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Status</p>
@@ -36,26 +36,26 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Check-in</p>
-                            <p class="font-semibold">{{ $booking->checkin_appointment_start->format('d M Y') }}</p>
+                            <p class="font-semibold">{{ $booking->checkin_appointment_start ? $booking->checkin_appointment_start->format('d M Y') : '-' }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Check-out</p>
-                            <p class="font-semibold">{{ $booking->checkout_appointment_end->format('d M Y') }}</p>
+                            <p class="font-semibold">{{ $booking->checkout_appointment_end ? $booking->checkout_appointment_end->format('d M Y') : '-' }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Duration</p>
-                            <p class="font-semibold">{{ $booking->duration_days }} days</p>
+                            <p class="font-semibold">{{ $booking->duration_days ?? '-' }} days</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-600">Booking Type</p>
                             <p class="font-semibold">
-                                @if($booking->packages->count() > 0 && $booking->products->count() > 0 && $booking->addons->count() > 0)
+                                @if(optional($booking->packages)->count() > 0 && optional($booking->products)->count() > 0 && optional($booking->addons)->count() > 0)
                                     Mixed Booking
-                                @elseif($booking->packages->count() > 0)
+                                @elseif(optional($booking->packages)->count() > 0)
                                     Package Booking
-                                @elseif($booking->products->count() > 0)
+                                @elseif(optional($booking->products)->count() > 0)
                                     Product Booking
-                                @elseif($booking->addons->count() > 0)
+                                @elseif(optional($booking->addons)->count() > 0)
                                     Addon Booking
                                 @else
                                     Unknown
@@ -70,12 +70,12 @@
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-2xl font-semibold mb-4">Packages</h2>
                         <div class="space-y-4">
-                            @foreach($booking->packages as $package)
+                            @foreach($booking->packages as $bookPackage)
                                 <div class="border border-gray-200 rounded-lg p-4">
                                     <div class="flex items-start space-x-4">
                                         <div class="w-20 h-20 flex-shrink-0">
-                                            @if($package->images && count($package->images) > 0)
-                                                <img src="{{ asset('storage/' . $package->images[0]) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover rounded-lg">
+                                            @if($bookPackage->package->images && count($bookPackage->package->images) > 0)
+                                                <img src="{{ asset('storage/' . $bookPackage->package->images[0]) }}" alt="{{ $bookPackage->package->name_package }}" class="w-full h-full object-cover rounded-lg">
                                             @else
                                                 <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
                                                     <i class="fas fa-box text-gray-400 text-2xl"></i>
@@ -83,12 +83,26 @@
                                             @endif
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-lg font-semibold mb-2">{{ $package->name_package }}</h3>
-                                            <p class="text-gray-600 mb-2">{{ $package->description }}</p>
+                                            <h3 class="text-lg font-semibold mb-2">{{ $bookPackage->package->name_package }}</h3>
+                                            <p class="text-gray-600 mb-2">{{ $bookPackage->package->description }}</p>
                                             <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-500">Price per package</span>
-                                                <span class="font-semibold">Rp {{ number_format($package->price_publish, 0, ',', '.') }}</span>
+                                                <span class="text-sm text-gray-500">Total price for package</span>
+                                                <span class="font-semibold">Rp {{ number_format($bookPackage->package->nta * $booking->duration_days, 0, ',', '.') }}</span>
                                             </div>
+                                            <!-- Package Add-ons -->
+                                            @if($bookPackage->bookPackageAddons->count() > 0)
+                                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                                    <h4 class="text-md font-semibold mb-2">Additional Services for this Package:</h4>
+                                                    <div class="space-y-2">
+                                                        @foreach($bookPackage->bookPackageAddons as $packageAddon)
+                                                            <div class="flex justify-between items-center text-sm">
+                                                                <span>{{ $packageAddon->addon->addons ?? 'Unnamed Addon' }} (Qty: {{ $packageAddon->quantity ?? 1 }})</span>
+                                                                <span>Rp {{ number_format($packageAddon->addon->finalPrice * ($packageAddon->quantity ?? 1), 0, ',', '.') }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -102,12 +116,12 @@
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-2xl font-semibold mb-4">Products</h2>
                         <div class="space-y-4">
-                            @foreach($booking->products as $product)
+                            @foreach($booking->products as $bookProduct)
                                 <div class="border border-gray-200 rounded-lg p-4">
                                     <div class="flex items-start space-x-4">
                                         <div class="w-20 h-20 flex-shrink-0">
-                                            @if($product->image)
-                                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover rounded-lg">
+                                            @if($bookProduct->product->images && count($bookProduct->product->images) > 0)
+                                                <img src="{{ asset('storage/' . $bookProduct->product->images[0]) }}" alt="{{ $bookProduct->product->name }}" class="w-full h-full object-cover rounded-lg">
                                             @else
                                                 <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
                                                     <i class="fas fa-shopping-cart text-gray-400 text-2xl"></i>
@@ -115,12 +129,26 @@
                                             @endif
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-lg font-semibold mb-2">{{ $product->name }}</h3>
-                                            <p class="text-gray-600 mb-2">{{ $product->description }}</p>
+                                            <h3 class="text-lg font-semibold mb-2">{{ $bookProduct->product->name }}</h3>
+                                            <p class="text-gray-600 mb-2">{{ $bookProduct->product->description }}</p>
                                             <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-500">Price per product (Qty: {{ $product->pivot->amount ?? 1 }})</span>
-                                                <span class="font-semibold">Rp {{ number_format($product->pivot->total_price, 0, ',', '.') }}</span>
+                                                <span class="text-sm text-gray-500">Total price for product (Qty: {{ $bookProduct->amount }})</span>
+                                                <span class="font-semibold">Rp {{ number_format($bookProduct->product->finalPrice * $bookProduct->amount, 0, ',', '.') }}</span>
                                             </div>
+                                            <!-- Product Add-ons -->
+                                            @if($bookProduct->bookProductAddons->count() > 0)
+                                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                                    <h4 class="text-md font-semibold mb-2">Additional Services for this Product:</h4>
+                                                    <div class="space-y-2">
+                                                        @foreach($bookProduct->bookProductAddons as $productAddon)
+                                                            <div class="flex justify-between items-center text-sm">
+                                                                <span>{{ $productAddon->addon->addons ?? 'Unnamed Addon' }} (Qty: {{ $productAddon->quantity ?? 1 }})</span>
+                                                                <span>Rp {{ number_format($productAddon->addon->finalPrice * ($productAddon->quantity ?? 1), 0, ',', '.') }}</span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -130,16 +158,16 @@
                 @endif
 
                 <!-- Add-ons -->
-                @if($booking->addons->count() > 0)
+                @if(optional($booking->addons)->count() > 0)
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <h2 class="text-2xl font-semibold mb-4">Additional Services</h2>
                         <div class="space-y-4">
-                            @foreach($booking->addons as $addon)
+                            @foreach($booking->addons as $bookAddon)
                                 <div class="border border-gray-200 rounded-lg p-4">
                                     <div class="flex items-start space-x-4">
                                         <div class="w-20 h-20 flex-shrink-0">
-                                            @if($addon->image)
-                                                <img src="{{ asset('storage/' . $addon->image) }}" alt="{{ $addon->addons }}" class="w-full h-full object-cover rounded-lg">
+                                            @if($bookAddon->addon->images && count($bookAddon->addon->images) > 0)
+                                                <img src="{{ asset('storage/' . $bookAddon->addon->images[0]) }}" alt="{{ $bookAddon->addon->addons ?? 'Addon image' }}" class="w-full h-full object-cover rounded-lg">
                                             @else
                                                 <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
                                                     <i class="fas fa-plus-circle text-gray-400 text-2xl"></i>
@@ -147,11 +175,11 @@
                                             @endif
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-lg font-semibold mb-2">{{ $addon->addons}}</h3>
-                                            <p class="text-gray-600 mb-2">{{ $addon->desc }}</p>
+                                            <h3 class="text-lg font-semibold mb-2">{{ $bookAddon->addon->addons ?? 'Unnamed Addon' }}</h3>
+                                            <p class="text-gray-600 mb-2">{{ $bookAddon->addon->desc ?? '' }}</p>
                                             <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-500">Price per service (Qty: {{ $addon->pivot->quantity ?? 1 }})</span>
-                                                <span class="font-semibold">Rp {{ number_format($addon->price * ($addon->pivot->quantity ?? 1), 0, ',', '.') }}</span>
+                                                <span class="text-sm text-gray-500">Total price for service (Qty: {{ $bookAddon->amount }})</span>
+                                                <span class="font-semibold">Rp {{ number_format($bookAddon->addon->finalPrice * $bookAddon->amount, 0, ',', '.') }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -193,28 +221,76 @@
                 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                     <h3 class="text-lg font-semibold mb-4">Payment Summary</h3>
                     <div class="space-y-2">
-                        @if($booking->packages->count() > 0)
+                        @php
+                            $totalPackages = 0;
+                            $totalProducts = 0;
+                            $totalAddons = 0;
+                            $grandTotal = 0;
+                        @endphp
+                        @if(optional($booking->packages)->count() > 0)
+                            @php
+                                $totalPackages = $booking->packages->sum(function($bookPackage) use ($booking) {
+                                    return $bookPackage->package->nta * $booking->duration_days;
+                                });
+                                $grandTotal += $totalPackages;
+                            @endphp
                             <div class="flex justify-between">
-                                <span>Packages ({{ $booking->packages->count() }} item{{ $booking->packages->count() > 1 ? 's' : '' }})</span>
-                                <span>Rp {{ number_format($booking->packages->sum('price_publish'), 0, ',', '.') }}</span>
+                                <span>Packages ({{ optional($booking->packages)->count() }} item{{ optional($booking->packages)->count() > 1 ? 's' : '' }})</span>
+                                <span>Rp {{ number_format($totalPackages, 0, ',', '.') }}</span>
                             </div>
                         @endif
-                        @if($booking->products->count() > 0)
+                        @if(optional($booking->products)->count() > 0)
+                            @php
+                                $totalProducts = $booking->products->sum(function($bookProduct) {
+                                    return $bookProduct->product->finalPrice * $bookProduct->amount;
+                                });
+                                $grandTotal += $totalProducts;
+                            @endphp
                             <div class="flex justify-between">
-                                <span>Products ({{ $booking->products->sum('pivot.amount') }} item{{ $booking->products->sum('pivot.amount') > 1 ? 's' : '' }})</span>
-                                <span>Rp {{ number_format($booking->products->sum('pivot.total_price'), 0, ',', '.') }}</span>
+                                <span>Products ({{ optional($booking->products)->sum('amount') }} item{{ optional($booking->products)->sum('amount') > 1 ? 's' : '' }})</span>
+                                <span>Rp {{ number_format($totalProducts, 0, ',', '.') }}</span>
                             </div>
                         @endif
-                        @if($booking->addons->count() > 0)
+                        @php
+                            $totalAddons = 0;
+                            // Standalone addons
+                            if (optional($booking->addons)->count() > 0) {
+                                $totalAddons += $booking->addons->sum(function($bookAddon) {
+                                    return $bookAddon->addon->finalPrice * $bookAddon->amount;
+                                });
+                            }
+                            // Package addons
+                            if (optional($booking->packages)->count() > 0) {
+                                foreach ($booking->packages as $bookPackage) {
+                                    if ($bookPackage->bookPackageAddons->count() > 0) {
+                                        $totalAddons += $bookPackage->bookPackageAddons->sum(function($packageAddon) {
+                                            return $packageAddon->addon->finalPrice * ($packageAddon->quantity ?? 1);
+                                        });
+                                    }
+                                }
+                            }
+                            // Product addons
+                            if (optional($booking->products)->count() > 0) {
+                                foreach ($booking->products as $bookProduct) {
+                                    if ($bookProduct->bookProductAddons->count() > 0) {
+                                        $totalAddons += $bookProduct->bookProductAddons->sum(function($productAddon) {
+                                            return $productAddon->addon->finalPrice * ($productAddon->quantity ?? 1);
+                                        });
+                                    }
+                                }
+                            }
+                            $grandTotal += $totalAddons;
+                        @endphp
+                        @if($totalAddons > 0)
                             <div class="flex justify-between">
-                                <span>Add-ons ({{ $booking->addons->sum('pivot.quantity') }} item{{ $booking->addons->sum('pivot.quantity') > 1 ? 's' : '' }})</span>
-                                <span>Rp {{ number_format($booking->addons->sum(function($addon) { return $addon->price * ($addon->pivot->quantity ?? 1); }), 0, ',', '.') }}</span>
+                                <span>Add-ons ({{ $totalAddons > 0 ? 'Included' : '0' }} item{{ $totalAddons > 1 ? 's' : '' }})</span>
+                                <span>Rp {{ number_format($totalAddons, 0, ',', '.') }}</span>
                             </div>
                         @endif
                         <hr class="my-2">
                         <div class="flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span>Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
+                            <span>Rp {{ number_format($grandTotal, 0, ',', '.') }}</span>
                         </div>
                     </div>
                 </div>
@@ -236,7 +312,7 @@
                         <div class="space-y-2">
                             <p class="text-sm text-gray-600 font-medium">Contact Support:</p>
                             <div class="grid grid-cols-1 gap-2">
-                                <a href="mailto:support@otawebsite.com?subject=Support Request - Booking #{{ $booking->id }}&body=Dear Support Team,%0A%0AI need assistance with my booking #%{{ $booking->id }}.%0A%0ABooking Details:%0A- Status: {{ ucfirst(str_replace('_', ' ', $booking->status)) }}%0A- Check-in: {{ $booking->checkin_appointment_start->format('d M Y') }}%0A- Check-out: {{ $booking->checkout_appointment_end->format('d M Y') }}%0A- Total: Rp {{ number_format($booking->total_price, 0, ',', '.') }}%0A%0APlease describe your issue or question below:%0A%0A[Your message here]%0A%0ABest regards,%0A{{ $booking->booker_name }}%0A{{ $booking->booker_email }}"
+                            <a href="mailto:support@otawebsite.com?subject=Support Request - Booking #{{ $booking->id }}&body=Dear Support Team,%0A%0AI need assistance with my booking #{{ $booking->id }}.%0A%0ABooking Details:%0A- Status: {{ ucfirst(str_replace('_', ' ', $booking->status)) }}%0A- Check-in: {{ $booking->checkin_appointment_start ? $booking->checkin_appointment_start->format('d M Y') : '-' }}%0A- Check-out: {{ $booking->checkout_appointment_end ? $booking->checkout_appointment_end->format('d M Y') : '-' }}%0A- Total: Rp {{ number_format($booking->total_price ?? 0, 0, ',', '.') }}%0A%0APlease describe your issue or question below:%0A%0A[Your message here]%0A%0ABest regards,%0A{{ $booking->booker_name }}%0A{{ $booking->booker_email }}"
                                    class="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition text-center text-sm">
                                     📧 Email Support
                                 </a>
@@ -256,34 +332,136 @@
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-2xl font-semibold mb-6">Review & Rating</h2>
 
-                    @if($booking->reviews->where('user_id', auth()->id())->count() > 0)
-                        <!-- Show existing review -->
-                        @php
-                            $userReview = $booking->reviews->where('user_id', auth()->id())->first();
-                        @endphp
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                            <h3 class="text-lg font-semibold text-green-800 mb-2">Your Review</h3>
-                            <div class="flex items-center mb-2">
-                                <div class="flex text-yellow-400">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        @if($i <= $userReview->rating)
-                                            <i class="fas fa-star"></i>
-                                        @else
-                                            <i class="far fa-star"></i>
+                    @php
+                        $userReviews = $booking->reviews->where('user_id', auth()->id());
+                        $reviewedItems = [];
+                        if ($userReviews->count() > 0) {
+                            foreach ($userReviews as $review) {
+                                if ($review->package_id) $reviewedItems[] = 'package-' . $review->package_id;
+                                if ($review->product_id) $reviewedItems[] = 'product-' . $review->product_id;
+                                if ($review->addon_id) $reviewedItems[] = 'addon-' . $review->addon_id;
+                            }
+                        }
+                        $totalItems = $booking->packages->count() + $booking->products->count() + $booking->addons->count();
+                    @endphp
+
+                    @if($userReviews->count() > 0)
+                        <!-- Show existing reviews -->
+                        <div class="space-y-4 mb-6">
+                            @foreach($userReviews as $userReview)
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-green-800 mb-2">
+                                        Your Review for
+                                        @if($userReview->package)
+                                            {{ $userReview->package->name_package }} (Package)
+                                        @elseif($userReview->product)
+                                            {{ $userReview->product->name }} (Product)
+                                        @elseif($userReview->addon)
+                                            {{ $userReview->addon->addons }} (Addon)
                                         @endif
-                                    @endfor
+                                    </h3>
+                                    <div class="flex items-center mb-2">
+                                        <div class="flex text-yellow-400">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= $userReview->rating)
+                                                    <i class="fas fa-star"></i>
+                                                @else
+                                                    <i class="far fa-star"></i>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                        <span class="ml-2 text-sm text-gray-600">{{ $userReview->rating }}/5 stars</span>
+                                    </div>
+                                    @if($userReview->comment)
+                                        <p class="text-gray-700">{{ $userReview->comment }}</p>
+                                    @endif
+                                    <p class="text-sm text-gray-500 mt-2">Reviewed on {{ $userReview->created_at->format('d M Y') }}</p>
                                 </div>
-                                <span class="ml-2 text-sm text-gray-600">{{ $userReview->rating }}/5 stars</span>
-                            </div>
-                            @if($userReview->comment)
-                                <p class="text-gray-700">{{ $userReview->comment }}</p>
-                            @endif
-                            <p class="text-sm text-gray-500 mt-2">Reviewed on {{ $userReview->created_at->format('d M Y') }}</p>
+                            @endforeach
                         </div>
-                    @else
+                    @endif
+
+                    @if(count($reviewedItems) < $totalItems)
                         <!-- Review Form -->
                         <form action="{{ route('reviews.store', $booking->id) }}" method="POST" class="space-y-4">
                             @csrf
+                            <input type="hidden" name="item_id" id="item_id" value="">
+
+                            <!-- Item Selection -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">What would you like to review?</label>
+                                <div class="space-y-2">
+                                    @if($booking->packages->count() > 0)
+                                        @foreach($booking->packages as $bookPackage)
+                                            @if(!in_array('package-' . $bookPackage->package->id, $reviewedItems))
+                                                <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                                    <input type="radio" name="review_type" value="package" data-id="{{ $bookPackage->package->id }}" class="text-blue-600 focus:ring-blue-500" required>
+                                                    <div class="flex items-center space-x-3">
+                                                        @if($bookPackage->package->images && count($bookPackage->package->images) > 0)
+                                                            <img src="{{ asset('storage/' . $bookPackage->package->images[0]) }}" alt="{{ $bookPackage->package->name_package }}" class="w-12 h-12 object-cover rounded-lg">
+                                                        @else
+                                                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                                <i class="fas fa-box text-gray-400"></i>
+                                                            </div>
+                                                        @endif
+                                                        <div>
+                                                            <span class="font-medium text-gray-800">{{ $bookPackage->package->name_package }}</span>
+                                                            <span class="text-sm text-gray-500 block">Package</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    @endif
+
+                                    @if($booking->products->count() > 0)
+                                        @foreach($booking->products as $bookProduct)
+                                            @if(!in_array('product-' . $bookProduct->product->id, $reviewedItems))
+                                                <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                                    <input type="radio" name="review_type" value="product" data-id="{{ $bookProduct->product->id }}" class="text-blue-600 focus:ring-blue-500">
+                                                    <div class="flex items-center space-x-3">
+                                                        @if($bookProduct->product->images && count($bookProduct->product->images) > 0)
+                                                            <img src="{{ asset('storage/' . $bookProduct->product->images[0]) }}" alt="{{ $bookProduct->product->name }}" class="w-12 h-12 object-cover rounded-lg">
+                                                        @else
+                                                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                                <i class="fas fa-shopping-cart text-gray-400"></i>
+                                                            </div>
+                                                        @endif
+                                                        <div>
+                                                            <span class="font-medium text-gray-800">{{ $bookProduct->product->name }}</span>
+                                                            <span class="text-sm text-gray-500 block">Product (Qty: {{ $bookProduct->amount }})</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    @endif
+
+                                    @if($booking->addons->count() > 0)
+                                        @foreach($booking->addons as $bookAddon)
+                                            @if(!in_array('addon-' . $bookAddon->addon->id, $reviewedItems))
+                                                <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                                    <input type="radio" name="review_type" value="addon" data-id="{{ $bookAddon->addon->id }}" class="text-blue-600 focus:ring-blue-500">
+                                                    <div class="flex items-center space-x-3">
+                                                        @if($bookAddon->addon->images && count($bookAddon->addon->images) > 0)
+                                                            <img src="{{ asset('storage/' . $bookAddon->addon->images[0]) }}" alt="{{ $bookAddon->addon->addons }}" class="w-12 h-12 object-cover rounded-lg">
+                                                        @else
+                                                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                                <i class="fas fa-plus-circle text-gray-400"></i>
+                                                            </div>
+                                                        @endif
+                                                        <div>
+                                                            <span class="font-medium text-gray-800">{{ $bookAddon->addon->addons }}</span>
+                                                            <span class="text-sm text-gray-500 block">Addon (Qty: {{ $bookAddon->amount }})</span>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            @endif
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
                                 <div class="flex space-x-1 star-rating">
@@ -354,6 +532,14 @@
                                 if (checkedRadio) {
                                     updateStars(parseInt(checkedRadio.value));
                                 }
+
+                                // Set item_id when radio button is selected
+                                const radioInputs = document.querySelectorAll('input[name="review_type"]');
+                                radioInputs.forEach(radio => {
+                                    radio.addEventListener('change', function() {
+                                        document.getElementById('item_id').value = this.getAttribute('data-id');
+                                    });
+                                });
                             });
                         </script>
                     @endif

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('booker_email', 150);
             $table->string('booker_telp', 20)->nullable();
             $table->string('booking_code')->unique(); // Kode unik untuk setiap pesanan
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             // Opsional: Definisi Foreign Key Constraints

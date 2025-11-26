@@ -84,7 +84,7 @@ Addon Details
                 <p class="text-orange-100 text-lg mb-6">{{ Str::limit($addon->desc, 200) }}</p>
 
                 <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
-                    <div class="text-3xl font-bold text-white mb-2">Rp {{ number_format($addon->price, 0, ',', '.') }}</div>
+                    <div class="text-3xl font-bold text-white mb-2">Rp {{ number_format($addon->finalPrice, 0, ',', '.') }}</div>
                     <div class="text-orange-100">per unit</div>
                 </div>
 

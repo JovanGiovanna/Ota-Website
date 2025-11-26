@@ -9,7 +9,7 @@
             @csrf
             @method('PUT')
 
-
+            {{-- Product Name --}}
             <div class="mb-4">
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
                 <input type="text" name="name" id="name" value="{{ old('name', $product->name) }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -18,31 +18,13 @@
                 @enderror
             </div>
 
-            @if(Auth::guard('super_admin')->check())
-            <div class="mb-4">
-                <label for="id_vendor" class="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
-                <select name="id_vendor" id="id_vendor" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    <option value="">Select Vendor</option>
-                    @foreach(\App\Models\Vendor::all() as $vendor)
-                        <option value="{{ $vendor->id }}" {{ old('id_vendor', $product->id_vendor) == $vendor->id ? 'selected' : '' }}>
-                            {{ $vendor->name }} ({{ $vendor->email }})
-                        </option>
-                    @endforeach
-                </select>
-                @error('id_vendor')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-            @endif
-
+            {{-- Category --}}
             <div class="mb-4">
                 <label for="id_category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
                 <select name="id_category" id="id_category" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     <option value="">Select Category</option>
-                    @foreach(\App\Models\Category::all() as $category)
-                        <option value="{{ $category->id }}" {{ old('id_category', $product->id_category) == $category->id ? 'selected' : '' }}>
-                            {{ $category->categories }}
-                        </option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}" {{ old('id_category', $product->id_category) == $category->id ? 'selected' : '' }}>{{ $category->categories }}</option>
                     @endforeach
                 </select>
                 @error('id_category')
@@ -50,19 +32,18 @@
                 @enderror
             </div>
 
-
-            
+            {{-- Price Section --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                {{-- 1. Basic Price (Harga Dasar) --}}
+                {{-- Basic Price --}}
                 <div>
                     <label for="basic_price" class="block text-sm font-medium text-gray-700 mb-2">Basic Price (Harga Dasar)</label>
-                    <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price', $product->basic_price ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="number" name="basic_price" id="basic_price" value="{{ old('basic_price', $product->basic_price) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                     @error('basic_price')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-                
-                {{-- 2. Tax Rate (%) --}}
+
+                {{-- Tax Rate --}}
                 <div>
                     <label for="tax_rate" class="block text-sm font-medium text-gray-700 mb-2">Tax Rate (%)</label>
                     <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $product->tax_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -71,72 +52,63 @@
                     @enderror
                 </div>
 
-                {{-- 3. NTA (Net Transaction Amount) - Otomatis & Readonly --}}
+                {{-- NTA --}}
                 <div>
                     <label for="nta" class="block text-sm font-medium text-gray-700 mb-2">NTA (Harga Jual Final)</label>
-                    {{-- DIUBAH: Ditambahkan readonly dan styling bg-gray-100 --}}
-                    <input type="number" name="nta" id="nta" value="{{ old('nta', $product->nta ?? $product->price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
+                    <input type="number" name="nta" id="nta" value="{{ old('nta', $product->nta) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
                     @error('nta')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
-            {{-- **BAGIAN DISKON BARU: Fixed vs Percentage** --}}
+            {{-- Discount Section --}}
             <h4 class="text-md font-semibold text-gray-800 mb-3 mt-4">Pilih Tipe Diskon</h4>
-            
-            @php
-                // Logika untuk menentukan tipe diskon saat ini
-                $currentDiscountType = 'none';
-                if (($product->discount_rate ?? 0) > 0 || old('discount_rate') > 0) {
-                    $currentDiscountType = 'percentage';
-                } elseif (($product->discount_fixed ?? 0) > 0 || old('discount_fixed') > 0) {
-                    $currentDiscountType = 'fixed';
-                }
-            @endphp
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
-                {{-- Pilihan Tipe Diskon --}}
+                {{-- Discount Type --}}
                 <div>
                     <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-2">Tipe Diskon</label>
-                    <select id="discount_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="none" {{ $currentDiscountType == 'none' ? 'selected' : '' }}>Tidak Ada Diskon</option>
-                        <option value="percentage" {{ $currentDiscountType == 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
-                        <option value="fixed" {{ $currentDiscountType == 'fixed' ? 'selected' : '' }}>Fixed Price (Rp)</option>
+                    <select name="discount_type" id="discount_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tidak Ada Diskon</option>
+                        <option value="percentage" {{ old('discount_type', $product->discount_type) == 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
+                        <option value="fixed" {{ old('discount_type', $product->discount_type) == 'fixed' ? 'selected' : '' }}>Fixed Price (Rp)</option>
                     </select>
-                </div>
-                
-                {{-- 4a. Discount Rate (%) - Input --}}
-                <div id="discount_rate_wrapper" class="{{ $currentDiscountType == 'percentage' ? '' : 'hidden' }}">
-                    <label for="discount_rate" class="block text-sm font-medium text-gray-700 mb-2">Discount Rate (%)</label>
-                    <input type="number" name="discount_rate" id="discount_rate" value="{{ old('discount_rate', $product->discount_rate ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('discount_rate')
+                    @error('discount_type')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- 4b. Discount Fixed (Rp) - Input --}}
-                <div id="discount_fixed_wrapper" class="{{ $currentDiscountType == 'fixed' ? '' : 'hidden' }}">
-                    <label for="discount_fixed" class="block text-sm font-medium text-gray-700 mb-2">Discount Fixed (Rp)</label>
-                    <input type="number" name="discount_fixed" id="discount_fixed" value="{{ old('discount_fixed', $product->discount_fixed ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('discount_fixed')
+                {{-- Discount Value (%) --}}
+                <div id="discount_value_wrapper" class="{{ old('discount_type', $product->discount_type) == 'percentage' ? '' : 'hidden' }}">
+                    <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-2">Discount Value (%)</label>
+                    <input type="number" name="discount_value" id="discount_value" value="{{ old('discount_value', $product->discount_value ?? 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_value')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Discount Value (Rp) --}}
+                <div id="discount_fixed_wrapper" class="{{ old('discount_type', $product->discount_type) == 'fixed' ? '' : 'hidden' }}">
+                    <label for="discount_value_fixed" class="block text-sm font-medium text-gray-700 mb-2">Discount Value (Rp)</label>
+                    <input type="number" name="discount_value" id="discount_value_fixed" value="{{ old('discount_value', $product->discount_value ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_value')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
-            {{-- 5. Discount Price (Nilai rupiah yang digunakan) - Otomatis & Readonly --}}
-            <div class="mb-4">
-                <label for="discount_price" class="block text-sm font-medium text-gray-700 mb-2">Potongan Harga (Rp)</label>
-                {{-- Asumsi kolom ini ada di database untuk ditampilkan, jika tidak ada, akan dihitung JS --}}
-                <input type="number" name="discount_price" id="discount_price" value="{{ old('discount_price', $product->discount_price ?? 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
-                <p class="text-xs text-gray-500 mt-1">Nilai potongan harga ini akan dihitung otomatis dari tipe diskon yang dipilih.</p>
-                @error('discount_price')
+            {{-- Discount Expires --}}
+            <div class="mb-4" id="discount_expires_wrapper" style="{{ old('discount_type', $product->discount_type) ? '' : 'display: none;' }}">
+                <label for="discount_expires_at" class="block text-sm font-medium text-gray-700 mb-2">Discount Expires At (Optional)</label>
+                <input type="datetime-local" name="discount_expires_at" id="discount_expires_at" value="{{ old('discount_expires_at', $product->discount_expires_at ? \Carbon\Carbon::parse($product->discount_expires_at)->format('Y-m-d\TH:i') : '') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Leave empty for no expiration</p>
+                @error('discount_expires_at')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
-            
-            
+
+            {{-- Capacity and Stock --}}
             <div class="mb-4">
                 <label for="pax" class="block text-sm font-medium text-gray-700 mb-2">Pax (Capacity / Min Quantity)</label>
                 <input type="number" name="pax" id="pax" value="{{ old('pax', $product->pax) }}" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
@@ -155,7 +127,7 @@
 
             <div class="mb-4">
                 <label for="max_adults" class="block text-sm font-medium text-gray-700 mb-2">Max Adults</label>
-                <input type="number" name="max_adults" id="max_adults" value="{{ old('max_adults', $product->max_adults) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" name="max_adults" id="max_adults" value="{{ old('max_adults', $product->max_adults ?? 2) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 @error('max_adults')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
@@ -163,13 +135,61 @@
 
             <div class="mb-4">
                 <label for="max_children" class="block text-sm font-medium text-gray-700 mb-2">Max Children</label>
-                <input type="number" name="max_children" id="max_children" value="{{ old('max_children', $product->max_children) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" name="max_children" id="max_children" value="{{ old('max_children', $product->max_children ?? 1) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                 @error('max_children')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
+            {{-- Existing Images --}}
+            @if($product->images && count($product->images) > 0)
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Current Images</label>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    @foreach($product->images as $index => $image)
+                    <div class="relative group cursor-pointer">
+                        <img src="{{ asset('storage/' . $image) }}" alt="Product Image" class="w-full h-32 object-cover rounded-md border">
+                        <div id="overlay-{{ $index }}" class="absolute inset-0 bg-red-500 bg-opacity-0 rounded-md transition-opacity duration-200 flex items-center justify-center">
+                            <span class="text-white font-bold">Remove</span>
+                        </div>
+                        <input type="checkbox" name="remove_images[]" value="{{ $index }}" class="absolute top-2 right-2 w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500">
+                    </div>
+                    @endforeach
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Check the images you want to remove</p>
+            </div>
+            @endif
 
+            {{-- New Images --}}
+            <div class="mb-4">
+                <label for="images" class="block text-sm font-medium text-gray-700 mb-2">Add New Images (Multiple)</label>
+                <input
+                    type="file"
+                    name="images[]"
+                    id="images"
+                    accept="image/*"
+                    multiple
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <p class="text-xs text-gray-500 mt-1">Select additional images to add to the product.</p>
+                @error('images')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+                @error('images.*')
+                    <p class="text-red-500 text-sm mt-1">One or more image files are invalid.</p>
+                @enderror
+            </div>
+
+            {{-- Description --}}
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea name="description" id="description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('description', $product->description) }}</textarea>
+                @error('description')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Status --}}
             <div class="mb-4">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select name="status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -178,61 +198,6 @@
                     <option value="draft" {{ old('status', $product->status) == 'draft' ? 'selected' : '' }}>Draft</option>
                 </select>
                 @error('status')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div class="mb-4">
-                <label for="publish" class="flex items-center">
-                    <input type="checkbox" name="publish" id="publish" value="1" {{ old('publish', $product->publish) ? 'checked' : '' }} class="mr-2">
-                    <span class="text-sm font-medium text-gray-700">Publish</span>
-                </label>
-                @error('publish')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div class="mb-4">
-                <label for="images" class="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
-
-                {{-- Current Images with Delete Selection --}}
-                @if($product->images && is_array($product->images) && count($product->images) > 0)
-                    <div class="mb-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Current Images (Select to Delete)</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            @foreach($product->images as $index => $image)
-                                <div class="relative group cursor-pointer" data-index="{{ $index }}">
-                                    <img src="{{ asset('storage/' . $image) }}" alt="Current Image {{ $index + 1 }}" class="w-full h-24 object-cover rounded-md border-2 border-gray-200">
-                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-md flex items-center justify-center">
-                                        <label class="flex items-center space-x-2 bg-white bg-opacity-90 px-2 py-1 rounded cursor-pointer hover:bg-opacity-100 transition-all">
-                                            <input type="checkbox" name="remove_images[]" value="{{ $index }}" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
-                                                {{ in_array($index, old('remove_images', [])) ? 'checked' : '' }}>
-                                            <span class="text-xs font-medium text-gray-700">Delete</span>
-                                        </label>
-                                    </div>
-                                    {{-- Red overlay when checked --}}
-                                    <div class="absolute inset-0 bg-red-500 bg-opacity-0 rounded-md transition-all duration-200 {{ in_array($index, old('remove_images', [])) ? 'bg-opacity-20' : '' }}" id="overlay-{{ $index }}"></div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Click on images you want to remove. Selected images will be highlighted in red.</p>
-                    </div>
-                @endif
-
-                {{-- Upload New Images --}}
-                <div class="mb-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Add New Images</label>
-                    <input type="file" name="images[]" id="images" accept="image/*" multiple class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <p class="text-xs text-gray-500 mt-1">Select multiple images to add. Leave empty to keep current images only.</p>
-                </div>
-
-                @error('images')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-                @error('images.*')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-                @error('remove_images')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
@@ -247,17 +212,16 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Elemen Harga & Diskon ---
     const basicPriceInput = document.getElementById('basic_price');
     const taxRateInput = document.getElementById('tax_rate');
     const ntaInput = document.getElementById('nta');
 
     // Elemen Diskon
     const discountTypeSelect = document.getElementById('discount_type');
-    const discountRateInput = document.getElementById('discount_rate');
-    const discountFixedInput = document.getElementById('discount_fixed');
-    const discountPriceInput = document.getElementById('discount_price');
-    const discountRateWrapper = document.getElementById('discount_rate_wrapper');
+    const discountValueInput = document.getElementById('discount_value');
+    const discountValueFixedInput = document.getElementById('discount_value_fixed');
+    const discountExpiresWrapper = document.getElementById('discount_expires_wrapper');
+    const discountValueWrapper = document.getElementById('discount_value_wrapper');
     const discountFixedWrapper = document.getElementById('discount_fixed_wrapper');
 
     /**
@@ -265,80 +229,95 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function toggleDiscountInput() {
         const type = discountTypeSelect.value;
-        
+
+        // Reset semua input diskon
+        discountValueInput.value = 0.00;
+        discountValueFixedInput.value = 0.00;
+
         // Sembunyikan semua wrapper
-        discountRateWrapper.classList.add('hidden');
+        discountValueWrapper.classList.add('hidden');
         discountFixedWrapper.classList.add('hidden');
-        
-        // Reset nilai input yang disembunyikan dan nonaktifkan pengiriman data yang tidak relevan
-        discountRateInput.setAttribute('disabled', 'disabled');
-        discountFixedInput.setAttribute('disabled', 'disabled');
+        discountExpiresWrapper.style.display = 'none';
 
         if (type === 'percentage') {
-            discountRateWrapper.classList.remove('hidden');
-            discountRateInput.removeAttribute('disabled');
+            discountValueWrapper.classList.remove('hidden');
+            discountExpiresWrapper.style.display = 'block';
         } else if (type === 'fixed') {
             discountFixedWrapper.classList.remove('hidden');
-            discountFixedInput.removeAttribute('disabled');
-        } else {
-            // Tipe 'none'
-            discountRateInput.value = 0.00;
-            discountFixedInput.value = 0.00;
+            discountExpiresWrapper.style.display = 'block';
         }
-        
+
         calculateNta(); // Hitung ulang NTA setelah ganti tipe
     }
-    
+
     /**
-     * Fungsi untuk menghitung NTA, menggunakan Basic Price, Diskon, dan Tax Rate.
+     * Fungsi untuk menghitung NTA, menggunakan Basic Price dan salah satu tipe diskon.
      */
     function calculateNta() {
-        // Ambil nilai dan pastikan tidak negatif
         const basicPrice = Math.max(0, parseFloat(basicPriceInput.value) || 0);
         const taxRate = Math.max(0, parseFloat(taxRateInput.value) || 0);
         const discountType = discountTypeSelect.value;
-        
-        let discountPrice = 0; 
-        
+
+        let discountPrice = 0;
+
         // 1. Tentukan Discount Price berdasarkan tipe input
         if (discountType === 'percentage') {
-            const discountRate = Math.max(0, parseFloat(discountRateInput.value) || 0);
-            const validDiscountRate = Math.min(100, discountRate); 
+            const discountRate = Math.max(0, parseFloat(discountValueInput.value) || 0);
+            const validDiscountRate = Math.min(100, discountRate);
             discountPrice = basicPrice * (validDiscountRate / 100);
+
+            // Pastikan input FixedPrice dikosongkan saat submit jika tidak digunakan
+            discountValueFixedInput.setAttribute('disabled', 'disabled');
+            discountValueInput.removeAttribute('disabled');
         } else if (discountType === 'fixed') {
-            const fixedDiscount = Math.max(0, parseFloat(discountFixedInput.value) || 0);
+            const fixedDiscount = Math.max(0, parseFloat(discountValueFixedInput.value) || 0);
             discountPrice = fixedDiscount;
+
+            // Pastikan input DiscountRate dikosongkan saat submit jika tidak digunakan
+            discountValueInput.setAttribute('disabled', 'disabled');
+            discountValueFixedInput.removeAttribute('disabled');
+        } else {
+            // Tipe 'none'
+            discountValueInput.setAttribute('disabled', 'disabled');
+            discountValueFixedInput.setAttribute('disabled', 'disabled');
         }
 
         // Batasi Discount Price agar tidak melebihi Basic Price
         discountPrice = Math.min(discountPrice, basicPrice);
 
-        // Tampilkan Discount Price (nilai rupiah diskon final)
-        discountPriceInput.value = discountPrice.toFixed(2);
-        
         // 2. Hitung Harga Setelah Diskon (Net Price sebelum Pajak)
         const netPriceBeforeTax = basicPrice - discountPrice;
-        
+
         // 3. Hitung NTA (Harga Final dengan Pajak)
-        const validTaxRate = Math.min(100, taxRate); 
+        const validTaxRate = Math.min(100, taxRate);
         const multiplier = 1 + (validTaxRate / 100);
         const nta = netPriceBeforeTax * multiplier;
 
         // Tampilkan NTA
-        ntaInput.value = nta.toFixed(2); 
+        ntaInput.value = nta.toFixed(2);
     }
 
     // Event Listeners
     basicPriceInput.addEventListener('input', calculateNta);
     taxRateInput.addEventListener('input', calculateNta);
-    discountRateInput.addEventListener('input', calculateNta);
-    discountFixedInput.addEventListener('input', calculateNta);
+    discountValueInput.addEventListener('input', calculateNta);
+    discountValueFixedInput.addEventListener('input', calculateNta);
     discountTypeSelect.addEventListener('change', toggleDiscountInput);
 
-    // --- Inisialisasi pada load ---
-    toggleDiscountInput();
-    
-    // --- Script untuk Hapus Gambar (dari kode asli Anda) ---
+    // Inisialisasi tampilan input dan perhitungan NTA saat halaman dimuat
+    // Gunakan old('discount_type') untuk menentukan tipe default
+    if (discountTypeSelect.value === 'percentage' || discountTypeSelect.value === 'fixed') {
+        // Already set from old value
+    } else if (parseFloat(discountValueInput.value) > 0) {
+        discountTypeSelect.value = 'percentage';
+    } else if (parseFloat(discountValueFixedInput.value) > 0) {
+        discountTypeSelect.value = 'fixed';
+    } else {
+        discountTypeSelect.value = '';
+    }
+    toggleDiscountInput(); // Panggil toggle untuk set tampilan awal
+
+    // --- Script untuk Hapus Gambar ---
     // Handle checkbox changes for visual feedback
     document.querySelectorAll('input[name="remove_images[]"]').forEach(function(checkbox) {
         checkbox.addEventListener('change', function() {

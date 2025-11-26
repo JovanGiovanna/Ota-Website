@@ -501,17 +501,18 @@ class VendorController extends Controller
     {
         $rules = [
             'addons'        => 'required|string|max:255',
-            'basic_price'   => 'required|numeric|min:0', 
-            'nta'           => 'required|numeric|min:0', 
-            'tax_rate'      => 'nullable|numeric|min:0|max:100', 
+            'basic_price'   => 'required|numeric|min:0',
+            'nta'           => 'required|numeric|min:0',
+            'tax_rate'      => 'nullable|numeric|min:0|max:100',
             'desc'          => 'nullable|string|max:500',
             'status'        => 'sometimes|string|in:available,unavailable,draft',
             'publish'       => 'sometimes|boolean',
             'pax'           => 'sometimes|integer|min:1',
-            
+
             // --- VALIDASI DISKON BARU (ADDON) ---
             'discount_type' => 'nullable|in:percentage,fixed',
-            'discount_value' => 'nullable|numeric|min:0',
+            'discount_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_fixed' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date|after:today',
             // -------------------------------------
 
@@ -528,7 +529,7 @@ class VendorController extends Controller
         // Ambil semua data yang relevan, termasuk diskon
         $data = $request->only([
             'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
-            'discount_type', 'discount_value', 'discount_expires_at' // KOLOM DISKON BARU
+            'discount_type', 'discount_expires_at' // KOLOM DISKON BARU
         ]);
 
         // Set id_vendor based on user type
@@ -538,9 +539,22 @@ class VendorController extends Controller
             $vendor = Auth::guard('vendor')->user();
             $data['id_vendor'] = $vendor->id;
         }
-        
+
+        // Map discount fields to discount_value based on discount_type
+        if ($request->filled('discount_type')) {
+            if ($request->discount_type === 'percentage' && $request->filled('discount_rate')) {
+                $data['discount_value'] = $request->discount_rate;
+            } elseif ($request->discount_type === 'fixed' && $request->filled('discount_fixed')) {
+                $data['discount_value'] = $request->discount_fixed;
+            } else {
+                $data['discount_value'] = 0.00;
+            }
+        } else {
+            $data['discount_value'] = 0.00;
+        }
+
         $imagePaths = [];
-        $uploadedPaths = []; 
+        $uploadedPaths = [];
 
         DB::beginTransaction();
         try {
@@ -548,13 +562,13 @@ class VendorController extends Controller
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('addons', 'public');
-                    $uploadedPaths[] = $path; 
+                    $uploadedPaths[] = $path;
                     $imagePaths[] = $path;
                 }
-            } 
-            
+            }
+
             $data['images'] = $imagePaths;
-            $data['tax_rate'] = $request->input('tax_rate', 0.00); 
+            $data['tax_rate'] = $request->input('tax_rate', 0.00);
 
             // Handle tanggal kadaluarsa diskon yang mungkin kosong
             if (!$request->filled('discount_expires_at')) {
@@ -586,17 +600,18 @@ class VendorController extends Controller
     {
         $rules = [
             'addons'        => 'sometimes|required|string|max:255',
-            'basic_price'   => 'sometimes|required|numeric|min:0', 
-            'nta'           => 'sometimes|required|numeric|min:0', 
-            'tax_rate'      => 'nullable|numeric|min:0|max:100', 
+            'basic_price'   => 'sometimes|required|numeric|min:0',
+            'nta'           => 'sometimes|required|numeric|min:0',
+            'tax_rate'      => 'nullable|numeric|min:0|max:100',
             'desc'          => 'nullable|string|max:500',
             'status'        => 'sometimes|string|in:available,unavailable,draft',
             'publish'       => 'sometimes|boolean',
             'pax'           => 'sometimes|integer|min:1',
-            
+
             // --- VALIDASI DISKON BARU (ADDON) ---
             'discount_type' => 'nullable|in:percentage,fixed',
-            'discount_value' => 'nullable|numeric|min:0',
+            'discount_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_fixed' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date|after:today',
             // -------------------------------------
 
@@ -627,15 +642,28 @@ class VendorController extends Controller
         // Ambil semua data yang relevan, termasuk diskon
         $data = $request->only([
             'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
-            'discount_type', 'discount_value', 'discount_expires_at' // KOLOM DISKON BARU
+            'discount_type', 'discount_expires_at' // KOLOM DISKON BARU
         ]);
 
         if (Auth::guard('super_admin')->check() && $request->filled('id_vendor')) {
             $data['id_vendor'] = $request->id_vendor;
         }
 
+        // Map discount fields to discount_value based on discount_type
+        if ($request->filled('discount_type')) {
+            if ($request->discount_type === 'percentage' && $request->filled('discount_rate')) {
+                $data['discount_value'] = $request->discount_rate;
+            } elseif ($request->discount_type === 'fixed' && $request->filled('discount_fixed')) {
+                $data['discount_value'] = $request->discount_fixed;
+            } else {
+                $data['discount_value'] = 0.00;
+            }
+        } else {
+            $data['discount_value'] = 0.00;
+        }
+
         $imagePaths = $addon->images ?? [];
-        $uploadedPaths = []; 
+        $uploadedPaths = [];
 
         DB::beginTransaction();
         try {
@@ -659,14 +687,14 @@ class VendorController extends Controller
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('addons', 'public');
-                    $uploadedPaths[] = $path; 
+                    $uploadedPaths[] = $path;
                     $imagePaths[] = $path;
                 }
             }
 
             $data['images'] = $imagePaths;
-            $data['tax_rate'] = $request->input('tax_rate', $addon->tax_rate ?? 0.00); 
-            
+            $data['tax_rate'] = $request->input('tax_rate', $addon->tax_rate ?? 0.00);
+
             // Handle tanggal kadaluarsa diskon yang mungkin kosong
             if (!$request->filled('discount_expires_at')) {
                 $data['discount_expires_at'] = null;

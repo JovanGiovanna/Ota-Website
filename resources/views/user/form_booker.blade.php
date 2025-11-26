@@ -24,118 +24,130 @@ Book Your Package with Products and Add-ons!
 
 <!-- Booking Form -->
 <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-    <form method="POST" action="{{ route('user.book') }}" id="booking-form" class="space-y-8">
-        @csrf
+<form method="POST" action="{{ route('user.book') }}" id="booking-form" class="space-y-8">
+    @csrf
 
-        @php
-            $preselectedPackage = request('package');
-            $preselectedPackageData = null;
-            if ($preselectedPackage) {
-                $preselectedPackageData = \App\Models\Package::find($preselectedPackage);
-            }
+    @if ($errors->any())
+    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+        <ul class="list-disc pl-5">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 
-            $preselectedProduct = request('product');
-            $preselectedProductData = null;
-            if ($preselectedProduct) {
-                $preselectedProductData = \App\Models\Product::find($preselectedProduct);
-            }
+    @if (session('error'))
+    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+        {{ session('error') }}
+    </div>
+    @endif
 
-            $preselectedAddon = request('addon');
-            $preselectedAddonData = null;
-            if ($preselectedAddon) {
-                $preselectedAddonData = \App\Models\Addon::find($preselectedAddon);
-            }
-        @endphp
+    @if (session('success'))
+    <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+        {{ session('success') }}
+    </div>
+    @endif
 
-        <!-- Pre-selected Package Info -->
-        @if($preselectedPackageData)
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center">
-                <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
-                    <i class="fas fa-info-circle text-blue-600"></i>
-                </div>
-                Selected Package
-            </h3>
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                    @php
-                        $validImages = array_filter((array) ($preselectedPackageData->images ?? []), function($img) {
-                            return is_string($img) && !empty($img);
-                        });
-                    @endphp
-                    @if($validImages && count($validImages) > 0)
-                        <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $preselectedPackageData->name_package }}" class="w-16 h-16 rounded-lg object-cover">
-                    @else
-                        <i class="fas fa-box text-blue-600 text-2xl"></i>
-                    @endif
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-800">{{ $preselectedPackageData->name_package }}</h4>
-                    <p class="text-gray-600 text-sm">{{ Str::limit($preselectedPackageData->description, 100) }}</p>
-                    <div class="text-lg font-bold text-blue-600">Rp {{ number_format($preselectedPackageData->price_publish, 0, ',', '.') }}/night</div>
-                </div>
+    @php
+        $preselectedPackage = request('package');
+        $preselectedPackageData = $preselectedPackage ? \App\Models\Package::find($preselectedPackage) : null;
+
+        $preselectedProduct = request('product');
+        $preselectedProductData = $preselectedProduct ? \App\Models\Product::find($preselectedProduct) : null;
+
+        $preselectedAddon = request('addon');
+        $preselectedAddonData = $preselectedAddon ? \App\Models\Addon::find($preselectedAddon) : null;
+    @endphp
+
+    <!-- Pre-selected Package -->
+    @if($preselectedPackageData)
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+        <h3 class="text-lg font-bold text-blue-800 mb-4 flex items-center">
+            <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center mr-2">
+                <i class="fas fa-info-circle text-blue-600"></i>
             </div>
-            <input type="hidden" name="id_package[]" value="{{ $preselectedPackageData->id }}">
-            <input type="hidden" name="booking_types[]" value="package">
-        </div>
-        @endif
-
-        <!-- Pre-selected Product Info -->
-        @if($preselectedProductData)
-        <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-bold text-green-800 mb-4 flex items-center">
-                <div class="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center mr-2">
-                    <i class="fas fa-info-circle text-green-600"></i>
-                </div>
-                Selected Product
-            </h3>
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
-                    @if($preselectedProductData->image)
-                        <img src="{{ asset('storage/' . $preselectedProductData->image) }}" alt="{{ $preselectedProductData->name }}" class="w-16 h-16 rounded-lg object-cover">
-                    @else
-                        <i class="fas fa-shopping-cart text-green-600 text-2xl"></i>
-                    @endif
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-800">{{ $preselectedProductData->name }}</h4>
-                    <p class="text-gray-600 text-sm">{{ Str::limit($preselectedProductData->description, 100) }}</p>
-                    <div class="text-lg font-bold text-green-600">Rp {{ number_format($preselectedProductData->price, 0, ',', '.') }}/unit</div>
-                </div>
+            Selected Package
+        </h3>
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
+                @php
+                    $validImages = array_filter((array) ($preselectedPackageData->images ?? []), fn($img) => is_string($img) && !empty($img));
+                @endphp
+                @if($validImages && count($validImages) > 0)
+                    <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $preselectedPackageData->name_package }}" class="w-16 h-16 rounded-lg object-cover">
+                @else
+                    <i class="fas fa-box text-blue-600 text-2xl"></i>
+                @endif
             </div>
-            <input type="hidden" name="product_id[]" value="{{ $preselectedProductData->id }}">
-            <input type="hidden" name="booking_types[]" value="product">
-        </div>
-        @endif
-
-        <!-- Pre-selected Addon Info -->
-        @if($preselectedAddonData)
-        <div class="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
-            <h3 class="text-lg font-bold text-orange-800 mb-4 flex items-center">
-                <div class="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center mr-2">
-                    <i class="fas fa-info-circle text-orange-600"></i>
-                </div>
-                Selected Addon
-            </h3>
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center">
-                    @if($preselectedAddonData->image)
-                        <img src="{{ asset('storage/' . $preselectedAddonData->image) }}" alt="{{ $preselectedAddonData->name_addon }}" class="w-16 h-16 rounded-lg object-cover">
-                    @else
-                        <i class="fas fa-plus-circle text-orange-600 text-2xl"></i>
-                    @endif
-                </div>
-                <div>
-                    <h4 class="font-bold text-gray-800">{{ $preselectedAddonData->name_addon }}</h4>
-                    <p class="text-gray-600 text-sm">{{ Str::limit($preselectedAddonData->description, 100) }}</p>
-                    <div class="text-lg font-bold text-orange-600">Rp {{ number_format($preselectedAddonData->price, 0, ',', '.') }}/unit</div>
-                </div>
+            <div>
+                <h4 class="font-bold text-gray-800">{{ $preselectedPackageData->name_package }}</h4>
+                <p class="text-gray-600 text-sm">{{ Str::limit($preselectedPackageData->description, 100) }}</p>
+<div class="text-lg font-bold text-blue-600">Rp {{ number_format($preselectedPackageData->nta, 0, ',', '.') }}/night</div>
             </div>
-            <input type="hidden" name="addon_id[]" value="{{ $preselectedAddonData->id }}">
-            <input type="hidden" name="quantity[{{ $preselectedAddonData->id }}]" value="1">
-            <input type="hidden" name="booking_types[]" value="addon">
         </div>
-        @endif
+        <input type="hidden" name="id_package[]" value="{{ $preselectedPackageData->id }}">
+        <input type="hidden" name="booking_types[]" value="package">
+    </div>
+    @endif
+
+    <!-- Pre-selected Product -->
+    @if($preselectedProductData)
+    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+        <h3 class="text-lg font-bold text-green-800 mb-4 flex items-center">
+            <div class="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center mr-2">
+                <i class="fas fa-info-circle text-green-600"></i>
+            </div>
+            Selected Product
+        </h3>
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
+                @if($preselectedProductData->image)
+                    <img src="{{ asset('storage/' . $preselectedProductData->image) }}" alt="{{ $preselectedProductData->name }}" class="w-16 h-16 rounded-lg object-cover">
+                @else
+                    <i class="fas fa-shopping-cart text-green-600 text-2xl"></i>
+                @endif
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800">{{ $preselectedProductData->name }}</h4>
+                <p class="text-gray-600 text-sm">{{ Str::limit($preselectedProductData->description, 100) }}</p>
+                <div class="text-lg font-bold text-green-600">Rp {{ number_format($preselectedProductData->finalPrice, 0, ',', '.') }}/unit</div>
+            </div>
+        </div>
+        <input type="hidden" name="product_id[]" value="{{ $preselectedProductData->id }}">
+        <input type="hidden" name="quantity[{{ $preselectedProductData->id }}]" value="1">
+        <input type="hidden" name="booking_types[]" value="product">
+    </div>
+    @endif
+
+    <!-- Pre-selected Addon -->
+    @if($preselectedAddonData)
+    <div class="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
+        <h3 class="text-lg font-bold text-orange-800 mb-4 flex items-center">
+            <div class="w-6 h-6 bg-orange-100 rounded-lg flex items-center justify-center mr-2">
+                <i class="fas fa-info-circle text-orange-600"></i>
+            </div>
+            Selected Addon
+        </h3>
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-orange-100 rounded-lg flex items-center justify-center">
+                @if($preselectedAddonData->image)
+                    <img src="{{ asset('storage/' . $preselectedAddonData->image) }}" alt="{{ $preselectedAddonData->addons }}" class="w-16 h-16 rounded-lg object-cover">
+                @else
+                    <i class="fas fa-plus-circle text-orange-600 text-2xl"></i>
+                @endif
+            </div>
+            <div>
+                <h4 class="font-bold text-gray-800">{{ $preselectedAddonData->addons }}</h4>
+                <p class="text-gray-600 text-sm">{{ Str::limit($preselectedAddonData->desc, 100) }}</p>
+                <div class="text-lg font-bold text-orange-600">Rp {{ number_format($preselectedAddonData->finalPrice, 0, ',', '.') }}/unit</div>
+            </div>
+        </div>
+        <input type="hidden" name="addon_id[]" value="{{ $preselectedAddonData->id }}">
+        <input type="hidden" name="quantity[{{ $preselectedAddonData->id }}]" value="1">
+        <input type="hidden" name="booking_types[]" value="addon">
+    </div>
+    @endif
 
         <!-- Booking Type Selection -->
         @if(!$preselectedPackage && !$preselectedProduct && !$preselectedAddon)
@@ -181,7 +193,7 @@ Book Your Package with Products and Add-ons!
             <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     @forelse($packages ?? [] as $package)
-                        <div class="relative border-2 border-gray-200 rounded-lg p-3 hover:border-blue-500 transition-all duration-200 cursor-pointer package-option bg-white hover:shadow-md" data-package="{{ $package->id }}" data-price="{{ $package->price_publish }}" data-name="{{ $package->name_package }}" data-desc="{{ $package->description }}">
+<div class="relative border-2 border-gray-200 rounded-lg p-3 hover:border-blue-500 transition-all duration-200 cursor-pointer package-option bg-white hover:shadow-md" data-package="{{ $package->id }}" data-price="{{ $package->nta }}" data-name="{{ $package->name_package }}" data-desc="{{ $package->description }}">
                             <div class="absolute top-2 right-2 z-10">
                                 <input type="checkbox" name="id_package[]" value="{{ $package->id }}" class="package-checkbox w-3 h-3 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer">
                             </div>
@@ -205,7 +217,7 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-center justify-between border-t border-gray-100 pt-2">
                                 <div>
-                                    <div class="text-sm font-bold text-blue-600">Rp {{ number_format($package->price_publish, 0, ',', '.') }}</div>
+<div class="text-sm font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
                                     <span class="text-gray-500 text-xs">per package</span>
                                 </div>
                                     <a href="{{ route('user.package_detail', $package->id) }}?from=form_booker" class="bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold hover:bg-blue-200 transition-all duration-200 text-xs">
@@ -238,7 +250,7 @@ Book Your Package with Products and Add-ons!
             <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     @forelse($products ?? [] as $product)
-                        <div class="relative border-2 border-gray-200 rounded-lg p-3 hover:border-green-500 transition-all duration-200 cursor-pointer product-option bg-white hover:shadow-md" data-product="{{ $product->id }}" data-price="{{ $product->price }}" data-name="{{ $product->name }}" data-desc="{{ $product->description }}">
+                        <div class="relative border-2 border-gray-200 rounded-lg p-3 hover:border-green-500 transition-all duration-200 cursor-pointer product-option bg-white hover:shadow-md" data-product="{{ $product->id }}" data-price="{{ $product->finalPrice }}" data-name="{{ $product->name }}" data-desc="{{ $product->description }}">
                             <div class="absolute top-2 right-2 z-10">
                                 <input type="checkbox" name="product_id[]" value="{{ $product->id }}" class="product-checkbox w-3 h-3 text-green-600 bg-white border-2 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer">
                             </div>
@@ -262,7 +274,7 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-center justify-between border-t border-gray-100 pt-2">
                                 <div>
-                                    <div class="text-sm font-bold text-green-600">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
+                                    <div class="text-sm font-bold text-green-600">Rp {{ number_format($product->finalPrice, 0, ',', '.') }}</div>
                                     <span class="text-gray-500 text-xs">per unit</span>
                                 </div>
                                 <div class="flex items-center space-x-1">
@@ -299,7 +311,7 @@ Book Your Package with Products and Add-ons!
             <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     @forelse($addons ?? [] as $addon)
-                        <div class="relative border-2 border-gray-200 rounded-lg p-3 hover:border-orange-500 transition-all duration-200 cursor-pointer addon-option bg-white hover:shadow-md" data-addon="{{ $addon->id }}" data-price="{{ $addon->price }}" data-name="{{ $addon->addons }}" data-desc="{{ $addon->desc }}">
+                        <div class="relative border-2 border-gray-200 rounded-lg p-3 hover:border-orange-500 transition-all duration-200 cursor-pointer addon-option bg-white hover:shadow-md" data-addon="{{ $addon->id }}" data-price="{{ $addon->finalPrice }}" data-name="{{ $addon->addons }}" data-desc="{{ $addon->desc }}">
                             <div class="absolute top-2 right-2 z-10">
                                 <input type="checkbox" name="addon_id[]" value="{{ $addon->id }}" class="addon-checkbox w-3 h-3 text-orange-600 bg-white border-2 border-gray-300 rounded focus:ring-orange-500 focus:ring-2 cursor-pointer">
                             </div>
@@ -323,7 +335,7 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-center justify-between border-t border-gray-100 pt-2">
                                 <div>
-                                    <div class="text-sm font-bold text-orange-600">Rp {{ number_format($addon->price, 0, ',', '.') }}</div>
+                                    <div class="text-sm font-bold text-orange-600">Rp {{ number_format($addon->finalPrice, 0, ',', '.') }}</div>
                                     <span class="text-gray-500 text-xs">per unit</span>
                                 </div>
                                 <div class="flex items-center space-x-1">
@@ -788,7 +800,39 @@ document.querySelectorAll('.product-option input[type="number"], .addon-option i
 });
 
 // Duration update
-document.querySelector('input[name="duration_days"]').addEventListener('input', updateSummary);
+const checkinInput = document.querySelector('input[name="checkin_appointment_start"]');
+const checkoutInput = document.querySelector('input[name="checkout_appointment_end"]');
+const durationInput = document.querySelector('input[name="duration_days"]');
+
+function calculateDuration() {
+    if (checkinInput.value && checkoutInput.value) {
+        const checkinDate = new Date(checkinInput.value);
+        const checkoutDate = new Date(checkoutInput.value);
+        const diffTime = checkoutDate - checkinDate;
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays < 1) diffDays = 1;
+        durationInput.value = diffDays;
+    } else {
+        durationInput.value = 1;
+    }
+    updateSummary();
+}
+
+// Make duration input readonly to prevent manual editing
+durationInput.setAttribute('readonly', true);
+
+checkinInput.addEventListener('change', () => {
+    calculateDuration();
+});
+
+checkoutInput.addEventListener('change', () => {
+    calculateDuration();
+});
+
+// Initial duration calculation on page load
+document.addEventListener('DOMContentLoaded', () => {
+    calculateDuration();
+});
 
 // Pre-select URL
 const urlParams = new URLSearchParams(window.location.search);

@@ -43,7 +43,7 @@ My Wishlist
                         $image = $item->images[0] ?? null;
                         $name = $item->name_package;
                         $description = $item->description;
-                        $price = $item->price_publish;
+                        $price = $item->nta;
                     @endphp
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                         <!-- Image -->
@@ -78,7 +78,7 @@ My Wishlist
 
                             <!-- Price and Rating -->
                             <div class="flex items-center justify-between mb-4">
-                                <div class="text-lg font-bold text-gray-900">Rp {{ number_format($price, 0, ',', '.') }}</div>
+                                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($price, 0, ',', '.') }}</div>
 
                                 <!-- Rating -->
                                 <div class="flex items-center space-x-1">
@@ -127,10 +127,10 @@ My Wishlist
                 @foreach($products as $wishlist)
                     @php
                         $item = $wishlist->wishable;
-                        $image = $item->image;
+                        $image = $item->images[0] ?? null;
                         $name = $item->name;
                         $description = $item->description;
-                        $price = $item->price;
+                        $price = $item->final_price;
                     @endphp
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                         <!-- Image -->
@@ -165,7 +165,14 @@ My Wishlist
 
                             <!-- Price and Rating -->
                             <div class="flex items-center justify-between mb-4">
-                                <div class="text-lg font-bold text-gray-900">Rp {{ number_format($price, 0, ',', '.') }}</div>
+                                @if($item->final_price < $item->total_price_before_discount)
+                                    <div class="text-lg font-bold text-green-600">
+                                        <span class="text-sm text-gray-500 line-through">Rp {{ number_format($item->total_price_before_discount, 0, ',', '.') }}</span>
+                                        Rp {{ number_format($item->final_price, 0, ',', '.') }}
+                                    </div>
+                                @else
+                                    <div class="text-lg font-bold text-green-600">Rp {{ number_format($item->final_price, 0, ',', '.') }}</div>
+                                @endif
 
                                 <!-- Rating -->
                                 <div class="flex items-center space-x-1">
@@ -214,10 +221,10 @@ My Wishlist
                 @foreach($addons as $wishlist)
                     @php
                         $item = $wishlist->wishable;
-                        $image = $item->image;
+                        $image = $item->images[0] ?? null;
                         $name = $item->addons;
                         $description = $item->desc;
-                        $price = $item->price;
+                        $price = $item->final_price;
                     @endphp
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                         <!-- Image -->
@@ -252,7 +259,14 @@ My Wishlist
 
                             <!-- Price and Rating -->
                             <div class="flex items-center justify-between mb-4">
-                                <div class="text-lg font-bold text-gray-900">Rp {{ number_format($price, 0, ',', '.') }}</div>
+                                @if($item->final_price < $item->basic_price)
+                                    <div class="text-lg font-bold text-orange-600">
+                                        <span class="text-sm text-gray-500 line-through">Rp {{ number_format($item->basic_price, 0, ',', '.') }}</span>
+                                        Rp {{ number_format($item->final_price, 0, ',', '.') }}
+                                    </div>
+                                @else
+                                    <div class="text-lg font-bold text-orange-600">Rp {{ number_format($item->final_price, 0, ',', '.') }}</div>
+                                @endif
 
                                 <!-- Rating -->
                                 <div class="flex items-center space-x-1">

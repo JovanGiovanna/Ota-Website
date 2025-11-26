@@ -17,6 +17,10 @@ return new class extends Migration
 
             // Kolom Foreign Keys (UUID)
             // Asumsi: tabel 'users' dan 'addons' menggunakan UUID untuk ID mereka.
+            $table->foreignUuid('id_book')   // Ini penting, relasi ke Booking
+          ->references('id')->on('bookings')
+          ->onDelete('cascade');
+
             $table->foreignUuid('id_user')
                   ->references('id')->on('users')
                   ->onDelete('cascade');

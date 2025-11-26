@@ -85,7 +85,7 @@ Package Details
 
                 <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
                     <div class="text-blue-100">Price</div>
-                    <div class="text-3xl font-bold text-white mb-2">Rp {{ number_format($package->price_publish, 0, ',', '.') }}</div>
+                    <div class="text-3xl font-bold text-white mb-2">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4">
@@ -203,12 +203,12 @@ Package Details
                                         </div>
                                     @endif
                                     <div>
-                                        <p class="font-medium text-gray-800">{{ $addon['addons'] ?? 'Unnamed Addon' }}</p>
+                                        <p class="font-medium text-gray-800">{{ $addon['name'] ?? 'Unnamed Addon' }}</p>
                                         <p class="text-sm text-gray-500">{{ isset($addon['desc']) && $addon['desc'] ? Str::limit($addon['desc'], 50) : 'No description' }}</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <p class="font-semibold text-gray-800">Rp {{ number_format($addon['price'] ?? 0, 0, ',', '.') }}</p>
+                                    <p class="font-semibold text-gray-800">Rp {{ number_format($addon['nta'] ?? 0, 0, ',', '.') }}</p>
                                     <p class="text-sm text-gray-500">{{ $addon['pax'] ?? 1 }} pax</p>
                                 </div>
                             </div>

@@ -177,7 +177,42 @@
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-                
+
+                {{-- Tax Rate --}}
+                <div class="space-y-2">
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                    <div class="relative rounded-lg shadow-sm">
+                        <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', 0) }}" step="0.01" min="0" max="100" placeholder="0.00" class="w-full pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('tax_rate') border-red-500 @enderror">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">%</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500">Persentase pajak yang akan diterapkan pada harga paket (0-100%).</p>
+                    @error('tax_rate')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Tax Amount - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Tax Amount</label>
+                    <div class="p-3 bg-orange-100 border border-orange-400 rounded-lg">
+                        <span class="text-lg font-bold text-orange-700" id="tax_amount_display">Rp0</span>
+                        {{-- Input hidden tax_amount --}}
+                        <input type="hidden" name="tax_amount" id="tax_amount" value="{{ old('tax_amount', 0) }}">
+                    </div>
+                </div>
+
+                {{-- Total Price - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Tax)</label>
+                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
+                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp0</span>
+                        {{-- Input hidden total_price --}}
+                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', 0) }}">
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label for="start_publish" class="block text-sm font-medium text-gray-700">Start Publish Date</label>
@@ -272,20 +307,34 @@
         // Update display dan hidden field NTA
         document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
         document.getElementById('nta').value = totalNTA;
-        
-        // 3. Hitung Harga Jual Per Pax (Pax Paid)
-        const paxPaidInput = document.getElementById('pax_paid_input'); 
-        
+
+        // 3. Hitung Tax Amount dan Total Price
+        const taxRateInput = document.getElementById('tax_rate');
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+        const taxAmount = totalNTA * taxRate / 100;
+        const totalPrice = totalNTA + taxAmount;
+
+        // Update tax_amount display dan hidden
+        document.getElementById('tax_amount_display').textContent = formatRupiah(taxAmount);
+        document.getElementById('tax_amount').value = taxAmount;
+
+        // Update total_price display dan hidden
+        document.getElementById('total_price_display').textContent = formatRupiah(totalPrice);
+        document.getElementById('total_price').value = totalPrice;
+
+        // 4. Hitung Harga Jual Per Pax (Pax Paid)
+        const paxPaidInput = document.getElementById('pax_paid_input');
+
         // Karena diskon dihapus, Total Harga Jual = Total NTA
-        const totalPricePublish = totalNTA; 
-        
+        const totalPricePublish = totalNTA;
+
         let paxPaidCalculated = 0;
         if (totalPaxCount > 0) {
             // Harga Per Pax = Total NTA / Total Pax
             paxPaidCalculated = totalPricePublish / totalPaxCount;
         } else {
             // Jika tidak ada pax, harga per pax dianggap 0
-            paxPaidCalculated = 0; 
+            paxPaidCalculated = 0;
         }
 
         // Update Pax Paid Input HANYA jika nilainya 0 atau kosong (otomatis)

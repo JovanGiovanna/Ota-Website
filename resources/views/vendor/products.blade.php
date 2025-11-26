@@ -64,7 +64,7 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $product->name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($product->description ?? 'N/A', 50) }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $product->category->categories ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $product->category ? $product->category->categories : 'N/A' }}</td>
                                 
                                 {{-- ISI KOLOM HARGA BARU --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
@@ -85,7 +85,7 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                             - Rp {{ number_format($product->discount_value, 0, ',', '.') }}
                                         </span>
                                         <div class="text-xs text-gray-500">
-                                            ({{ ($product->discount_rate ?? 0) > 0 ? number_format($product->discount_value, 2) . '%' : 'Fixed' }})
+                                            ({{ $product->discount_type === 'percentage' ? number_format($product->discount_value, 2) . '%' : 'Fixed' }})
                                         </div>
                                     @else
                                         <span class="text-gray-500">None</span>

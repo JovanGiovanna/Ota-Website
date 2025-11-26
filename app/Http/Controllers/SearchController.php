@@ -170,6 +170,19 @@ class SearchController extends Controller
 
         $addons = $addonQuery->where('status', 'available')->where('publish', true)->paginate(12);
 
-        return view('user.search', compact('packages', 'products', 'addons', 'searchType', 'categories', 'types'));
+        // Popular packages: paginate 8 by highest average rating (most popular first)
+        $popularPackages = Package::with(['reviews'])
+            ->where('is_active', true)
+            ->withCount('reviews')
+            ->orderByRaw('(SELECT AVG(rating) FROM reviews WHERE reviews.package_id = packages.id) DESC')
+            ->orderBy('reviews_count', 'DESC')
+            ->paginate(8, ['*'], 'popularPackagesPage');
+
+        // Newest packages: paginate 8 from newest to oldest (id descending)
+        $newestPackages = Package::where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->paginate(8, ['*'], 'newestPackagesPage');
+
+        return view('user.search', compact('packages', 'products', 'addons', 'searchType', 'categories', 'types', 'popularPackages', 'newestPackages'));
     }
 }

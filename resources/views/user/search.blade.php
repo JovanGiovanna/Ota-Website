@@ -138,7 +138,6 @@ Find your perfect packages, products, and add-ons!
     </div>
 @else
     <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Popular Items</h2>
         <p class="text-gray-600">Explore our most popular packages, products, and add-ons</p>
     </div>
 @endif
@@ -157,9 +156,6 @@ Find your perfect packages, products, and add-ons!
                         <div class="relative h-32 overflow-hidden">
                             <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover">
                             @if(count($validImages) > 1)
-                                <div class="absolute top-2 right-2 bg-black/50 backdrop-blur-sm rounded-full px-2 py-1">
-                                    <span class="text-white text-xs font-medium">{{ count($validImages) }} photos</span>
-                                </div>
                                 <!-- Image indicators -->
                                 <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
                                     @for($i = 0; $i < min(count($validImages), 3); $i++)
@@ -194,10 +190,10 @@ Find your perfect packages, products, and add-ons!
                 <div class="p-4">
                     <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
                     <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
-                    <div class="flex items-center justify-between">
-                        <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->price_publish, 0, ',', '.') }}</div>
-                        <span class="text-xs text-gray-500">per package</span>
-                    </div>
+        <div class="flex items-center justify-between">
+            <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
+            <span class="text-xs text-gray-500">per package</span>
+        </div>
                 </div>
             </a>
         @empty
@@ -246,7 +242,14 @@ Find your perfect packages, products, and add-ons!
                     <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $product->name }}</h3>
                     <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($product->description, 60) }}</p>
                     <div class="flex items-center justify-between">
-                        <div class="text-lg font-bold text-green-600">Rp {{ number_format($product->price, 0, ',', '.') }}</div>
+                        @if($product->finalPrice < $product->totalPriceBeforeDiscount)
+                            <div class="text-lg font-bold text-green-600">
+                                <span class="text-sm text-gray-500 line-through">Rp {{ number_format($product->totalPriceBeforeDiscount, 0, ',', '.') }}</span>
+                                Rp {{ number_format($product->finalPrice, 0, ',', '.') }}
+                            </div>
+                        @else
+                            <div class="text-lg font-bold text-green-600">Rp {{ number_format($product->finalPrice, 0, ',', '.') }}</div>
+                        @endif
                         <span class="text-xs text-gray-500">per unit</span>
                     </div>
                 </div>
@@ -297,7 +300,14 @@ Find your perfect packages, products, and add-ons!
                     <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $addon->addons }}</h3>
                     <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($addon->desc, 60) }}</p>
                     <div class="flex items-center justify-between">
-                        <div class="text-lg font-bold text-orange-600">Rp {{ number_format($addon->price, 0, ',', '.') }}</div>
+                        @if($addon->finalPrice < $addon->basic_price)
+                            <div class="text-lg font-bold text-orange-600">
+                                <span class="text-sm text-gray-500 line-through">Rp {{ number_format($addon->basic_price, 0, ',', '.') }}</span>
+                                Rp {{ number_format($addon->finalPrice, 0, ',', '.') }}
+                            </div>
+                        @else
+                            <div class="text-lg font-bold text-orange-600">Rp {{ number_format($addon->finalPrice, 0, ',', '.') }}</div>
+                        @endif
                         <span class="text-xs text-gray-500">per unit</span>
                     </div>
                 </div>
@@ -313,6 +323,196 @@ Find your perfect packages, products, and add-ons!
         @endforelse
     @endif
 </div>
+
+<!-- New User Section Added -->
+<section class="mt-12">
+    <div>
+        <!-- Tabs navigation -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="flex space-x-4" aria-label="Tabs" id="packageTabs">
+                <button class="px-4 py-2 font-semibold text-blue-700 border-b-2 border-blue-700 focus:outline-none flex items-center space-x-2" data-tab="popular" type="button">
+                    <i class="fas fa-fire text-orange-500"></i>
+                    <span>Popular Items</span>
+                </button>
+                <button class="px-4 py-2 font-semibold text-gray-600 hover:text-blue-700 border-b-2 border-transparent focus:outline-none flex items-center space-x-2" data-tab="newest" type="button">
+                    <i class="fas fa-clock text-green-500"></i>
+                    <span>Newest Items</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tabs content -->
+        <div id="popular" class="tab-content">
+            <p class="text-gray-600 mb-6">Discover our most popular packages based on customer ratings and reviews</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                @foreach ($popularPackages as $package)
+                    <a href="{{ route('user.package_detail', $package->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div class="relative">
+                            @php
+                                $validImages = array_filter((array) ($package->images ?? []), function($img) {
+                                    return is_string($img) && !empty($img);
+                                });
+                            @endphp
+                            @if($validImages && count($validImages) > 0)
+                                <div class="relative h-32 overflow-hidden">
+                                    <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover">
+                                </div>
+                            @else
+                                <div class="w-full h-32 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                                    <i class="fas fa-box text-white text-2xl"></i>
+                                </div>
+                            @endif
+                            <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+                                <div class="flex items-center space-x-1">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= floor($package->averageRating()))
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        @elseif($i - 0.5 <= $package->averageRating())
+                                            <i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>
+                                        @else
+                                            <i class="far fa-star text-gray-300 text-xs"></i>
+                                        @endif
+                                    @endfor
+                                    <span class="text-xs font-semibold ml-1">{{ number_format($package->averageRating(), 1) }} ({{ $package->reviews->count() }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
+                            <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
+                            <div class="flex items-center justify-between">
+                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
+                <span class="text-xs text-gray-500">per package</span>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+            <div class="mt-6">
+                {{ $popularPackages->withQueryString()->links() }}
+            </div>
+        </div>
+
+        <div id="newest" class="tab-content hidden">
+            <p class="text-gray-600 mb-6">Explore our newest packages, ordered from newest to oldest</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                @foreach ($newestPackages as $package)
+                    <a href="{{ route('user.package_detail', $package->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div class="relative">
+                            @php
+                                $validImages = array_filter((array) ($package->images ?? []), function($img) {
+                                    return is_string($img) && !empty($img);
+                                });
+                            @endphp
+                            @if($validImages && count($validImages) > 0)
+                                <div class="relative h-32 overflow-hidden">
+                                    <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover">
+                                </div>
+                            @else
+                                <div class="w-full h-32 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                                    <i class="fas fa-box text-white text-2xl"></i>
+                                </div>
+                            @endif
+                            <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+                                <div class="flex items-center space-x-1">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= floor($package->averageRating()))
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        @elseif($i - 0.5 <= $package->averageRating())
+                                            <i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>
+                                        @else
+                                            <i class="far fa-star text-gray-300 text-xs"></i>
+                                        @endif
+                                    @endfor
+                                    <span class="text-xs font-semibold ml-1">{{ number_format($package->averageRating(), 1) }} ({{ $package->reviews->count() }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
+                            <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
+                                <span class="text-xs text-gray-500">per package</span>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+            <div class="mt-6">
+                {{ $newestPackages->withQueryString()->links() }}
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function toggleAdvancedFilters() {
+        const filters = document.getElementById('advanced-filters');
+        const icon = document.getElementById('advanced-filters-icon');
+
+        if (filters.classList.contains('hidden')) {
+            filters.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+        } else {
+            filters.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all star rating containers
+        const starRatingContainers = document.querySelectorAll('.star-rating');
+
+        starRatingContainers.forEach(container => {
+            const stars = container.querySelectorAll('.star');
+            const radioButtons = container.querySelectorAll('input[type="radio"]');
+
+            function updateStars(rating) {
+                stars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.classList.remove('text-gray-300');
+                        star.classList.add('text-yellow-500');
+                    } else {
+                        star.classList.remove('text-yellow-500');
+                        star.classList.add('text-gray-300');
+                    }
+                });
+            }
+
+            // Initialize with the checked radio button
+            const checkedRadio = container.querySelector('input[type="radio"]:checked');
+            if (checkedRadio) {
+                updateStars(parseInt(checkedRadio.value));
+            }
+        });
+
+        // Tab switching logic
+        const tabs = document.querySelectorAll('#packageTabs button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => {
+                    t.classList.remove('text-blue-700', 'border-blue-700');
+                    t.classList.add('text-gray-600', 'border-transparent');
+                });
+
+                // Hide all tab contents
+                tabContents.forEach(content => content.classList.add('hidden'));
+
+                // Activate clicked tab
+                tab.classList.add('text-blue-700', 'border-blue-700');
+                tab.classList.remove('text-gray-600', 'border-transparent');
+
+                // Show corresponding tab content
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+    });
+</script>
 
 <script>
     function toggleAdvancedFilters() {

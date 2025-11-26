@@ -78,6 +78,12 @@ Transaction Products Management
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Price</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Amount</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pax Paid</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th scope="col" class="relative px-6 py-3">
                             <span class="sr-only">Actions</span>
@@ -113,18 +119,22 @@ Transaction Products Management
                             <div class="text-sm font-medium text-gray-900">{{ $transaction->adults + $transaction->children }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->booking->total_price ?? 0, 0, ',', '.') }}</div>
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->basic_price ?? 0, 0, ',', '.') }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($transaction->booking->status == 'completed')
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
-                            @elseif($transaction->booking->status == 'pending')
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                            @elseif($transaction->booking->status == 'cancelled')
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Cancelled</span>
-                            @else
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">{{ ucfirst($transaction->booking->status ?? 'Unknown') }}</span>
-                            @endif
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->tax_amount ?? 0, 0, ',', '.') }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->discount_amount ?? 0, 0, ',', '.') }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->nta ?? 0, 0, ',', '.') }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-sm font-medium text-gray-900">{{ $transaction->pax_paid ?? 0 }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->profit ?? 0, 0, ',', '.') }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $transaction->created_at->format('M d, Y') }}
@@ -135,12 +145,8 @@ Transaction Products Management
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="16" class="px-6 py-4 text-center text-gray-500">
                             No transactions found.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
             </table>
         </div>
 

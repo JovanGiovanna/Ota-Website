@@ -27,6 +27,7 @@ class Package extends Model
         'images',
         'nta',           // ⬅️ Ditambahkan
         'pax_paid',      // ⬅️ Ditambahkan
+        'tax_rate',      // ⬅️ Ditambahkan
         'start_publish',
         'end_publish',
         'is_active',
@@ -41,6 +42,7 @@ class Package extends Model
     protected $casts = [
         'nta' => 'decimal:2',           // ⬅️ Ditambahkan/Diubah
         'pax_paid' => 'decimal:2',      // ⬅️ Ditambahkan/Diubah
+        'tax_rate' => 'decimal:2',      // ⬅️ Ditambahkan
         'start_publish' => 'datetime',
         'end_publish' => 'datetime',
         'is_active' => 'boolean',
@@ -65,20 +67,16 @@ class Package extends Model
     // --- Relasi (Relasi yang tidak memiliki foreign key di Migrasi dinonaktifkan/dihapus) ---
 
     // ❌ Relasi 'vendorInfo' dinonaktifkan karena 'id_vendor_info' TIDAK ada di Migrasi
-    /*
     public function vendorInfo()
     {
         return $this->belongsTo(\App\Models\VendorInfo::class, 'id_vendor_info');
     }
-    */
 
     // ❌ Relasi 'type' dinonaktifkan karena 'id_type' TIDAK ada di Migrasi
-    /*
     public function type()
     {
         return $this->belongsTo(\App\Models\Type::class, 'id_type');
     }
-    */
 
     /**
      * Get the reviews for the package. (Asumsi ini masih relevan dengan tabel lain)
@@ -104,4 +102,11 @@ class Package extends Model
     {
         return $this->morphMany(\App\Models\Wishlist::class, 'wishable');
     }
+
+    // app/Models/Package.php
+public function bookPackageAddons()
+{
+    return $this->hasMany(\App\Models\BookPackageAddon::class, 'id_package', 'id');
+}
+
 }

@@ -15,39 +15,81 @@ class ReviewController extends Controller
     public function store(Request $request, $bookingId)
     {
         $request->validate([
+            'review_type' => 'required|in:package,product,addon',
+            'item_id' => 'required|string',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
         ]);
 
-        $booking = Booking::with('packages', 'bookProducts', 'bookPackageAddons')->findOrFail($bookingId);
+        $booking = Booking::with('packages', 'products', 'bookPackageAddons', 'addons')->findOrFail($bookingId);
 
         // Check if user owns the booking
         if ($booking->id_user !== Auth::id()) {
             return redirect()->back()->with('error', 'You can only review your own bookings.');
         }
 
-        // Check if booking is completed (you might want to adjust this condition)
+        // Check if booking is completed
         if ($booking->status !== 'completed') {
             return redirect()->back()->with('error', 'You can only review completed bookings.');
         }
 
-        // Check if review already exists
+        // Check if review already exists for this user, booking, and specific item
         $existingReview = Review::where('user_id', Auth::id())
             ->where('booking_id', $bookingId)
+            ->where(function ($query) use ($request) {
+                switch ($request->review_type) {
+                    case 'package':
+                        $query->where('package_id', $request->item_id);
+                        break;
+                    case 'product':
+                        $query->where('product_id', $request->item_id);
+                        break;
+                    case 'addon':
+                        $query->where('addon_id', $request->item_id);
+                        break;
+                }
+            })
             ->first();
 
         if ($existingReview) {
-            return redirect()->back()->with('error', 'You have already reviewed this booking.');
+            return redirect()->back()->with('error', 'You have already reviewed this item.');
         }
 
-        // Get the first package ID from the booking's packages relation
-        $packageId = $booking->packages->first()->id ?? null;
+        // Validate that the item exists in the booking
+        $itemExists = false;
+        switch ($request->review_type) {
+            case 'package':
+                $itemExists = $booking->packages->contains('package.id', $request->item_id);
+                break;
+            case 'product':
+                $itemExists = $booking->products->contains('product.id', $request->item_id);
+                break;
+            case 'addon':
+                $itemExists = $booking->addons->contains('addon.id', $request->item_id);
+                break;
+        }
 
-        // Get the first product ID from the booking's products relation
-        $productId = $booking->bookProducts->first()->id_product ?? null;
+        if (!$itemExists) {
+            return redirect()->back()->with('error', 'Item not found in this booking.');
+        }
 
-        // Get the first addon ID from the booking's addons relation
-        $addonId = $booking->bookPackageAddons->first()->id_addons ?? null;
+        // Initialize IDs
+        $packageId = null;
+        $productId = null;
+        $addonId = null;
+
+        // Set the appropriate ID based on review_type and item_id
+        switch ($request->review_type) {
+            case 'package':
+                $packageId = $request->item_id;
+                break;
+            case 'product':
+                $productId = $request->item_id;
+                break;
+            case 'addon':
+                $addonId = $request->item_id;
+                break;
+        }
 
         Review::create([
             'user_id' => Auth::id(),

@@ -1,0 +1,178 @@
+<<<<<<<
+function updateSummary() {
+    let total = 0;
+    let packages = [];
+    let products = [];
+    let addons = [];
+
+    const durationInput = document.querySelector('input[name="duration_days"]');
+    const duration = durationInput ? parseInt(durationInput.value) || 1 : 1;
+
+    // Handle preselected package
+    const preselectedPackageDiv = document.querySelector('.bg-blue-50.border.border-blue-200');
+    const hasPackage = !!preselectedPackageDiv || document.querySelectorAll('.package-option.selected').length > 0;
+    const preselectedProductDiv = document.querySelector('.bg-green-50.border.border-green-200');
+    const hasProduct = !!preselectedProductDiv || document.querySelectorAll('.product-option.selected').length > 0;
+    const preselectedAddonDiv = document.querySelector('.bg-orange-50.border.border-orange-200');
+    const hasAddon = !!preselectedAddonDiv || document.querySelectorAll('.addon-option.selected').length > 0;
+
+    if (hasPackage) {
+        if (preselectedPackageDiv) {
+            const name = preselectedPackageDiv.querySelector('h4').textContent;
+            const priceText = preselectedPackageDiv.querySelector('.text-lg.font-bold.text-blue-600').textContent;
+            const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+            const packageTotal = price * duration;
+            packages.push(`${name} - Rp ${price.toLocaleString('id-ID')}/night`);
+            total += packageTotal;
+        }
+
+        document.querySelectorAll('.package-option.selected').forEach(option => {
+            const name = option.querySelector('h4').textContent;
+            const price = parseInt(option.dataset.price) || 0;
+            const packageTotal = price * duration;
+            packages.push(`${name} - Rp ${price.toLocaleString('id-ID')}/night`);
+            total += packageTotal;
+        });
+    }
+
+    if (hasProduct && !hasPackage) {
+        if (preselectedProductDiv) {
+            const name = preselectedProductDiv.querySelector('h4').textContent;
+            const priceText = preselectedProductDiv.querySelector('.text-lg.font-bold.text-green-600').textContent;
+            const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+            products.push(`${name} - Rp ${price.toLocaleString('id-ID')}`);
+            total += price;
+        }
+
+        document.querySelectorAll('.product-option.selected').forEach(option => {
+            const name = option.querySelector('h4').textContent;
+            const price = parseInt(option.dataset.price) || 0;
+            const qtyInput = option.querySelector('input[type="number"]');
+            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            products.push(`${name} x${qty} - Rp ${(price*qty).toLocaleString('id-ID')}`);
+            total += price*qty;
+        });
+    }
+
+    if (hasAddon) {
+        if (preselectedAddonDiv) {
+            const name = preselectedAddonDiv.querySelector('h4').textContent;
+            const priceText = preselectedAddonDiv.querySelector('.text-lg.font-bold.text-orange-600').textContent;
+            const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+            addons.push(`${name} - Rp ${price.toLocaleString('id-ID')}`);
+            total += price;
+        }
+
+        document.querySelectorAll('.addon-option.selected').forEach(option => {
+            const name = option.querySelector('h4').textContent;
+            const price = parseInt(option.dataset.price) || 0;
+            const qtyInput = option.querySelector('input[type="number"]');
+            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            addons.push(`${name} x${qty} - Rp ${(price*qty).toLocaleString('id-ID')}`);
+            total += price*qty;
+        });
+    }
+
+    document.getElementById('summary-package').textContent = hasPackage ? (packages.length ? packages.join(', ') : 'Not selected') : 'Not selected';
+    document.getElementById('summary-product').textContent = (hasProduct && !hasPackage) ? (products.length ? products.join(', ') : 'None') : 'None';
+    document.getElementById('summary-addons').textContent = addons.length ? addons.join(', ') : 'None';
+    document.getElementById('summary-duration').textContent = duration + ' night' + (duration > 1 ? 's' : '');
+    document.getElementById('summary-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+=======
+function updateSummary() {
+    let total = 0;
+    let packages = [];
+    let products = [];
+    let addons = [];
+
+    const durationInput = document.querySelector('input[name="duration_days"]');
+    const duration = durationInput ? parseInt(durationInput.value) || 1 : 1;
+
+    // Handle preselected package
+    const preselectedPackageDiv = document.querySelector('.bg-blue-50.border.border-blue-200');
+    const hasPackage = !!preselectedPackageDiv || document.querySelectorAll('.package-option.selected').length > 0;
+    const preselectedProductDiv = document.querySelector('.bg-green-50.border.border-green-200');
+    const hasProduct = !!preselectedProductDiv || document.querySelectorAll('.product-option.selected').length > 0;
+    const preselectedAddonDiv = document.querySelector('.bg-orange-50.border.border-orange-200');
+    const hasAddon = !!preselectedAddonDiv || document.querySelectorAll('.addon-option.selected').length > 0;
+    
+    // New booking type logic
+    const onlyAddon = hasAddon && !hasPackage && !hasProduct;
+
+    if (hasPackage) {
+        if (preselectedPackageDiv) {
+            const name = preselectedPackageDiv.querySelector('h4').textContent;
+            const priceText = preselectedPackageDiv.querySelector('.text-lg.font-bold.text-blue-600').textContent;
+            const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+            const packageTotal = price * duration;
+            packages.push(`${name} - Rp ${price.toLocaleString('id-ID')}/night`);
+            total += packageTotal;
+        }
+        document.querySelectorAll('.package-option.selected').forEach(option => {
+            const name = option.querySelector('h4').textContent;
+            const price = parseInt(option.dataset.price) || 0;
+            const packageTotal = price * duration;
+            packages.push(`${name} - Rp ${price.toLocaleString('id-ID')}/night`);
+            total += packageTotal;
+        });
+    }
+    
+    if (hasProduct && !hasPackage) {
+        if (preselectedProductDiv) {
+            const name = preselectedProductDiv.querySelector('h4').textContent;
+            const priceText = preselectedProductDiv.querySelector('.text-lg.font-bold.text-green-600').textContent;
+            const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+            products.push(`${name} - Rp ${price.toLocaleString('id-ID')}`);
+            total += price;
+        }
+        document.querySelectorAll('.product-option.selected').forEach(option => {
+            const name = option.querySelector('h4').textContent;
+            const price = parseInt(option.dataset.price) || 0;
+            const qtyInput = option.querySelector('input[type="number"]');
+            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            products.push(`${name} x${qty} - Rp ${(price*qty).toLocaleString('id-ID')}`);
+            total += price*qty;
+        });
+    }
+
+    if (hasAddon) {
+        if (preselectedAddonDiv) {
+            const name = preselectedAddonDiv.querySelector('h4').textContent;
+            const priceText = preselectedAddonDiv.querySelector('.text-lg.font-bold.text-orange-600').textContent;
+            const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
+            addons.push(`${name} - Rp ${price.toLocaleString('id-ID')}`);
+            total += price;
+        }
+        document.querySelectorAll('.addon-option.selected').forEach(option => {
+            const name = option.querySelector('h4').textContent;
+            const price = parseInt(option.dataset.price) || 0;
+            const qtyInput = option.querySelector('input[type="number"]');
+            const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+            addons.push(`${name} x${qty} - Rp ${(price*qty).toLocaleString('id-ID')}`);
+            total += price*qty;
+        });
+    }
+
+    // Set summaries with enforced rules:
+    // - When package booked: show packages summary, product summary "None"
+    // - When product booked no package: show products summary, package summary "Not selected"
+    // - When addon only: show addons, package and product summary "Not selected" and "None"
+    if (hasPackage) {
+        document.getElementById('summary-package').textContent = packages.length ? packages.join(', ') : 'Not selected';
+        document.getElementById('summary-product').textContent = 'None';
+    } else if (hasProduct) {
+        document.getElementById('summary-package').textContent = 'Not selected';
+        document.getElementById('summary-product').textContent = products.length ? products.join(', ') : 'None';
+    } else if (onlyAddon) {
+        document.getElementById('summary-package').textContent = 'Not selected';
+        document.getElementById('summary-product').textContent = 'None';
+    } else {
+        document.getElementById('summary-package').textContent = 'Not selected';
+        document.getElementById('summary-product').textContent = 'None';
+    }
+
+    document.getElementById('summary-addons').textContent = addons.length ? addons.join(', ') : 'None';
+    document.getElementById('summary-duration').textContent = duration + ' night' + (duration > 1 ? 's' : '');
+    document.getElementById('summary-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}

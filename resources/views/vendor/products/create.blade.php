@@ -63,43 +63,46 @@
 
             {{-- **BAGIAN DISKON BARU: Fixed vs Percentage** --}}
             <h4 class="text-md font-semibold text-gray-800 mb-3 mt-4">Pilih Tipe Diskon</h4>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
                 {{-- Pilihan Tipe Diskon --}}
                 <div>
                     <label for="discount_type" class="block text-sm font-medium text-gray-700 mb-2">Tipe Diskon</label>
-                    <select id="discount_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="none">Tidak Ada Diskon</option>
-                        <option value="percentage" {{ old('discount_rate') > 0 ? 'selected' : '' }}>Persentase (%)</option>
-                        <option value="fixed" {{ old('discount_fixed') > 0 ? 'selected' : '' }}>Fixed Price (Rp)</option>
+                    <select name="discount_type" id="discount_type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Tidak Ada Diskon</option>
+                        <option value="percentage" {{ old('discount_type') == 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
+                        <option value="fixed" {{ old('discount_type') == 'fixed' ? 'selected' : '' }}>Fixed Price (Rp)</option>
                     </select>
-                </div>
-                
-                {{-- 4a. Discount Rate (%) - Input --}}
-                <div id="discount_rate_wrapper" class="{{ old('discount_rate') > 0 ? '' : 'hidden' }}">
-                    <label for="discount_rate" class="block text-sm font-medium text-gray-700 mb-2">Discount Rate (%)</label>
-                    <input type="number" name="discount_rate" id="discount_rate" value="{{ old('discount_rate', 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('discount_rate')
+                    @error('discount_type')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- 4b. Discount Fixed (Rp) - Input --}}
-                <div id="discount_fixed_wrapper" class="{{ old('discount_fixed') > 0 ? '' : 'hidden' }}">
-                    <label for="discount_fixed" class="block text-sm font-medium text-gray-700 mb-2">Discount Fixed (Rp)</label>
-                    <input type="number" name="discount_fixed" id="discount_fixed" value="{{ old('discount_fixed', 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    @error('discount_fixed')
+            {{-- 4a. Discount Value (%) - Input --}}
+                <div id="discount_value_wrapper" class="{{ old('discount_type') == 'percentage' ? '' : 'hidden' }}">
+                    <label for="discount_value" class="block text-sm font-medium text-gray-700 mb-2">Discount Value (%)</label>
+                    <input type="number" name="discount_value" id="discount_value" value="{{ old('discount_value', 0.00) }}" step="0.01" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_value')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- 4b. Discount Value (Rp) - Input --}}
+                <div id="discount_fixed_wrapper" class="{{ old('discount_type') == 'fixed' ? '' : 'hidden' }}">
+                    <label for="discount_value_fixed" class="block text-sm font-medium text-gray-700 mb-2">Discount Value (Rp)</label>
+                    <input type="number" name="discount_value" id="discount_value_fixed" value="{{ old('discount_value', 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('discount_value')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
             </div>
 
-            {{-- 5. Discount Price (Nilai rupiah yang digunakan) - Otomatis & Readonly --}}
-            <div class="mb-4">
-                <label for="discount_price" class="block text-sm font-medium text-gray-700 mb-2">Potongan Harga (Rp)</label>
-                <input type="number" name="discount_price" id="discount_price" value="{{ old('discount_price', 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" readonly>
-                <p class="text-xs text-gray-500 mt-1">Nilai potongan harga ini akan dikirim ke database bersama Basic Price dan Tax Rate.</p>
-                @error('discount_price')
+            {{-- 5. Discount Expires At --}}
+            <div class="mb-4" id="discount_expires_wrapper" style="{{ old('discount_type') ? '' : 'display: none;' }}">
+                <label for="discount_expires_at" class="block text-sm font-medium text-gray-700 mb-2">Discount Expires At (Optional)</label>
+                <input type="datetime-local" name="discount_expires_at" id="discount_expires_at" value="{{ old('discount_expires_at') }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Leave empty for no expiration</p>
+                @error('discount_expires_at')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
@@ -192,13 +195,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const basicPriceInput = document.getElementById('basic_price');
     const taxRateInput = document.getElementById('tax_rate');
     const ntaInput = document.getElementById('nta');
-    
+
     // Elemen Diskon
     const discountTypeSelect = document.getElementById('discount_type');
-    const discountRateInput = document.getElementById('discount_rate');
-    const discountFixedInput = document.getElementById('discount_fixed');
-    const discountPriceInput = document.getElementById('discount_price');
-    const discountRateWrapper = document.getElementById('discount_rate_wrapper');
+    const discountValueInput = document.getElementById('discount_value');
+    const discountValueFixedInput = document.getElementById('discount_value_fixed');
+    const discountExpiresWrapper = document.getElementById('discount_expires_wrapper');
+    const discountValueWrapper = document.getElementById('discount_value_wrapper');
     const discountFixedWrapper = document.getElementById('discount_fixed_wrapper');
 
     /**
@@ -208,22 +211,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const type = discountTypeSelect.value;
 
         // Reset semua input diskon
-        discountRateInput.value = 0.00;
-        discountFixedInput.value = 0.00;
+        discountValueInput.value = 0.00;
+        discountValueFixedInput.value = 0.00;
 
         // Sembunyikan semua wrapper
-        discountRateWrapper.classList.add('hidden');
+        discountValueWrapper.classList.add('hidden');
         discountFixedWrapper.classList.add('hidden');
+        discountExpiresWrapper.style.display = 'none';
 
         if (type === 'percentage') {
-            discountRateWrapper.classList.remove('hidden');
+            discountValueWrapper.classList.remove('hidden');
+            discountExpiresWrapper.style.display = 'block';
         } else if (type === 'fixed') {
             discountFixedWrapper.classList.remove('hidden');
+            discountExpiresWrapper.style.display = 'block';
         }
-        
+
         calculateNta(); // Hitung ulang NTA setelah ganti tipe
     }
-    
+
     /**
      * Fungsi untuk menghitung NTA, menggunakan Basic Price dan salah satu tipe diskon.
      */
@@ -231,64 +237,63 @@ document.addEventListener('DOMContentLoaded', function() {
         const basicPrice = Math.max(0, parseFloat(basicPriceInput.value) || 0);
         const taxRate = Math.max(0, parseFloat(taxRateInput.value) || 0);
         const discountType = discountTypeSelect.value;
-        
-        let discountPrice = 0; 
-        
+
+        let discountPrice = 0;
+
         // 1. Tentukan Discount Price berdasarkan tipe input
         if (discountType === 'percentage') {
-            const discountRate = Math.max(0, parseFloat(discountRateInput.value) || 0);
-            const validDiscountRate = Math.min(100, discountRate); 
+            const discountRate = Math.max(0, parseFloat(discountValueInput.value) || 0);
+            const validDiscountRate = Math.min(100, discountRate);
             discountPrice = basicPrice * (validDiscountRate / 100);
 
             // Pastikan input FixedPrice dikosongkan saat submit jika tidak digunakan
-            discountFixedInput.setAttribute('disabled', 'disabled');
-            discountRateInput.removeAttribute('disabled');
+            discountValueFixedInput.setAttribute('disabled', 'disabled');
+            discountValueInput.removeAttribute('disabled');
         } else if (discountType === 'fixed') {
-            const fixedDiscount = Math.max(0, parseFloat(discountFixedInput.value) || 0);
+            const fixedDiscount = Math.max(0, parseFloat(discountValueFixedInput.value) || 0);
             discountPrice = fixedDiscount;
 
             // Pastikan input DiscountRate dikosongkan saat submit jika tidak digunakan
-            discountRateInput.setAttribute('disabled', 'disabled');
-            discountFixedInput.removeAttribute('disabled');
+            discountValueInput.setAttribute('disabled', 'disabled');
+            discountValueFixedInput.removeAttribute('disabled');
         } else {
             // Tipe 'none'
-            discountRateInput.setAttribute('disabled', 'disabled');
-            discountFixedInput.setAttribute('disabled', 'disabled');
+            discountValueInput.setAttribute('disabled', 'disabled');
+            discountValueFixedInput.setAttribute('disabled', 'disabled');
         }
 
         // Batasi Discount Price agar tidak melebihi Basic Price
         discountPrice = Math.min(discountPrice, basicPrice);
 
-        // Tampilkan Discount Price (nilai rupiah diskon final)
-        discountPriceInput.value = discountPrice.toFixed(2);
-        
         // 2. Hitung Harga Setelah Diskon (Net Price sebelum Pajak)
         const netPriceBeforeTax = basicPrice - discountPrice;
-        
+
         // 3. Hitung NTA (Harga Final dengan Pajak)
-        const validTaxRate = Math.min(100, taxRate); 
+        const validTaxRate = Math.min(100, taxRate);
         const multiplier = 1 + (validTaxRate / 100);
         const nta = netPriceBeforeTax * multiplier;
 
         // Tampilkan NTA
-        ntaInput.value = nta.toFixed(2); 
+        ntaInput.value = nta.toFixed(2);
     }
 
     // Event Listeners
     basicPriceInput.addEventListener('input', calculateNta);
     taxRateInput.addEventListener('input', calculateNta);
-    discountRateInput.addEventListener('input', calculateNta);
-    discountFixedInput.addEventListener('input', calculateNta);
+    discountValueInput.addEventListener('input', calculateNta);
+    discountValueFixedInput.addEventListener('input', calculateNta);
     discountTypeSelect.addEventListener('change', toggleDiscountInput);
 
     // Inisialisasi tampilan input dan perhitungan NTA saat halaman dimuat
-    // Gunakan old('discount_rate') atau old('discount_fixed') untuk menentukan tipe default
-    if (parseFloat(discountRateInput.value) > 0) {
+    // Gunakan old('discount_type') untuk menentukan tipe default
+    if (discountTypeSelect.value === 'percentage' || discountTypeSelect.value === 'fixed') {
+        // Already set from old value
+    } else if (parseFloat(discountValueInput.value) > 0) {
         discountTypeSelect.value = 'percentage';
-    } else if (parseFloat(discountFixedInput.value) > 0) {
+    } else if (parseFloat(discountValueFixedInput.value) > 0) {
         discountTypeSelect.value = 'fixed';
     } else {
-        discountTypeSelect.value = 'none';
+        discountTypeSelect.value = '';
     }
     toggleDiscountInput(); // Panggil toggle untuk set tampilan awal
 });

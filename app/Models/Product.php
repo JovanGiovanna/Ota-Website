@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids; 
 use Illuminate\Database\Eloquent\SoftDeletes; 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Product extends Model
 {
@@ -153,4 +154,9 @@ class Product extends Model
             },
         );
     }
+
+public function bookProductAddons()
+{
+    return $this->hasMany(\App\Models\BookProductAddon::class, 'id_product', 'id');
+}
 }

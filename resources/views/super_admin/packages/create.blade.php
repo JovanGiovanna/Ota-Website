@@ -70,10 +70,10 @@
                         @php
                             $isProductChecked = is_array(old('products')) && in_array($product->id, old('products'));
                             $paxValue = old('product_pax.' . $product->id, $product->pax ?? 1);
-                            // Ambil NTA atau fallback ke price
-                            $productNTA = $product->nta ?? $product->price ?? 0; 
+                            // Ambil NTA atau fallback ke basic_price
+                            $productNTA = $product->nta ?? $product->basic_price ?? 0;
                         @endphp
-                        
+
                         <div class="flex items-start space-x-3 product-item" data-nta="{{ $productNTA }}" data-pax-min="{{ $product->pax ?? 1 }}">
                             <input type="checkbox" id="product_{{ $product->id }}" name="products[]" value="{{ $product->id }}" class="mt-1 product-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isProductChecked ? 'checked' : '' }}>
                             <label for="product_{{ $product->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
@@ -115,8 +115,8 @@
                         @php
                             $isAddonChecked = is_array(old('addons')) && in_array($addon->id, old('addons'));
                             $paxValue = old('addon_pax.' . $addon->id, $addon->pax ?? 1);
-                            // Ambil NTA atau fallback ke price
-                            $addonNTA = $addon->nta ?? $addon->price ?? 0; 
+                            // Ambil NTA atau fallback ke basic_price
+                            $addonNTA = $addon->nta ?? $addon->basic_price ?? 0;
                         @endphp
 
                         <div class="flex items-start space-x-3 addon-item" data-nta="{{ $addonNTA }}" data-pax-min="{{ $addon->pax ?? 1 }}">
@@ -176,6 +176,41 @@
                     @error('pax_paid_input')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
+                </div>
+
+                {{-- Tax Rate --}}
+                <div class="space-y-2">
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                    <div class="relative rounded-lg shadow-sm">
+                        <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', 0) }}" step="0.01" min="0" max="100" placeholder="0.00" class="w-full pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('tax_rate') border-red-500 @enderror">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">%</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500">Persentase pajak yang akan diterapkan pada harga paket (0-100%).</p>
+                    @error('tax_rate')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Tax Amount - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Tax Amount</label>
+                    <div class="p-3 bg-orange-100 border border-orange-400 rounded-lg">
+                        <span class="text-lg font-bold text-orange-700" id="tax_amount_display">Rp0</span>
+                        {{-- Input hidden tax_amount --}}
+                        <input type="hidden" name="tax_amount" id="tax_amount" value="{{ old('tax_amount', 0) }}">
+                    </div>
+                </div>
+
+                {{-- Total Price - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Tax)</label>
+                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
+                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp0</span>
+                        {{-- Input hidden total_price --}}
+                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', 0) }}">
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -374,6 +409,11 @@
             }
         });
 
+        // --- 4. TAX RATE LOGIC ---
+        const taxRateInput = document.getElementById('tax_rate');
+        taxRateInput.addEventListener('input', function() {
+            calculatePrice(); // Recalculate when tax rate changes
+        });
 
         // Hitung harga saat halaman dimuat
         calculatePrice();

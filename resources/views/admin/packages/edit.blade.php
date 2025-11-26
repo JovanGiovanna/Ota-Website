@@ -12,7 +12,7 @@
         <form id="package-form" action="{{ route('admin.packages.update', $package) }}" method="POST" enctype="multipart/form-data" class="bg-white p-8 shadow-xl rounded-xl border border-gray-200">
             @csrf
             {{-- Pastikan menggunakan PUT untuk update --}}
-            @method('PUT') 
+            @method('PUT')
 
             {{-- Bagian 1: Info Dasar & Publish --}}
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 p-6 bg-indigo-50/50 rounded-lg border border-indigo-100">
@@ -98,91 +98,177 @@
 
             ---
 
-            {{-- Bagian 2: Harga & Periode --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-6 bg-emerald-50/50 rounded-lg border border-emerald-100">
-                <div class="md:col-span-3">
-                    <h2 class="text-2xl font-semibold text-emerald-700 mb-4">Pricing & Publication Period</h2>
+            {{-- SECTION 5: PRICE CALCULATION & PUBLISH FIELDS (Diskon Dihapus) --}}
+            <div class="space-y-6 pt-4">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Pricing & Publishing</h2>
+
+                {{-- NTA (Nett Total Package Price) - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Nett Total Package Price (NTA) - Total Harga Pokok</label>
+                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
+                        <span class="text-lg font-bold text-green-700" id="nta_display">Rp{{ number_format($package->nta, 0, ',', '.') }}</span>
+                        {{-- Input hidden NTA --}}
+                        <input type="hidden" name="nta" id="nta" value="{{ old('nta', $package->nta) }}">
+                    </div>
                 </div>
 
-                {{-- Harga Jual --}}
-                <div>
-                    <label for="price_publish_display" class="block text-sm font-semibold text-green-700 mb-2">Pax Paid (Rp) <span class="text-red-500">*</span></label>
-                    <input type="text" id="price_publish_display" value="{{ number_format(old('price_publish', $package->price_publish), 0, ',', '.') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-800 font-bold" readonly>
-                    
-                    {{-- Input Hidden untuk dikirim ke backend --}}
-                    <input type="hidden" name="price_publish" id="price_publish_input" value="{{ old('price_publish', $package->price_publish) }}">
-                    <input type="hidden" name="price_real" id="price_real" value="{{ old('price_real', $package->price_real) }}">
-                    <input type="hidden" name="discount_percentage" id="discount_percentage" value="0">
-                    
-                    <p class="text-xs text-gray-500 mt-1" id="price-publish-note">Harga ini adalah **Accumulated NTA** dari produk dan addon (yang akan dikirim sebagai 'price_publish').</p>
-                    @error('price_publish')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                {{-- Tanggal Mulai Publish --}}
-                <div>
-                    <label for="start_publish" class="block text-sm font-semibold text-gray-700 mb-2">Start Publish Date <span class="text-red-500">*</span></label>
-                    <input type="date" name="start_publish" id="start_publish" value="{{ old('start_publish', \Carbon\Carbon::parse($package->start_publish)->format('Y-m-d')) }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-150" required>
-                    @error('start_publish')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                {{-- Price (Pax Paid) - Harga Jual Per Pax Final --}}
+                <div class="space-y-2">
+                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Price (Pax Paid) - Harga Jual Per Pax Final</label>
+                    <div class="relative rounded-lg shadow-sm">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">Rp</span>
+                        </div>
+                        {{-- Input field disesuaikan dengan 'pax_paid_input' --}}
+                        <input type="number" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', $package->pax_paid) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('pax_paid_input') border-red-500 @enderror">
+                    </div>
+                    <p class="text-xs text-gray-500">Harga ini dihitung dari Total Harga Pokok (NTA) dibagi total Pax, namun dapat diubah secara manual.</p>
+                    @error('pax_paid_input')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Tanggal Akhir Publish --}}
-                <div>
-                    <label for="end_publish" class="block text-sm font-semibold text-gray-700 mb-2">End Publish Date (Optional)</label>
-                    <input type="date" name="end_publish" id="end_publish" value="{{ old('end_publish', $package->end_publish ? \Carbon\Carbon::parse($package->end_publish)->format('Y-m-d') : '') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-150">
-                    <p class="text-xs text-gray-500 mt-1">Kosongkan jika paket ingin tayang tanpa batas waktu.</p>
-                    @error('end_publish')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                {{-- Tax Rate --}}
+                <div class="space-y-2">
+                    <label for="tax_rate" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                    <div class="relative rounded-lg shadow-sm">
+                        <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $package->tax_rate ?? 0) }}" step="0.01" min="0" max="100" placeholder="0.00" class="w-full pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('tax_rate') border-red-500 @enderror">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">%</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500">Persentase pajak yang akan diterapkan pada harga paket (0-100%).</p>
+                    @error('tax_rate')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+
+                {{-- Tax Amount - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Tax Amount</label>
+                    <div class="p-3 bg-orange-100 border border-orange-400 rounded-lg">
+                        <span class="text-lg font-bold text-orange-700" id="tax_amount_display">Rp{{ number_format(($package->nta * ($package->tax_rate ?? 0) / 100), 0, ',', '.') }}</span>
+                        {{-- Input hidden tax_amount --}}
+                        <input type="hidden" name="tax_amount" id="tax_amount" value="{{ old('tax_amount', $package->nta * ($package->tax_rate ?? 0) / 100) }}">
+                    </div>
+                </div>
+
+                {{-- Total Price - Display --}}
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Tax)</label>
+                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
+                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp{{ number_format($package->nta + ($package->nta * ($package->tax_rate ?? 0) / 100), 0, ',', '.') }}</span>
+                        {{-- Input hidden total_price --}}
+                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', $package->nta + ($package->nta * ($package->tax_rate ?? 0) / 100)) }}">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="start_publish" class="block text-sm font-medium text-gray-700">Start Publish Date</label>
+                        <input type="date" name="start_publish" id="start_publish" value="{{ old('start_publish', \Carbon\Carbon::parse($package->start_publish)->format('Y-m-d')) }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('start_publish') border-red-500 @enderror">
+                        @error('start_publish')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="end_publish" class="block text-sm font-medium text-gray-700">End Publish Date (Optional)</label>
+                        <input type="date" name="end_publish" id="end_publish" value="{{ old('end_publish', $package->end_publish ? \Carbon\Carbon::parse($package->end_publish)->format('Y-m-d') : '') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('end_publish') border-red-500 @enderror">
+                        @error('end_publish')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+
             </div>
 
-            
 
-            {{-- Bagian 4: Products dan Addons (Langsung tampil semua) --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
 
-                {{-- Pemilihan Products (Loading Semua) --}}
-                <div class="space-y-4 border p-4 rounded-lg bg-blue-50/50">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 text-blue-700">Products Included <span class="text-red-500">*</span></h3>
+            {{-- SECTION 2: PRODUCTS (Multi-Select) --}}
+            <div class="space-y-4 border p-4 rounded-lg bg-gray-50">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Select Products (Multi)</h2>
 
-                    <div id="product-list-container" class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto min-h-[10rem]">
-                        {{-- Konten akan langsung diganti oleh JS saat DOMContentLoaded --}}
-                        <p class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin mr-2"></i> Loading Products...</p>
+                <div class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto">
+                    @forelse ($products as $product)
+                        @php
+                            $isProductChecked = in_array($product->id, $selectedProductIds);
+                            $paxValue = old('product_pax.' . $product->id, ($isProductChecked ? collect($selectedProductsData)->firstWhere('id', $product->id)['pax'] ?? 1 : 1));
+                            // Ambil NTA atau fallback ke basic_price
+                            $productNTA = $product->nta ?? $product->basic_price ?? 0;
+                        @endphp
 
-                        {{-- Data products/pax yang sudah dipilih (diparsing oleh JS) --}}
-                        <input type="hidden" id="selected-products-data" value="{{ json_encode($package->products_data ?? []) }}">
-                        <input type="hidden" id="old-products-ids" value="{{ json_encode(old('products') ?? []) }}">
-                        <input type="hidden" id="old-products-pax" value="{{ json_encode(old('product_pax') ?? []) }}">
-                    </div>
+                        <div class="flex items-start space-x-3 product-item" data-nta="{{ $productNTA }}" data-pax-min="{{ $product->pax ?? 1 }}">
+                            <input type="checkbox" id="product_{{ $product->id }}" name="products[]" value="{{ $product->id }}" class="mt-1 product-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isProductChecked ? 'checked' : '' }}>
+                            <label for="product_{{ $product->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
+                                {{ $product->name }} (<span class="font-bold text-green-700">NTA: Rp{{ number_format($productNTA, 0, ',', '.') }}</span> / Pax: {{ $product->pax ?? 1 }})
+                            </label>
 
+                            {{-- Input Pax untuk Produk --}}
+                            <div class="w-32">
+                                <label for="product_pax_{{ $product->id }}" class="block text-xs text-gray-500 mb-1">Pax</label>
+                                <input type="number" id="product_pax_{{ $product->id }}" name="product_pax[{{ $product->id }}]" min="{{ $product->pax ?? 1 }}" value="{{ $paxValue }}" class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" required {{ $isProductChecked ? '' : 'disabled' }}>
+                                @error('product_pax.' . $product->id)
+                                    <p class="text-red-500 text-xs mt-1">Wajib</p>
+                                @enderror
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-gray-500">No products available.</p>
+                    @endforelse
                     @error('products')
-                        <p class="text-red-500 text-sm mt-1">Anda harus memilih setidaknya satu produk.</p>
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-
-                {{-- Pemilihan Addons (Loading Semua) --}}
-                <div class="space-y-4 border p-4 rounded-lg bg-purple-50/50">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2 text-purple-700">Addons (Optional)</h3>
-
-                    <div id="addon-list-container" class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto min-h-[10rem]">
-                        {{-- Konten akan langsung diganti oleh JS saat DOMContentLoaded --}}
-                         <p class="text-center text-gray-500 py-8"><i class="fas fa-spinner fa-spin mr-2"></i> Loading Addons...</p>
-
-                          {{-- Data addons/pax yang sudah dipilih (diparsing oleh JS) --}}
-                        <input type="hidden" id="selected-addons-data" value="{{ json_encode($package->addons_data ?? []) }}">
-                        <input type="hidden" id="old-addons-ids" value="{{ json_encode(old('addons') ?? []) }}">
-                        <input type="hidden" id="old-addons-pax" value="{{ json_encode(old('addon_pax') ?? []) }}">
-                    </div>
-
-                    @error('addons')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                @if ($products instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                <div class="mt-4">
+                    {{ $products->links() }}
                 </div>
+                @endif
+            </div>
+
+            ---
+
+            {{-- SECTION 3: ADDONS (Multi-Select) --}}
+            <div class="space-y-4 border p-4 rounded-lg bg-gray-50">
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Select Addons (Multi)</h2>
+
+                <div class="space-y-3 p-2 bg-white rounded-lg shadow-inner border max-h-96 overflow-y-auto">
+                    @forelse ($addons as $addon)
+                        @php
+                            $isAddonChecked = in_array($addon->id, $selectedAddonIds);
+                            $paxValue = old('addon_pax.' . $addon->id, ($isAddonChecked ? collect($selectedAddonsData)->firstWhere('id', $addon->id)['pax'] ?? 1 : 1));
+                            // Ambil NTA atau fallback ke basic_price
+                            $addonNTA = $addon->nta ?? $addon->basic_price ?? 0;
+                        @endphp
+
+                        <div class="flex items-start space-x-3 addon-item" data-nta="{{ $addonNTA }}" data-pax-min="{{ $addon->pax ?? 1 }}">
+                            <input type="checkbox" id="addon_{{ $addon->id }}" name="addons[]" value="{{ $addon->id }}" class="mt-1 addon-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isAddonChecked ? 'checked' : '' }}>
+                            <label for="addon_{{ $addon->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
+                                {{ $addon->addons }} (<span class="font-bold text-green-700">NTA: Rp{{ number_format($addonNTA, 0, ',', '.') }}</span> / Pax: {{ $addon->pax ?? 1 }})
+                            </label>
+
+                            {{-- Input Pax untuk Addon --}}
+                            <div class="w-32">
+                                <label for="addon_pax_{{ $addon->id }}" class="block text-xs text-gray-500 mb-1">Pax</label>
+                                <input type="number" id="addon_pax_{{ $addon->id }}" name="addon_pax[{{ $addon->id }}]" min="{{ $addon->pax ?? 1 }}" value="{{ $paxValue }}" class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" required {{ $isAddonChecked ? '' : 'disabled' }}>
+                                @error('addon_pax.' . $addon->id)
+                                    <p class="text-red-500 text-xs mt-1">Wajib</p>
+                                @enderror
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-gray-500">No addons available.</p>
+                    @endforelse
+                </div>
+
+                @if ($addons instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                <div class="mt-4">
+                    {{ $addons->links() }}
+                </div>
+                @endif
             </div>
 
 
@@ -197,243 +283,174 @@
     </div>
 </div>
 
+@push('scripts')
+
 <script>
-    // FUNGSI UTILITY
+    function slugify(text) {
+        return text.toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/[\s-]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
     function formatRupiah(number) {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0
-        }).format(number).replace('IDR', 'Rp');
+        }).format(number);
     }
 
-    // FUNGSI UTAMA UNTUK PERHITUNGAN HARGA (Accumulated NTA)
-    function calculatePrices() {
-        // Menggunakan NTA Price sebagai basis perhitungan
-        let totalNTAPrice = 0; 
+    // Fungsi utama untuk menghitung total NTA dan Harga Jual Per Pax
+    function calculatePrice() {
+        let totalNTA = 0;
+        let totalPaxCount = 0;
 
-        // 1. Hitung Total dari Products
-        document.querySelectorAll('#product-list-container .product-item').forEach(item => {
+        // 1. Hitung Total NTA dan Total Pax dari Products
+        document.querySelectorAll('.product-item').forEach(item => {
             const checkbox = item.querySelector('.product-checkbox');
             const paxInput = item.querySelector('.pax-input');
 
-            if (checkbox && checkbox.checked) {
-                // Harga produk diasumsikan sebagai NTA Price per unit
-                const price = parseFloat(item.dataset.price) || 0; 
+            if (checkbox.checked) {
+                const nta = parseFloat(item.dataset.nta) || 0;
                 const pax = parseInt(paxInput.value) || 1;
-                totalNTAPrice += price * pax;
+
+                totalNTA += nta * pax;
+                totalPaxCount += pax; // PENTING: Pax produk dihitung sebagai Pax paket
             }
         });
 
-        // 2. Hitung Total dari Addons
-        document.querySelectorAll('#addon-list-container .addon-item').forEach(item => {
+        // 2. Hitung Total NTA dari Addons (Addons TIDAK menambah Total Pax Paket)
+        document.querySelectorAll('.addon-item').forEach(item => {
             const checkbox = item.querySelector('.addon-checkbox');
             const paxInput = item.querySelector('.pax-input');
 
-            if (checkbox && checkbox.checked) {
-                // Harga addon diasumsikan sebagai NTA Price per unit
-                const price = parseFloat(item.dataset.price) || 0; 
+            if (checkbox.checked) {
+                const nta = parseFloat(item.dataset.nta) || 0;
                 const pax = parseInt(paxInput.value) || 1;
-                totalNTAPrice += price * pax;
+
+                totalNTA += nta * pax;
             }
         });
 
-        // 3. Update Harga Real (price_real) dan Harga Publish (price_publish)
-        const priceRealInput = document.getElementById('price_real');
-        const pricePublishInput = document.getElementById('price_publish_input');
-        const pricePublishDisplay = document.getElementById('price_publish_display');
+        // Update display dan hidden field NTA
+        document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
+        document.getElementById('nta').value = totalNTA;
 
-        priceRealInput.value = totalNTAPrice.toFixed(0);
-        pricePublishInput.value = totalNTAPrice.toFixed(0);
-        pricePublishDisplay.value = totalNTAPrice.toLocaleString('id-ID', { minimumFractionDigits: 0 });
+        // 3. Hitung Tax Amount dan Total Price
+        const taxRateInput = document.getElementById('tax_rate');
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+        const taxAmount = totalNTA * taxRate / 100;
+        const totalPrice = totalNTA + taxAmount;
+
+        // Update tax_amount display dan hidden
+        document.getElementById('tax_amount_display').textContent = formatRupiah(taxAmount);
+        document.getElementById('tax_amount').value = taxAmount;
+
+        // Update total_price display dan hidden
+        document.getElementById('total_price_display').textContent = formatRupiah(totalPrice);
+        document.getElementById('total_price').value = totalPrice;
+
+        // 4. Hitung Harga Jual Per Pax (Pax Paid)
+        const paxPaidInput = document.getElementById('pax_paid_input');
+        const currentPaxPaidValue = parseInt(paxPaidInput.value) || 0;
+
+        const totalPricePublish = totalNTA;
+
+        let paxPaidCalculated = 0;
+        if (totalPaxCount > 0) {
+            // Formula: Harga Per Pax = Total NTA / Total Pax Produk
+            paxPaidCalculated = totalPricePublish / totalPaxCount;
+        }
+
+        // Update Pax Paid Input HANYA JIKA nilainya 0 atau belum diubah manual (reset)
+        // Kita menggunakan `data-manual-edit` untuk melacak perubahan manual
+        const isManualEdit = paxPaidInput.dataset.manualEdit === 'true';
+
+        if (!isManualEdit || currentPaxPaidValue === 0) {
+            paxPaidInput.value = Math.round(paxPaidCalculated);
+        }
     }
 
+    document.addEventListener('DOMContentLoaded', function () {
+        const namePackageInput = document.getElementById('name_package');
+        const paxPaidInput = document.getElementById('pax_paid_input');
 
-    // FUNGSI UNTUK MEMUAT PRODUCT/ADDON (SUDAH DIUBAH MENJADI loadItems)
-    function loadItems(type) {
-        const container = document.getElementById(`${type}-list-container`);
-        const isProduct = (type === 'product');
-        const listName = isProduct ? 'Products' : 'Addons';
-        const checkboxClass = isProduct ? 'product-checkbox' : 'addon-checkbox';
-        const nameAttribute = isProduct ? 'products[]' : 'addons[]';
-        const paxNameAttribute = isProduct ? 'product_pax' : 'addon_pax';
-        const itemClass = isProduct ? 'product-item' : 'addon-item';
+        // --- Inisialisasi data-manual-edit ---
+        paxPaidInput.dataset.manualEdit = 'false';
 
-        // Tampilkan loading
-        container.innerHTML = `<p class="text-center text-gray-500 py-8">
-            <i class="fas fa-spinner fa-spin mr-2"></i> Loading all ${listName}...
-        </p>`;
-        calculatePrices(); // Reset harga saat loading
-
-        // URL untuk mengambil SEMUA item
-        const url = `/admin/api/${type}s/all`; 
-        
-        // Ambil data yang sudah tersimpan atau dari old input
-        const selectedData = JSON.parse(document.getElementById(`selected-${type}s-data`).value);
-        const oldIds = JSON.parse(document.getElementById(`old-${type}s-ids`).value);
-        const oldPax = JSON.parse(document.getElementById(`old-${type}s-pax`).value);
-        
-        // Tentukan data yang akan digunakan (prioritas: old input > data tersimpan)
-        const activeIds = oldIds.length > 0 ? oldIds.map(id => parseInt(id)) : selectedData.map(item => item.id);
-
-        
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(items => {
-                if (items.length === 0) {
-                    container.innerHTML = `<p class="text-center text-gray-500 py-8">No ${listName.toLowerCase()} available.</p>`;
-                    calculatePrices();
-                    return;
-                }
-
-                let htmlContent = '';
-                items.forEach(item => {
-                    const itemId = item.id;
-                    
-                    let isChecked = activeIds.includes(itemId);
-                    let initialPax = 1;
-
-                    // Tentukan nilai PAX yang benar
-                    if (oldPax[itemId]) {
-                        initialPax = oldPax[itemId]; // Dari old input
-                    } else if (isChecked) {
-                        // Dari data tersimpan
-                        const savedItem = selectedData.find(d => d.id === itemId);
-                        if (savedItem && savedItem.pax) {
-                            initialPax = savedItem.pax;
-                        }
-                    }
-
-                    const itemPrice = item.price || 0;
-                    const itemName = isProduct ? item.name : item.addons;
-                    
-                    // HTML untuk setiap item
-                    htmlContent += `
-                        <div class="flex items-start space-x-3 ${itemClass} border-b border-gray-100 pb-2 mb-2 last:border-b-0 last:pb-0" data-id="${itemId}" data-price="${itemPrice}">
-                            
-                            {{-- Checkbox --}}
-                            <input type="checkbox" id="${type}_${itemId}" name="${nameAttribute}" value="${itemId}"
-                                class="mt-1 ${checkboxClass} h-4 w-4 ${isProduct ? 'text-blue-600 focus:ring-blue-500' : 'text-purple-600 focus:ring-purple-500'} border-gray-300 rounded" 
-                                ${isChecked ? 'checked' : ''}>
-                            
-                            {{-- Label dan Harga (Asumsi Harga adalah NTA per unit) --}}
-                            <label for="${type}_${itemId}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
-                                ${itemName} (NTA: ${formatRupiah(itemPrice)})
-                            </label>
-                            
-                            {{-- Input Pax Paid --}}
-                            <div class="w-32">
-                                <label for="${type}_pax_${itemId}" class="block text-xs font-semibold text-gray-600 mb-1">Pax Paid</label>
-                                <input type="number" id="${type}_pax_${itemId}" name="${paxNameAttribute}[${itemId}]" 
-                                    min="1" value="${initialPax}" 
-                                    class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" 
-                                    ${isChecked ? '' : 'disabled'} required>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                container.innerHTML = htmlContent;
-                attachEventListenersToNewItems();
-                calculatePrices(); // Hitung harga setelah item dimuat
-            })
-            .catch(error => {
-                console.error(`Error loading ${listName}:`, error);
-                container.innerHTML = `<p class="text-center text-red-500 py-8">Failed to load ${listName}. Please check the console and server logs.</p>`;
-                calculatePrices();
-            });
-    }
-
-    // FUNGSI UNTUK MENGHUBUNGKAN EVENT LISTENER KE ITEM BARU
-    function attachEventListenersToNewItems() {
+        // --- 2. CHECKBOX AND PAX LOGIC ---
         document.querySelectorAll('.product-checkbox, .addon-checkbox').forEach(checkbox => {
             const paxInput = checkbox.closest('.flex').querySelector('.pax-input');
-
             paxInput.disabled = !checkbox.checked;
 
             checkbox.addEventListener('change', function() {
                 paxInput.disabled = !this.checked;
                 if (this.checked) {
-                    paxInput.value = paxInput.min || 1; 
+                    paxInput.value = paxInput.min;
                     paxInput.focus();
                 } else {
-                    paxInput.value = paxInput.min || 1;
+                    paxInput.value = paxInput.min;
                 }
-                calculatePrices();
+
+                // Reset manual edit flag dan nilai pax paid untuk memaksa perhitungan ulang
+                paxPaidInput.dataset.manualEdit = 'false';
+                paxPaidInput.value = 0;
+
+                calculatePrice();
             });
         });
 
         document.querySelectorAll('.pax-input').forEach(paxInput => {
             paxInput.addEventListener('input', function() {
                 let currentValue = parseInt(this.value);
-                let minValue = parseInt(this.min) || 1;
+                let minValue = parseInt(this.min);
 
-                if (currentValue < minValue || isNaN(currentValue)) {
+                if (currentValue < minValue) {
                     this.value = minValue;
                 }
 
-                calculatePrices();
+                // Reset manual edit flag dan nilai pax paid untuk memaksa perhitungan ulang
+                paxPaidInput.dataset.manualEdit = 'false';
+                paxPaidInput.value = 0;
+
+                calculatePrice();
             });
-        });
-    }
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-        
-        // --- 1. LOGIC ITEM LOADING (Langsung Tampil Semua) ---
-        // Panggil fungsi loadItems untuk Product dan Addon
-        loadItems('product'); 
-        loadItems('addon'); 
-
-        // Inisialisasi perhitungan harga saat DOM siap
-        // Event listener untuk perhitungan harga tidak lagi terikat pada pemilihan Vendor yang sudah dihapus
-        calculatePrices(); 
-
-
-        // --- 2. LOGIC IMAGE REMOVAL VISUAL FEEDBACK ---
-        document.querySelectorAll('.remove_image_checkbox').forEach(checkbox => {
-            toggleImageVisibility(checkbox); 
-            checkbox.addEventListener('change', function() {
-                toggleImageVisibility(this);
+            paxInput.addEventListener('change', function() {
+                 paxPaidInput.dataset.manualEdit = 'false';
+                 paxPaidInput.value = 0;
             });
         });
 
-        function toggleImageVisibility(checkbox) {
-            const imageContainer = checkbox.closest('.relative');
-            const label = imageContainer.querySelector('label[for="' + checkbox.id + '"]');
-            if (checkbox.checked) {
-                imageContainer.style.opacity = '0.4';
-                imageContainer.style.filter = 'grayscale(100%)';
-                if(label) label.textContent = 'Undo';
-                label.classList.remove('bg-red-500', 'hover:bg-red-700');
-                label.classList.add('bg-gray-500', 'hover:bg-gray-700');
+        // --- 3. LOGIKA PAX PAID INPUT (Override Otomatis) ---
+        // Jika user mengetik atau mengubah, kita set flag 'manual-edit' menjadi true
+        paxPaidInput.addEventListener('input', function() {
+            if (this.value !== "") {
+                this.dataset.manualEdit = 'true';
             } else {
-                imageContainer.style.opacity = '1';
-                imageContainer.style.filter = 'none';
-                if(label) label.textContent = 'Remove';
-                label.classList.remove('bg-gray-500', 'hover:bg-gray-700');
-                label.classList.add('bg-red-500', 'hover:bg-red-700');
+                this.dataset.manualEdit = 'false';
             }
-        }
-        document.getElementById('package-form').addEventListener('submit', function(e) {
-            const checkedBoxes = document.querySelectorAll('.remove_image_checkbox:checked');
-            if (checkedBoxes.length > 0) {
-                const count = checkedBoxes.length;
-                const confirmMessage = `Are you sure you want to remove ${count} image${count > 1 ? 's' : ''}? This action cannot be undone.`;
-                if (!confirm(confirmMessage)) {
-                    e.preventDefault();
-                    return false;
-                }
+        });
+        // Jika user blur/keluar dari input dan nilainya kosong, hitung ulang otomatis
+        paxPaidInput.addEventListener('blur', function() {
+            if (this.value === "" || parseInt(this.value) === 0) {
+                 this.dataset.manualEdit = 'false';
+                 calculatePrice(); // Hitung ulang untuk mengisi nilai otomatis
             }
         });
 
-        // Pastikan harga dihitung ulang setelah semua listener terpasang
-        calculatePrices();
+        // --- 4. TAX RATE LOGIC ---
+        const taxRateInput = document.getElementById('tax_rate');
+        taxRateInput.addEventListener('input', function() {
+            calculatePrice(); // Recalculate when tax rate changes
+        });
+
+        // Hitung harga saat halaman dimuat
+        calculatePrice();
     });
+
 </script>
+
+@endpush
 @endsection

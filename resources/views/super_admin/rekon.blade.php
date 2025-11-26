@@ -119,7 +119,7 @@ Rekon Management
 
             <!-- Filters -->
             <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <div class="flex flex-wrap gap-4">
+                <form method="GET" action="{{ route('super_admin.rekon') }}" class="flex flex-wrap gap-4">
                     <div class="flex-1 min-w-0">
                         <label for="search" class="sr-only">Search reconciliation</label>
                         <div class="relative">
@@ -128,26 +128,31 @@ Rekon Management
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <input type="search" name="search" id="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search reconciliation records...">
+                            <input type="search" name="search" id="search" value="{{ request('search') }}" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search reconciliation records...">
                         </div>
                     </div>
                     <div>
                         <select id="status" name="status" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                             <option value="">All Status</option>
-                            <option value="matched">Matched</option>
-                            <option value="unmatched">Unmatched</option>
-                            <option value="pending">Pending</option>
+                            <option value="matched" {{ request('status') == 'matched' ? 'selected' : '' }}>Matched</option>
+                            <option value="unmatched" {{ request('status') == 'unmatched' ? 'selected' : '' }}>Unmatched</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         </select>
                     </div>
                     <div>
                         <select id="period" name="period" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                             <option value="">All Periods</option>
-                            <option value="today">Today</option>
-                            <option value="week">This Week</option>
-                            <option value="month">This Month</option>
+                            <option value="today" {{ request('period') == 'today' ? 'selected' : '' }}>Today</option>
+                            <option value="week" {{ request('period') == 'week' ? 'selected' : '' }}>This Week</option>
+                            <option value="month" {{ request('period') == 'month' ? 'selected' : '' }}>This Month</option>
                         </select>
                     </div>
-                </div>
+                    <div>
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Filter
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Reconciliation Table -->
@@ -155,57 +160,43 @@ Rekon Management
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">System Amount</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Amount</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difference</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" class="relative px-6 py-3">
-                                <span class="sr-only">Actions</span>
-                            </th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Price</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Paid</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit</th>
+                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($rekons as $rekon)
-                        <tr class="{{ $rekon->status === 'cancelled' ? 'bg-red-50' : '' }}">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $rekon->id }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $rekon->created_at->format('M d, Y') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($rekon->system_amount, 0, ',', '.') }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                @if($rekon->status === 'completed')
-                                    Rp {{ number_format($rekon->bank_amount, 0, ',', '.') }}
-                                @else
-                                    -
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm {{ $rekon->difference == 0 ? 'text-green-600' : 'text-red-600' }}">
-                                @if($rekon->difference == 0)
-                                    Rp 0
-                                @else
-                                    Rp {{ number_format($rekon->difference, 0, ',', '.') }}
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($rekon->status === 'completed')
+                        @forelse($rekonDetailsPaginated as $detail)
+                        <tr class="{{ $detail->status === 'cancelled' ? 'bg-red-50' : '' }}">
+                            <td class="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $detail->transaction_id }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{{ \Carbon\Carbon::parse($detail->date)->format('M d, Y') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">{{ $detail->product_name }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->basic_price, 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->tax, 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->discount, 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->nta, 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->pax_paid, 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->profit, 0, ',', '.') }}</td>
+                            <td class="px-3 py-4 whitespace-nowrap">
+                                @if($detail->status === 'completed')
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Matched</span>
-                                @elseif($rekon->status === 'cancelled')
+                                @elseif($detail->status === 'cancelled')
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Unmatched</span>
                                 @else
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button class="text-blue-600 hover:text-blue-900 mr-3">View Details</button>
-                                @if($rekon->status === 'cancelled')
-                                    <button class="text-blue-600 hover:text-blue-900 mr-3">Investigate</button>
-                                    <button class="text-green-600 hover:text-green-900">Resolve</button>
-                                @endif
-                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                            <td colspan="10" class="px-6 py-4 text-center text-gray-500">
                                 No reconciliation records found.
                             </td>
                         </tr>
@@ -217,16 +208,16 @@ Rekon Management
             <!-- Pagination -->
             <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div class="flex-1 flex justify-between sm:hidden">
-                    {{ $rekons->links() }}
+                    {{ $rekonDetailsPaginated->links() }}
                 </div>
                 <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                         <p class="text-sm text-gray-700">
-                            Showing <span class="font-medium">{{ $rekons->firstItem() }}</span> to <span class="font-medium">{{ $rekons->lastItem() }}</span> of <span class="font-medium">{{ $rekons->total() }}</span> results
+                            Showing <span class="font-medium">{{ $rekonDetailsPaginated->firstItem() }}</span> to <span class="font-medium">{{ $rekonDetailsPaginated->lastItem() }}</span> of <span class="font-medium">{{ $rekonDetailsPaginated->total() }}</span> results
                         </p>
                     </div>
                     <div>
-                        {{ $rekons->links() }}
+                        {{ $rekonDetailsPaginated->links() }}
                     </div>
                 </div>
             </div>

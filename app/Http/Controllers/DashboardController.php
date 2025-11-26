@@ -118,18 +118,19 @@ class DashboardController extends Controller
             'description' => 'nullable|string',
             'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            
+
             // ✅ PAX PAID (Harga Jual Per Pax Manual)
-            'pax_paid_input' => 'nullable|numeric|min:0', 
-            
+            'pax_paid_input' => 'nullable|numeric|min:0',
+
             // ❌ DIHAPUS: 'discount_percentage'
-            // 'discount_percentage' => 'required|integer|min:0|max:100', 
+            // 'discount_percentage' => 'required|integer|min:0|max:100',
 
             'nta' => 'required|numeric|min:0', // ✅ VALIDASI NTA (Nett Total Package Price) dari hidden input
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
             'is_active' => 'required|boolean',
-            
+
             'products' => 'required|array|min:1',
             'products.*' => 'uuid|exists:products,id',
             'product_pax' => 'required|array',
@@ -232,11 +233,11 @@ class DashboardController extends Controller
                 'slug' => $slug,
                 'description' => $data['description'],
                 'images' => $uploadedImagePaths,
-                
+
                 // 🔄 Penyesuaian Kolom
                 'nta' => $finalNTA, // Nett Total Package Price
                 'pax_paid' => round($finalPaxPaid, 2), // Harga Jual Per Pax (Final)
-                
+                'tax_rate' => $data['tax_rate'] ?? 0,
                 'start_publish' => $data['start_publish'],
                 'end_publish' => $data['end_publish'] ?? null,
                 'is_active' => $data['is_active'],
@@ -335,17 +336,17 @@ class DashboardController extends Controller
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
 
             // ✅ PAX PAID (Harga Jual Per Pax Manual)
-            'pax_paid_input' => 'nullable|numeric|min:0', 
-            
-            // ❌ DIHAPUS: 'discount_percentage'
-            // 'discount_percentage' => 'required|integer|min:0|max:100', 
-            
-            'nta' => 'required|numeric|min:0', // ✅ VALIDASI NTA (Nett Total Package Price) dari hidden input
+            'pax_paid_input' => 'nullable|numeric|min:0',
 
+            // ❌ DIHAPUS: 'discount_percentage'
+            // 'discount_percentage' => 'required|integer|min:0|max:100',
+
+            'nta' => 'required|numeric|min:0', // ✅ VALIDASI NTA (Nett Total Package Price) dari hidden input
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
-            'is_active' => 'required|boolean', 
-            
+            'is_active' => 'required|boolean',
+
             // Produk dan PAX
             'products' => 'required|array|min:1',
             'products.*' => 'uuid|exists:products,id',
@@ -433,7 +434,7 @@ class DashboardController extends Controller
                 // 🔄 Penyesuaian Kolom
                 'nta' => $finalNTA, // Nett Total Package Price
                 'pax_paid' => round($finalPaxPaid, 2), // Harga Jual Per Pax (Final)
-                
+                'tax_rate' => $data['tax_rate'] ?? 0,
                 'start_publish' => $data['start_publish'],
                 'end_publish' => $data['end_publish'] ?? null,
                 'is_active' => $data['is_active'],

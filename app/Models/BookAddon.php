@@ -38,6 +38,7 @@ class BookAddon extends Model
      */
     protected $fillable = [
         'id_user',
+        'id_book',
         'id_addon',
         'checkin_appointment_start',
         'checkout_appointment_end',
@@ -99,4 +100,10 @@ class BookAddon extends Model
     {
         return $this->belongsTo(Addon::class, 'id_addon');
     }
+
+    public function booking()
+{
+    return $this->belongsTo(Booking::class, 'id_book');
+}
+
 }

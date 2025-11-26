@@ -253,9 +253,7 @@ Route::get('/search', [SearchController::class, 'index'])->name('user.search');
 
 Route::middleware(['super_admin_access'])->group(function () {
     // User pages
-    Route::get('/home', function () {
-        return view('user.home');
-    })->name('user.home');
+    Route::get('/home', [App\Http\Controllers\SearchController::class, 'index'])->name('user.home');
 
     Route::get('/book', function () {
         $packages = \App\Models\Package::where('is_active', true)->get();
@@ -290,7 +288,7 @@ Route::middleware(['super_admin_access'])->group(function () {
 
     // User dashboard - accessible by user
     Route::get('/dashboard', function () {
-        return view('user.home');
+        return redirect()->route('user.search');
     })->name('user.dashboard');
 
     // Review routes

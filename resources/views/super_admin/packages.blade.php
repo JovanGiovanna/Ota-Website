@@ -38,6 +38,15 @@ Packages Management
                             Price
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tax
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tax Amount
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Price
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Start Publish
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -71,13 +80,18 @@ Packages Management
                             {{-- Price --}}
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-semibold text-green-600">
-                                    Rp {{ number_format($package->price_publish, 0, ',', '.') }}
+                                    Rp {{ number_format($package->nta, 0, ',', '.') }}
                                 </div>
-                                @if ($package->discount_percentage > 0)
                                 <div class="text-xs text-gray-500">
-                                    <span class="line-through">Rp {{ number_format($package->price_real, 0, ',', '.') }}</span> ({{ $package->discount_percentage }}% disc)
+                                    Per Pax: Rp {{ number_format($package->pax_paid, 0, ',', '.') }}
                                 </div>
-                                @endif
+                            </td>
+
+                            {{-- Tax --}}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    {{ $package->tax_rate }}%
+                                </div>
                             </td>
 
                             {{-- Start Publish --}}
@@ -127,7 +141,7 @@ Packages Management
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            <td colspan="9" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                                 No packages found.
                             </td>
                         </tr>

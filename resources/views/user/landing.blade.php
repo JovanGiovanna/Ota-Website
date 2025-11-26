@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pointer - Travel & Booking Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         .hero-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -72,6 +72,118 @@
                         <i class="fas fa-plane text-white text-4xl"></i>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Items Section -->
+    <section class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Popular Items</h2>
+            <p class="text-gray-600 mb-8">Discover our most popular packages based on customer ratings and reviews</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                @foreach ($popularPackages as $package)
+                    <a href="{{ route('user.package_detail', $package->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div class="relative">
+                            @php
+                                $validImages = array_filter((array) ($package->images ?? []), function($img) {
+                                    return is_string($img) && !empty($img);
+                                });
+                            @endphp
+                            @if($validImages && count($validImages) > 0)
+                                <div class="relative h-32 overflow-hidden">
+                                    <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover">
+                                </div>
+                            @else
+                                <div class="w-full h-32 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                                    <i class="fas fa-box text-white text-2xl"></i>
+                                </div>
+                            @endif
+                            <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+                                <div class="flex items-center space-x-1">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= floor($package->averageRating()))
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        @elseif($i - 0.5 <= $package->averageRating())
+                                            <i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>
+                                        @else
+                                            <i class="far fa-star text-gray-300 text-xs"></i>
+                                        @endif
+                                    @endfor
+                                    <span class="text-xs font-semibold ml-1">{{ number_format($package->averageRating(), 1) }} ({{ $package->reviews->count() }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
+                            <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
+                                <span class="text-xs text-gray-500">per package</span>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            <div class="mt-6">
+                {{ $popularPackages->withQueryString()->links() }}
+            </div>
+        </div>
+    </section>
+
+    <!-- Newest Items Section -->
+    <section class="py-12 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Newest Items</h2>
+            <p class="text-gray-600 mb-8">Explore our newest packages, ordered from newest to oldest</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                @foreach ($newestPackages as $package)
+                    <a href="{{ route('user.package_detail', $package->id) }}" class="block bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
+                        <div class="relative">
+                            @php
+                                $validImages = array_filter((array) ($package->images ?? []), function($img) {
+                                    return is_string($img) && !empty($img);
+                                });
+                            @endphp
+                            @if($validImages && count($validImages) > 0)
+                                <div class="relative h-32 overflow-hidden">
+                                    <img src="{{ asset('storage/' . reset($validImages)) }}" alt="{{ $package->name_package }}" class="w-full h-full object-cover">
+                                </div>
+                            @else
+                                <div class="w-full h-32 bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center">
+                                    <i class="fas fa-box text-white text-2xl"></i>
+                                </div>
+                            @endif
+                            <div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+                                <div class="flex items-center space-x-1">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= floor($package->averageRating()))
+                                            <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                        @elseif($i - 0.5 <= $package->averageRating())
+                                            <i class="fas fa-star-half-alt text-yellow-400 text-xs"></i>
+                                        @else
+                                            <i class="far fa-star text-gray-300 text-xs"></i>
+                                        @endif
+                                    @endfor
+                                    <span class="text-xs font-semibold ml-1">{{ number_format($package->averageRating(), 1) }} ({{ $package->reviews->count() }})</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
+                            <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
+                            <div class="flex items-center justify-between">
+                                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
+                                <span class="text-xs text-gray-500">per package</span>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+            
+            <div class="mt-6">
+                {{ $newestPackages->withQueryString()->links() }}
             </div>
         </div>
     </section>
@@ -175,80 +287,5 @@
             </div>
         </div>
     </section>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div class="col-span-1 md:col-span-2">
-                    <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-compass text-white text-lg"></i>
-                        </div>
-                        <span class="text-2xl font-bold">Pointer</span>
-                    </div>
-                    <p class="text-gray-400 mb-4">
-                        Your trusted partner for amazing travel experiences. Discover, book, and enjoy the best packages worldwide.
-                    </p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors duration-200">Features</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">About Us</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Contact</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Support</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 class="text-lg font-semibold mb-4">Services</h3>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Hotel Packages</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Add-on Services</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Custom Bookings</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Travel Insurance</a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center">
-                <p class="text-gray-400">
-                    &copy; 2024 Pointer. All rights reserved. Made with <i class="fas fa-heart text-red-500"></i> for travelers.
-                </p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    </script>
 </body>
 </html>
