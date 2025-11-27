@@ -94,6 +94,20 @@ Packages Management
                                 </div>
                             </td>
 
+                            {{-- Tax Amount --}}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    Rp {{ number_format($package->pax_paid * ($package->tax_rate / 100), 0, ',', '.') }}
+                                </div>
+                            </td>
+
+                            {{-- Total Price --}}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-green-600">
+                                    Rp {{ number_format($package->pax_paid + ($package->pax_paid * ($package->tax_rate / 100)), 0, ',', '.') }}
+                                </div>
+                            </td>
+
                             {{-- Start Publish --}}
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">

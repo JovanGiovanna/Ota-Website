@@ -456,22 +456,19 @@ public function transactionProducts()
                 $discountAmount = $discountValue;
             }
 
-            // NTA is the cost to vendor
-            $ntaPerUnit = $product->nta ?? 0;
+            // NTA = BasicPrice - Discount
+            $ntaPerUnit = $basicPrice - $discountAmount;
 
             // Pax paid
             $paxCount = $bookProduct->amount ?? 1;
 
-            // Final price after discount
-            $finalPrice = $product->finalPrice ?? ($totalPriceBeforeDiscount - $discountAmount);
-
-            // Total paid
-            $totalPaid = $paxCount * $finalPrice;
+            // TotalPaid = BasicPrice + Tax - Discount
+            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
 
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = total paid - total nta
+            // Profit = TotalPaid - NTA
             $profit = $totalPaid - $totalNta;
 
             $rekonDetails[] = (object) [                                                                                                                                                                                                                                                                                                                                                                                                        
@@ -514,19 +511,16 @@ public function transactionProducts()
             // Packages have no discount in model
             $discountAmount = 0;
 
-            // NTA is the total cost to vendor for the package, so per pax = total NTA / paxCount
-            $ntaPerUnit = $paxCount > 0 ? ($package->nta ?? 0) / $paxCount : 0;
+            // NTA = BasicPrice - Discount
+            $ntaPerUnit = $basicPrice - $discountAmount;
 
-            // Final price is pax_paid (per pax)
-            $finalPrice = $basicPrice;
-
-            // Total paid
-            $totalPaid = $paxCount * $finalPrice;
+            // TotalPaid = BasicPrice + Tax - Discount
+            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
 
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = total paid - total nta
+            // Profit = TotalPaid - NTA
             $profit = $totalPaid - $totalNta;
 
             $rekonDetails[] = (object) [
@@ -573,22 +567,19 @@ public function transactionProducts()
                 $discountAmount = $discountValue;
             }
 
-            // NTA is the cost to vendor
-            $ntaPerUnit = $addon->nta ?? 0;
+            // NTA = BasicPrice - Discount
+            $ntaPerUnit = $basicPrice - $discountAmount;
 
             // Use amount from bookAddon as pax count
             $paxCount = $bookAddon->amount ?? 1;
 
-            // Final price after discount
-            $finalPrice = $addon->finalPrice ?? ($totalPriceBeforeDiscount - $discountAmount);
-
-            // Total paid
-            $totalPaid = $paxCount * $finalPrice;
+            // TotalPaid = BasicPrice + Tax - Discount
+            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
 
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Calculate profit = total paid - total nta
+            // Profit = TotalPaid - NTA
             $profit = $totalPaid - $totalNta;
 
             $rekonDetails[] = (object) [
