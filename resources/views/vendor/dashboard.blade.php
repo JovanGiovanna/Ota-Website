@@ -26,8 +26,8 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
     @endif
 
     @php
-$vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
-        $hasVendorInfo = \App\Models\VendorInfo::where('id_vendor', $vendor->id)->exists();
+    $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
+    $hasVendorInfo = \App\Models\VendorInfo::where('id_vendor', $vendor->id)->exists();
     @endphp
 
     @if (!$hasVendorInfo)
@@ -50,114 +50,151 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
         </div>
     @endif
 
-    <div class="border-4 border-dashed border-gray-200 rounded-lg">
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-2xl p-6 shadow-lg border border-emerald-100 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Total Bookings</p>
-                        <p class="text-3xl font-bold text-emerald-600">{{ $totalBookings ?? 0 }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-calendar-check text-emerald-600 text-xl"></i>
-                    </div>
+    <!-- Stats Cards Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <!-- Total Bookings Card -->
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-emerald-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-gray-600">Total Bookings</p>
+                    <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $totalBookings ?? 0 }}</p>
                 </div>
-                <div class="mt-4 flex items-center">
-                    <span class="text-green-500 text-sm font-medium">+15%</span>
-                    <span class="text-gray-500 text-sm ml-2">from last month</span>
+                <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-calendar-check text-emerald-600"></i>
                 </div>
             </div>
+            <p class="text-xs text-gray-500 mt-2">Active bookings</p>
+        </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-lg border border-blue-100 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Revenue</p>
-                        <p class="text-3xl font-bold text-blue-600">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-dollar-sign text-blue-600 text-xl"></i>
-                    </div>
+        <!-- Cancellations Card -->
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-red-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-gray-600">Cancellations</p>
+                    <p class="text-2xl font-bold text-red-600 mt-1">{{ $totalCancellations ?? 0 }}</p>
                 </div>
-                <div class="mt-4 flex items-center">
-                    <span class="text-green-500 text-sm font-medium">+22%</span>
-                    <span class="text-gray-500 text-sm ml-2">from last month</span>
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-times-circle text-red-600"></i>
                 </div>
             </div>
+            <p class="text-xs text-red-500 mt-2">{{ $totalBookings > 0 ? round(($totalCancellations / ($totalBookings + $totalCancellations)) * 100, 1) : 0 }}% rate</p>
+        </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-lg border border-purple-100 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Active Services</p>
-                        <p class="text-3xl font-bold text-purple-600">{{ $activeServices ?? 0 }}</p>
-                    </div>
-                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-concierge-bell text-purple-600 text-xl"></i>
-                    </div>
+        <!-- Revenue Card -->
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-gray-600">Revenue</p>
+                    <p class="text-lg font-bold text-blue-600 mt-1">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</p>
                 </div>
-                <div class="mt-4 flex items-center">
-                    <span class="text-green-500 text-sm font-medium">+5%</span>
-                    <span class="text-gray-500 text-sm ml-2">from last month</span>
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-dollar-sign text-blue-600"></i>
                 </div>
             </div>
+            <p class="text-xs text-gray-500 mt-2">Completed</p>
+        </div>
 
-            <div class="bg-white rounded-2xl p-6 shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-600">Rating</p>
-                        <p class="text-3xl font-bold text-orange-600">{{ $averageRating ?? 0 }}/5</p>
-                    </div>
-                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-star text-orange-600 text-xl"></i>
-                    </div>
+        <!-- Active Services Card -->
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-purple-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-gray-600">Active Services</p>
+                    <p class="text-2xl font-bold text-purple-600 mt-1">{{ $activeServices ?? 0 }}</p>
                 </div>
-                <div class="mt-4 flex items-center">
-                    <span class="text-green-500 text-sm font-medium">+0.2</span>
-                    <span class="text-gray-500 text-sm ml-2">from last month</span>
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-concierge-bell text-purple-600"></i>
                 </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">Published</p>
+        </div>
+
+        <!-- Rating Card -->
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-orange-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-gray-600">Rating</p>
+                    <p class="text-2xl font-bold text-orange-600 mt-1">{{ $averageRating ?? 0 }}/5</p>
+                </div>
+                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-star text-orange-600"></i>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+                @if($averageRating >= 4)
+                    Excellent
+                @elseif($averageRating >= 3)
+                    Good
+                @else
+                    Fair
+                @endif
+            </p>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Monthly Performance Chart (Full Width on Mobile, 2/3 on Desktop) -->
+        <div class="lg:col-span-2 bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Monthly Performance</h3>
+                <i class="fas fa-chart-line text-green-600"></i>
+            </div>
+            <div style="position: relative; height: 300px;">
+                <canvas id="performanceChart"></canvas>
             </div>
         </div>
 
-        <!-- Performance Chart -->
-        <div class="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-800">Monthly Performance</h3>
-                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-chart-line text-green-600"></i>
-                </div>
+        <!-- Bookings vs Cancellations Chart -->
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Comparison</h3>
+                <i class="fas fa-chart-bar text-blue-600"></i>
             </div>
-            <canvas id="performanceChart" class="w-full h-64"></canvas>
+            <div style="position: relative; height: 300px;">
+                <canvas id="bookingComparisonChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div class="mt-4 bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">Monthly Revenue Trend</h3>
+            <i class="fas fa-money-bill text-green-600"></i>
+        </div>
+        <div style="position: relative; height: 300px;">
+            <canvas id="revenueChart"></canvas>
         </div>
     </div>
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-    // Performance Chart
+    // Performance Chart (Line chart showing bookings)
     const performanceCtx = document.getElementById('performanceChart').getContext('2d');
     new Chart(performanceCtx, {
         type: 'line',
         data: {
-            labels: {!! json_encode(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']) !!},
+            labels: {!! $labels !!},
             datasets: [{
-                label: 'Bookings',
-                data: {!! json_encode([12, 19, 15, 25, 22, 30]) !!},
+                label: 'Successful Bookings',
+                data: {!! $monthlyBookings !!},
                 borderColor: 'rgb(16, 185, 129)',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderWidth: 3,
+                borderWidth: 2,
                 fill: true,
                 tension: 0.4,
                 pointBackgroundColor: 'rgb(16, 185, 129)',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8
+                pointRadius: 5,
+                pointHoverRadius: 7
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
-            aspectRatio: 2,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false
@@ -168,6 +205,106 @@ $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
                     beginAtZero: true,
                     grid: {
                         color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Bookings vs Cancellations Chart (Bar chart)
+    const comparisonCtx = document.getElementById('bookingComparisonChart').getContext('2d');
+    new Chart(comparisonCtx, {
+        type: 'bar',
+        data: {
+            labels: {!! $labels !!},
+            datasets: [
+                {
+                    label: 'Bookings',
+                    data: {!! $monthlyBookings !!},
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Cancelled',
+                    data: {!! $monthlyCancellations !!},
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Revenue Chart (Area chart)
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {!! $labels !!},
+            datasets: [{
+                label: 'Revenue (Rp)',
+                data: {!! $monthlyRevenue !!},
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: 'rgb(59, 130, 246)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'Rp ' + value.toLocaleString('id-ID');
+                        }
                     }
                 },
                 x: {

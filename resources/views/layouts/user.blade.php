@@ -12,6 +12,7 @@
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <!-- Navbar -->
     <nav class="bg-white shadow-lg fixed top-0 w-full z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

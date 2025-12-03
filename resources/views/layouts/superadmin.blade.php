@@ -7,10 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/sweetalert2@11.27.0/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.27.0/dist/sweetalert2.min.css">
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 to-blue-50">
+    <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <div class="flex h-full">
         <!-- Sidebar -->
         <div class="hidden md:flex md:w-72 md:flex-col">
@@ -76,6 +79,18 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                     </svg>
                                     Package
+                                </a>
+                                <a href="{{ route('super_admin.products') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                    Product
+                                </a>
+                                <a href="{{ route('super_admin.addons') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Addon
                                 </a>
                             </div>
                         </div>
@@ -236,5 +251,40 @@
     </div>
 
     @stack('scripts')
+
+    <script>
+        // Helper function for delete confirmation
+        window.confirmDeleteAction = function(formElement) {
+            if (!formElement) return false;
+            event.preventDefault();
+
+            const itemName = formElement.getAttribute('data-delete-item') || 'this item';
+
+            // Use Swal if available (provided by realrashid package); otherwise fallback
+            if (typeof Swal === 'undefined') {
+                return confirm('Are you sure you want to delete ' + itemName + '?');
+            }
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you really want to delete ' + itemName + '? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Delete',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    formElement.submit();
+                }
+            });
+            return false;
+        };
+    </script>
+
+    {{-- realrashid/sweet-alert blade include (renders alert scripts) --}}
+    @includeIf('sweetalert::alert')
+
 </body>
 </html>

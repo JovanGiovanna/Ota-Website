@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('booker_name', 100);    
             $table->string('booker_email', 100);
             $table->string('booker_telp', 20);     
-            $table->string('booking_code')->unique(); // Kode unik untuk setiap pesanan
+            $table->string('booking_code')->unique(); 
             
             $table->dateTime('checkin_appointment_start'); 
             $table->dateTime('checkout_appointment_end');   
@@ -34,8 +34,7 @@ return new class extends Migration
         
             $table->integer('amount')->unsigned()->default(1); 
             $table->decimal('total_price', 15, 2); 
-            // Status & Timestamps
-            $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled', 'checked_in', 'checked_out', 'maintenance'])
+            $table->enum('status', ['pending', 'confirmed payment', 'completed', 'cancelled', 'payment return', 'maintenance'])
                   ->default('pending');
             $table->string('note')->nullable();
 

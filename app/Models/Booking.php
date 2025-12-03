@@ -104,7 +104,7 @@ class Booking extends Model
     // Scope Active Bookings
     public function scopeActive($query)
     {
-        return $query->whereIn('status', ['pending', 'confirmed', 'checked_in']);
+        return $query->whereIn('status', ['pending', 'confirmed payment', 'completed']);
     }
 
     // Hitung durasi booking dalam hari

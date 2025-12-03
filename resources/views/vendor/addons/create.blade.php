@@ -152,16 +152,6 @@
                 @enderror
             </div>
 
-            <div class="mb-4">
-                <label for="publish" class="flex items-center">
-                    <input type="checkbox" name="publish" id="publish" value="1" {{ old('publish') ? 'checked' : '' }} class="mr-2">
-                    <span class="text-sm font-medium text-gray-700">Publish</span>
-                </label>
-                @error('publish')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
-
             {{-- Bidang Upload Multiple Images --}}
             <div class="mb-6">
                 <label for="images" class="block text-sm font-medium text-gray-700 mb-2">Addon Images (Multiple)</label>

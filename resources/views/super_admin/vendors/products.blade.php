@@ -98,6 +98,12 @@ Vendor Products Management
                                     <button onclick="openImageModal('{{ asset('storage/' . $product->image) }}', '{{ $product->name }}')" class="text-blue-600 hover:text-blue-900 text-sm">View Image</button>
                                 @endif
                                 <a href="{{ route('super_admin.vendors.products.detail', [$vendor->id, $product->id]) }}" class="text-green-600 hover:text-green-900 text-sm">View Details</a>
+                                <a href="{{ route('super_admin.vendors.products.edit', [$vendor->id, $product->id]) }}" class="text-yellow-600 hover:text-yellow-900 text-sm">Edit</a>
+                                <form action="{{ route('super_admin.vendors.products.destroy', [$vendor->id, $product->id]) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm">Delete</button>
+                                </form>
                             </div>
                         </td>
                     </tr>

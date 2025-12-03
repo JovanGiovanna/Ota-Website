@@ -112,9 +112,9 @@
                     </div>
                 </div>
 
-                {{-- Price (Pax Paid) - Harga Jual Per Pax Final --}}
+                {{-- Total Price (Gross) --}}
                 <div class="space-y-2">
-                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Price (Pax Paid) - Harga Jual Per Pax Final</label>
+                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Total Price (Gross) - Total Harga Paket (NTA + Upsale - Diskon)</label>
                     <div class="relative rounded-lg shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">Rp</span>
@@ -122,7 +122,7 @@
                         {{-- Input field disesuaikan dengan 'pax_paid_input' --}}
                         <input type="number" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', $package->pax_paid) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('pax_paid_input') border-red-500 @enderror">
                     </div>
-                    <p class="text-xs text-gray-500">Harga ini dihitung dari Total Harga Pokok (NTA) dibagi total Pax, namun dapat diubah secara manual.</p>
+                    <p class="text-xs text-gray-500">Nilai ini menyimpan total harga paket (NTA + Upsale - Diskon). Untuk mendapatkan harga per orang, bagi nilai ini dengan total Pax.</p>
                     @error('pax_paid_input')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror

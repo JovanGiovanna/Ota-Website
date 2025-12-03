@@ -6,12 +6,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use App\Models\VendorInfo;
 use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Models\Addon; 
 use App\Models\Category;
+use App\Models\BookProduct;
+use App\Models\BookPackage;
+use App\Models\Review;
+use App\Helpers\SweetAlert;
 
 class VendorController extends Controller
 {
@@ -25,7 +30,7 @@ class VendorController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:vendor,email,' . Auth::guard('vendor')->id(),
             'phone' => 'nullable|string|max:20',
@@ -33,16 +38,36 @@ class VendorController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        /** @var \App\Models\Vendor $vendor */
-        $vendor = Auth::guard('vendor')->user();
-        $vendor->update($request->only(['name', 'email']));
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        VendorInfo::updateOrCreate(
-            ['id_vendor' => $vendor->id],
-            $request->only(['phone', 'address', 'description'])
-        );
+        try {
+            /** @var \App\Models\Vendor $vendor */
+            $vendor = Auth::guard('vendor')->user();
+            $vendor->update($request->only(['name', 'email']));
 
-        return redirect()->back()->with('success', 'Profile updated successfully');
+            VendorInfo::updateOrCreate(
+                ['id_vendor' => $vendor->id],
+                $request->only(['phone', 'address', 'description'])
+            );
+
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Profil berhasil diperbarui');
+            }
+            return redirect()->back();
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Profil gagal diperbarui: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function index()
@@ -59,7 +84,7 @@ class VendorController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:vendor,email',
             'password' => 'required|string|min:8|confirmed',
@@ -68,25 +93,42 @@ class VendorController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $vendor = Vendor::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        VendorInfo::create([
-            'id_vendor' => $vendor->id,
-            'id_city' => null,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'description' => $request->description,
-            'desc' => $request->description,
-            'coordinate_latitude' => null,
-            'coordinate_longitude' => null,
-            'landmark_description' => null,
-        ]);
+        try {
+            $vendor = Vendor::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+            ]);
 
-        return redirect()->route('super_admin.vendors')->with('success', 'Vendor created successfully');
+            VendorInfo::create([
+                'id_vendor' => $vendor->id,
+                'id_city' => null,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'description' => $request->description,
+                'desc' => $request->description,
+                'coordinate_latitude' => null,
+                'coordinate_longitude' => null,
+                'landmark_description' => null,
+            ]);
+
+            return SweetAlert::created('Vendor', route('super_admin.vendors'));
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Vendor gagal dibuat: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function edit($id)
@@ -100,7 +142,7 @@ class VendorController extends Controller
     {
         $vendor = Vendor::findOrFail($id);
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:vendor,email,' . $vendor->id,
             'password' => 'nullable|string|min:8|confirmed',
@@ -110,30 +152,57 @@ class VendorController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $vendor->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'is_active' => $request->is_active,
-        ]);
-
-        if ($request->filled('password')) {
-            $vendor->update(['password' => bcrypt($request->password)]);
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        VendorInfo::updateOrCreate(
-            ['id_vendor' => $vendor->id],
-            $request->only(['phone', 'address', 'description'])
-        );
+        try {
+            $vendor->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'is_active' => $request->is_active,
+            ]);
 
-        return redirect()->route('super_admin.vendors')->with('success', 'Vendor updated successfully');
+            if ($request->filled('password')) {
+                $vendor->update(['password' => bcrypt($request->password)]);
+            }
+
+            VendorInfo::updateOrCreate(
+                ['id_vendor' => $vendor->id],
+                $request->only(['phone', 'address', 'description'])
+            );
+
+            return SweetAlert::updated('Vendor', route('super_admin.vendors'));
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Vendor gagal diubah: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function destroy($id)
     {
-        $vendor = Vendor::findOrFail($id);
-        $vendor->delete();
+        try {
+            $vendor = Vendor::findOrFail($id);
+            $vendor->delete();
 
-        return redirect()->route('super_admin.vendors')->with('success', 'Vendor deleted successfully');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Vendor "' . $vendor->name . '" berhasil dihapus');
+            }
+            return redirect()->route('super_admin.vendors');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Vendor gagal dihapus: ' . $e->getMessage());
+            }
+            return redirect()->back();
+        }
     }
 
     public function bookings()
@@ -270,6 +339,120 @@ class VendorController extends Controller
         return view('super_admin.vendors.addon_detail', compact('vendor', 'addon'));
     }
 
+    // Edit Product (Super Admin)
+    public function editProductAdmin($vendorId, $productId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $product = Product::where('id_vendor', $vendorId)->findOrFail($productId);
+        $categories = Category::all();
+
+        return view('super_admin.vendors.product_edit', compact('vendor', 'product', 'categories'));
+    }
+
+    // Update Product (Super Admin)
+    public function updateProductAdmin(Request $request, $vendorId, $productId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $product = Product::where('id_vendor', $vendorId)->findOrFail($productId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'id_category' => 'required|exists:categories,id',
+            'description' => 'required|string',
+            'location' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'basic_price' => 'required|numeric|min:0',
+            'nta' => 'nullable|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date',
+            'status' => 'required|in:active,inactive'
+        ]);
+
+        $product->update($validated);
+
+        return redirect()->route('super_admin.vendors.products', $vendor->id)
+                       ->with('success', 'Product updated successfully');
+    }
+
+    // Delete Product (Super Admin)
+    public function deleteProductAdmin($vendorId, $productId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $product = Product::where('id_vendor', $vendorId)->findOrFail($productId);
+        
+        // Delete images from storage
+        if (is_array($product->images)) {
+            foreach ($product->images as $image) {
+                if ($image && Storage::disk('public')->exists($image)) {
+                    Storage::disk('public')->delete($image);
+                }
+            }
+        }
+
+        $product->delete();
+
+        return redirect()->route('super_admin.vendors.products', $vendor->id)
+                       ->with('success', 'Product deleted successfully');
+    }
+
+    // Edit Addon (Super Admin)
+    public function editAddonAdmin($vendorId, $addonId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $addon = Addon::where('id_vendor', $vendorId)->findOrFail($addonId);
+
+        return view('super_admin.vendors.addon_edit', compact('vendor', 'addon'));
+    }
+
+    // Update Addon (Super Admin)
+    public function updateAddonAdmin(Request $request, $vendorId, $addonId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $addon = Addon::where('id_vendor', $vendorId)->findOrFail($addonId);
+
+        $validated = $request->validate([
+            'addons' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'basic_price' => 'required|numeric|min:0',
+            'nta' => 'nullable|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date',
+            'status' => 'required|in:active,inactive',
+            'desc' => 'nullable|string'
+        ]);
+
+        $addon->update($validated);
+
+        return redirect()->route('super_admin.vendors.addons', $vendor->id)
+                       ->with('success', 'Addon updated successfully');
+    }
+
+    // Delete Addon (Super Admin)
+    public function deleteAddonAdmin($vendorId, $addonId)
+    {
+        $vendor = Vendor::findOrFail($vendorId);
+        $addon = Addon::where('id_vendor', $vendorId)->findOrFail($addonId);
+        
+        // Delete images from storage if exists
+        if (is_array($addon->images)) {
+            foreach ($addon->images as $image) {
+                if ($image && Storage::disk('public')->exists($image)) {
+                    Storage::disk('public')->delete($image);
+                }
+            }
+        }
+
+        $addon->delete();
+
+        return redirect()->route('super_admin.vendors.addons', $vendor->id)
+                       ->with('success', 'Addon deleted successfully');
+    }
+
     public function vendorProfile($vendorId)
     {
         $vendor = Vendor::with('vendorInfo')->findOrFail($vendorId);
@@ -349,13 +532,9 @@ class VendorController extends Controller
             'basic_price' => 'required|numeric|min:0', 
             'nta' => 'required|numeric|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100', 
-            
-            // --- VALIDASI DISKON BARU (PRODUCT) ---
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
-            'discount_expires_at' => 'nullable|date|after:today',
-            // ---------------------------
-            
+            'discount_expires_at' => 'nullable|date|after:today',            
             'images' => 'nullable|array|max:5', 
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', 
             'description' => 'nullable|string',
@@ -411,13 +590,9 @@ class VendorController extends Controller
             'basic_price' => 'required|numeric|min:0', 
             'nta' => 'required|numeric|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100', 
-            
-            // --- VALIDASI DISKON BARU (PRODUCT) ---
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
-            'discount_expires_at' => 'nullable|date|after:today',
-            // ---------------------------
-            
+            'discount_expires_at' => 'nullable|date|after:today',            
             'images' => 'nullable|array|max:5',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'remove_images' => 'nullable|array',
@@ -759,5 +934,297 @@ class VendorController extends Controller
         $addon->delete();
 
         return redirect()->route('vendor.addons')->with('success', 'Addon deleted successfully (Soft Deleted)');
+    }
+
+    /**
+     * Dashboard method with analytics data
+     * Tracks product bookings, package bookings containing products, and cancellations
+     */
+    public function dashboard()
+    {
+        $vendor = Auth::guard('vendor')->user();
+        
+        // Get all products for this vendor
+        $products = Product::where('id_vendor', $vendor->id)->pluck('id')->toArray();
+        
+        // Initialize arrays for monthly data (last 6 months)
+        $monthlyBookings = [];
+        $monthlyCancellations = [];
+        $monthlyRevenue = [];
+        $labels = [];
+        
+        // Generate data for last 6 months
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->format('M');
+            $labels[] = $month;
+            
+            // Count product bookings for this month
+            $productBookings = BookProduct::whereHas('booking', function ($query) use ($date, $vendor) {
+                $query->whereMonth('created_at', $date->month)
+                      ->whereYear('created_at', $date->year)
+                      ->where('status', '!=', 'cancelled');
+            })->whereHas('product', function ($query) use ($vendor) {
+                $query->where('id_vendor', $vendor->id);
+            })->count();
+            
+            // Count package bookings containing this vendor's products (via PackageProduct)
+            $packageBookings = BookPackage::whereHas('bookPackageAddons', function ($query) use ($date) {
+                // This tracks packages - we need to count the booking if any product in it belongs to vendor
+            })->whereMonth('created_at', $date->month)
+              ->whereYear('created_at', $date->year)
+              ->where('status', '!=', 'cancelled')
+              ->count();
+            
+            // Alternative: Get bookings through booking_id and check if booking has vendor's products
+            $bookingIds = BookProduct::whereIn('id_product', $products)
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->distinct('id_book')
+                ->pluck('id_book')
+                ->toArray();
+                
+            $vendorBookings = Booking::whereIn('id', $bookingIds)
+                ->where('status', '!=', 'cancelled')
+                ->count();
+            
+            // Count cancellations
+            $cancellations = BookProduct::whereHas('booking', function ($query) use ($date) {
+                $query->whereMonth('created_at', $date->month)
+                      ->whereYear('created_at', $date->year)
+                      ->where('status', 'cancelled');
+            })->whereHas('product', function ($query) use ($vendor) {
+                $query->where('id_vendor', $vendor->id);
+            })->count();
+            
+            $monthlyBookings[] = $vendorBookings + $productBookings;
+            $monthlyCancellations[] = $cancellations;
+            
+            // Calculate revenue (sum of completed bookings)
+            $revenue = DB::table('book_products')
+                ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
+                ->join('products', 'book_products.id_product', '=', 'products.id')
+                ->where('products.id_vendor', $vendor->id)
+                ->whereMonth('book_products.created_at', $date->month)
+                ->whereYear('book_products.created_at', $date->year)
+                ->where('bookings.status', 'completed')
+                ->sum('book_products.total_price');
+            
+            $monthlyRevenue[] = (int)$revenue;
+        }
+        
+        // Calculate total stats
+        $totalBookings = BookProduct::whereIn('id_product', $products)
+            ->whereHas('booking', function ($query) {
+                $query->where('status', '!=', 'cancelled');
+            })->count();
+        
+        $totalCancellations = BookProduct::whereIn('id_product', $products)
+            ->whereHas('booking', function ($query) {
+                $query->where('status', 'cancelled');
+            })->count();
+        
+        $totalRevenue = DB::table('book_products')
+            ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
+            ->join('products', 'book_products.id_product', '=', 'products.id')
+            ->where('products.id_vendor', $vendor->id)
+            ->where('bookings.status', 'completed')
+            ->sum('book_products.total_price');
+        
+        $activeServices = Product::where('id_vendor', $vendor->id)
+            ->where('status', 'active')
+            ->count();
+        
+        // Calculate average rating from reviews
+        $averageRating = Review::whereHas('product', function ($query) use ($vendor) {
+            $query->where('id_vendor', $vendor->id);
+        })->avg('rating') ?? 0;
+        
+        return view('vendor.dashboard', [
+            'totalBookings' => $totalBookings,
+            'totalCancellations' => $totalCancellations,
+            'totalRevenue' => $totalRevenue,
+            'activeServices' => $activeServices,
+            'averageRating' => round($averageRating, 1),
+            'monthlyBookings' => json_encode($monthlyBookings),
+            'monthlyCancellations' => json_encode($monthlyCancellations),
+            'monthlyRevenue' => json_encode($monthlyRevenue),
+            'labels' => json_encode($labels),
+        ]);
+    }
+
+    // ========== TOP-LEVEL PRODUCT & ADDON MANAGEMENT (SUPER ADMIN) ==========
+
+    // List all products across vendors (top-level)
+    public function allProducts()
+    {
+        $products = Product::with('vendor', 'category')->paginate(5);
+        return view('super_admin.products_list', compact('products'));
+    }
+
+    // Add stock (top-level) to a product
+    public function addProductStockTop(Request $request, $productId)
+    {
+        $request->validate([
+            'amount' => 'required|integer|min:1'
+        ]);
+
+        $product = Product::findOrFail($productId);
+        $amount = (int)$request->input('amount', 0);
+        $product->jumlah = ($product->jumlah ?? 0) + $amount;
+        $product->save();
+
+        return redirect()->back()->with('success', "Added {$amount} to product stock.");
+    }
+
+    // Vendor: list own products' stock and add stock
+    public function vendorStock()
+    {
+        $vendor = Auth::guard('vendor')->user();
+        $products = Product::where('id_vendor', $vendor->id)->paginate(15);
+        return view('vendor.products_stock', compact('products'));
+    }
+
+    // Vendor: add stock to own product
+    public function addProductStockVendor(Request $request, $productId)
+    {
+        $request->validate([
+            'amount' => 'required|integer|min:1'
+        ]);
+
+        $vendor = Auth::guard('vendor')->user();
+        $product = Product::where('id', $productId)->where('id_vendor', $vendor->id)->firstOrFail();
+
+        $amount = (int)$request->input('amount', 0);
+        $product->jumlah = ($product->jumlah ?? 0) + $amount;
+        $product->save();
+
+        return redirect()->back()->with('success', "Added {$amount} to product stock.");
+    }
+
+    // Show edit form for a top-level product
+    public function editProductTop($productId)
+    {
+        $product = Product::findOrFail($productId);
+        $categories = Category::all();
+        return view('super_admin.products_edit', compact('product', 'categories'));
+    }
+
+    // Update a top-level product
+    public function updateProductTop(Request $request, $productId)
+    {
+        $product = Product::findOrFail($productId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
+            'description' => 'nullable|string',
+            'location' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'basic_price' => 'required|numeric|min:0',
+            'nta' => 'nullable|numeric|min:0',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'discount_type' => 'nullable|in:fixed,percentage',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date',
+            'status' => 'required|in:available,unavailable,draft,publish',
+        ]);
+
+        $product->update([
+            'name' => $validated['name'],
+            'id_category' => $validated['category_id'],
+            'description' => $validated['description'] ?? $product->description,
+            'location' => $validated['location'] ?? $product->location,
+            'phone' => $validated['phone'] ?? $product->phone,
+            'basic_price' => $validated['basic_price'],
+            'nta' => $validated['nta'] ?? $product->nta,
+            'tax_rate' => $validated['tax_rate'] ?? $product->tax_rate,
+            'discount_type' => $validated['discount_type'] ?? $product->discount_type,
+            'discount_value' => $validated['discount_value'] ?? $product->discount_value,
+            'discount_expires_at' => $validated['discount_expires_at'] ?? $product->discount_expires_at,
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->route('super_admin.products')->with('success', 'Product updated successfully');
+    }
+
+    // Delete a top-level product
+    public function deleteProductTop($productId)
+    {
+        $product = Product::findOrFail($productId);
+
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+        if ($product->image2) {
+            Storage::disk('public')->delete($product->image2);
+        }
+        if ($product->image3) {
+            Storage::disk('public')->delete($product->image3);
+        }
+
+        $product->delete();
+
+        return redirect()->route('super_admin.products')->with('success', 'Product deleted successfully');
+    }
+
+    // List all addons across vendors (top-level)
+    public function allAddons()
+    {
+        $addons = Addon::with('vendor')->paginate(15);
+        return view('super_admin.addons_list', compact('addons'));
+    }
+
+    // Show edit form for a top-level addon
+    public function editAddonTop($addonId)
+    {
+        $addon = Addon::findOrFail($addonId);
+        return view('super_admin.addons_edit', compact('addon'));
+    }
+
+    // Update a top-level addon
+    public function updateAddonTop(Request $request, $addonId)
+    {
+        $addon = Addon::findOrFail($addonId);
+
+        $validated = $request->validate([
+            'addons' => 'required|string|max:255',
+            'location' => 'nullable|string',
+            'phone' => 'nullable|string',
+            'desc' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'discount_type' => 'nullable|in:fixed,percentage',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date',
+            'status' => 'required|in:available,unavailable,draft,publish',
+        ]);
+
+        $addon->update([
+            'addons' => $validated['addons'],
+            'location' => $validated['location'] ?? $addon->location,
+            'phone' => $validated['phone'] ?? $addon->phone,
+            'desc' => $validated['desc'] ?? $addon->desc,
+            'price' => $validated['price'],
+            'discount_type' => $validated['discount_type'] ?? $addon->discount_type,
+            'discount_value' => $validated['discount_value'] ?? $addon->discount_value,
+            'discount_expires_at' => $validated['discount_expires_at'] ?? $addon->discount_expires_at,
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->route('super_admin.addons')->with('success', 'Addon updated successfully');
+    }
+
+    // Delete a top-level addon
+    public function deleteAddonTop($addonId)
+    {
+        $addon = Addon::findOrFail($addonId);
+
+        if ($addon->image) {
+            Storage::disk('public')->delete($addon->image);
+        }
+
+        $addon->delete();
+
+        return redirect()->route('super_admin.addons')->with('success', 'Addon deleted successfully');
     }
 }

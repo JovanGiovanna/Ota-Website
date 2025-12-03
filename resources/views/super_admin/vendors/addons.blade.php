@@ -102,6 +102,12 @@ Vendor Addons Management
                                     <button onclick="openImageModal('{{ asset('storage/' . $addon->image) }}', '{{ $addon->addons }}')" class="text-blue-600 hover:text-blue-900 text-sm">View Image</button>
                                 @endif
                                 <a href="{{ route('super_admin.vendors.addons.detail', [$vendor->id, $addon->id]) }}" class="text-green-600 hover:text-green-900 text-sm">View Details</a>
+                                <a href="{{ route('super_admin.vendors.addons.edit', [$vendor->id, $addon->id]) }}" class="text-yellow-600 hover:text-yellow-900 text-sm">Edit</a>
+                                <form action="{{ route('super_admin.vendors.addons.destroy', [$vendor->id, $addon->id]) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this addon?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm">Delete</button>
+                                </form>
                             </div>
                         </td>
                     </tr>

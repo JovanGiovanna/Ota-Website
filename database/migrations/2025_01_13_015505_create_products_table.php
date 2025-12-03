@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('name', 255);
             $table->json('images')->nullable(); 
             $table->text('description'); 
+            $table->text('location'); 
+            $table->string('phone')->nullable();
 
             $table->decimal('basic_price', 10, 2); 
             $table->decimal('nta', 10, 2); 
@@ -22,6 +24,7 @@ return new class extends Migration
             
             $table->enum('discount_type', ['percentage', 'fixed'])->nullable()->comment('Tipe Diskon');
             $table->decimal('discount_value', 10, 2)->nullable()->comment('Nilai Diskon');
+            $table->decimal('discount_amount', 10, 2)->nullable()->comment('Jumlah Diskon Terhitung');
             $table->timestamp('discount_expires_at')->nullable()->comment('Kadaluarsa Diskon');
             
             $table->foreignUuid('id_category')
@@ -34,10 +37,8 @@ return new class extends Migration
                   
             $table->integer('pax'); 
             $table->integer('jumlah')->unsigned(); 
-            $table->integer('max_adults')->default(2); 
-            $table->integer('max_children')->default(1); 
             
-            $table->enum('status', ['available', 'unavailable', 'draft'])->default('available');
+            $table->enum('status', ['available', 'unavailable', 'draft' , 'publish'])->default('available');
             
             $table->timestamps();
             $table->softDeletes();

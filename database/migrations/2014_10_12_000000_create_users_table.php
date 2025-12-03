@@ -12,22 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            // PERBAIKAN: Mengganti $table->id() dengan UUID untuk konsistensi
             $table->uuid('id')->primary();
-
-            // PERBAIKAN: Menggunakan 'name' (huruf kecil)
             $table->string('name'); 
-            
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            
-            // Tidak ada kolom role, karena tabel users khusus untuk user biasa
-            
+            $table->string('password');            
             $table->rememberToken();
             $table->timestamps();
-
-            // Tambahan: Soft Deletes (opsional, tapi disarankan)
             $table->softDeletes();
         });
     }

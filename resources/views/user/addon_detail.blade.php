@@ -379,20 +379,8 @@ function toggleWishlist(type, id) {
 }
 
 function showMessage(message, type) {
-    // Create message element
-    const messageEl = document.createElement('div');
-    messageEl.className = `fixed top-4 right-4 px-6 py-3 rounded-lg font-semibold z-50 ${
-        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`;
-    messageEl.textContent = message;
-
-    // Add to page
-    document.body.appendChild(messageEl);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-        messageEl.remove();
-    }, 3000);
+    const icon = type === 'success' ? 'success' : 'error';
+    window.showToast(icon, message);
 }
 
 // Gallery Popup Functions

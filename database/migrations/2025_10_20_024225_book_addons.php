@@ -12,12 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('book_addons', function (Blueprint $table) {
-            // Kolom Primary Key (UUID)
             $table->uuid('id')->primary();
 
-            // Kolom Foreign Keys (UUID)
-            // Asumsi: tabel 'users' dan 'addons' menggunakan UUID untuk ID mereka.
-            $table->foreignUuid('id_book')   // Ini penting, relasi ke Booking
+            $table->foreignUuid('id_book')
           ->references('id')->on('bookings')
           ->onDelete('cascade');
 
@@ -29,25 +26,19 @@ return new class extends Migration
                   ->references('id')->on('addons')
                   ->onDelete('cascade');
             
-            // Kolom Waktu Reservasi
             $table->dateTime('checkin_appointment_start'); 
             $table->dateTime('checkout_appointment_end')->nullable(); 
 
-            // Kolom Kuantitas dan Harga (Memperbaiki 'amount' dari datetime ke integer/decimal)
-            $table->integer('amount')->unsigned(); // Jumlah/kuantitas addon yang dipesan
-            $table->decimal('total_price', 10, 2); // Kolom tambahan untuk total harga
+            $table->integer('amount')->unsigned(); 
+            $table->decimal('total_price', 10, 2); 
 
-            // Kolom Detail Pemesan
             $table->string('booker_name', 100);
             $table->string('booker_email')->nullable();
             $table->string('booker_telp', 20)->nullable();
-            // Kolom Pendukung Tambahan yang Umum
-            $table->string('booking_code')->unique(); // Kode unik untuk setiap pesanan
+            $table->string('booking_code')->unique(); 
             $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])
-                  ->default('pending'); // Status pesanan
-            $table->text('notes')->nullable(); // Catatan tambahan dari pemesan
-            
-            // Kolom timestamps
+                  ->default('pending');
+            $table->text('notes')->nullable();
             $table->timestamps();
 
         });

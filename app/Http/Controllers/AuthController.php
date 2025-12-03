@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Helpers\SweetAlert;
 
 class AuthController extends Controller
 {
@@ -61,23 +62,40 @@ public function index(Request $request)
     }
 
     public function registerWeb(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users',
-        'password' => 'required|string|min:6|confirmed', // pastikan form ada password_confirmation
-    ]);
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
 
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-    ]);
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-    Auth::login($user);
+        try {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
 
-    return redirect()->route('landing')->with('success', 'Registrasi berhasil, silakan login.');
-}
+            Auth::login($user);
+
+            return SweetAlert::created('Akun', route('dashboard'));
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Registrasi gagal. Silakan coba lagi.');
+            }
+            return redirect()->back()
+                ->withInput();
+        }
+    }
 
 
     public function login(Request $request)
@@ -118,14 +136,13 @@ public function index(Request $request)
         return view('auth.register');
     }
     public function logout(Request $request)
-{
-    Auth::logout(); // keluarin user dari session
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-    $request->session()->invalidate(); // invalidate session
-    $request->session()->regenerateToken(); // regenerate CSRF token
-
-    return redirect()->route('login'); // langsung balik ke login
-}
+        return SweetAlert::success('Anda telah logout', route('login'));
+    }
 
     // --- Logout User (API/JSON) ---
 
@@ -143,27 +160,63 @@ public function index(Request $request)
     }
 
 
-   public function loginWeb(Request $request)
+public function loginWeb(Request $request)
 {
-    $credentials = $request->only('email', 'password');
+    $validator = Validator::make($request->all(), [
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-    if (Auth::attempt($credentials)) {
-        $request->session()->regenerate();
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Mohon periksa email dan password Anda');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        $user = Auth::user();
+    try {
+        $credentials = $request->only('email', 'password');
+        $remember = $request->boolean('remember');
 
-        // User biasa ke dashboard
-        return redirect()->route('user.dashboard');
-    }
+        if (Auth::guard('super_admin')->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            return SweetAlert::success('Login berhasil!', '/super-admin/dashboard');
+        }
 
-    return back()->withErrors([
-        'email' => 'Email atau password salah.',
-    ])->withInput();
+        if (Auth::guard('admin')->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            return SweetAlert::success('Login berhasil!', '/admin/dashboard');
+        }
+
+        if (Auth::guard('vendor')->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            return SweetAlert::success('Login berhasil!', '/vendor/dashboard');
+        }
+
+        if (Auth::guard('web')->attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            return SweetAlert::success('Login berhasil!', route('dashboard'));
+        }
+
+        if (function_exists('alert')) {
+            alert()->error('Error', 'Email atau password salah');
+        }
+        return redirect()->back()
+            ->withInput();
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Terjadi kesalahan. Silakan coba lagi.');
+            }
+            return redirect()->back()
+                ->withInput();
+        }
 }
 
     public function updateProfile(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . Auth::id(),
             'phone' => 'nullable|string|max:20',
@@ -171,36 +224,112 @@ public function index(Request $request)
             'address' => 'nullable|string|max:500',
         ]);
 
-        $user = Auth::user();
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'dob' => $request->dob,
-            'address' => $request->address,
-        ]);
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'title' => 'Validation Error',
+                    'message' => SweetAlertHelper::getValidationErrors($validator),
+                    'icon' => 'error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
 
-        return redirect()->back()->with('success', 'Profile updated successfully.');
+        try {
+            $user = Auth::user();
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'dob' => $request->dob,
+                'address' => $request->address,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'title' => 'Success!',
+                    'message' => 'Profile updated successfully.',
+                    'icon' => 'success'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Profile updated successfully.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'title' => 'Update Failed',
+                    'message' => 'An error occurred while updating profile.',
+                    'icon' => 'error'
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'An error occurred while updating profile.');
+        }
     }
 
     public function changePassword(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'current_password' => 'required|string',
             'password' => 'required|string|min:6|confirmed',
         ]);
 
-        $user = Auth::user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'title' => 'Validation Error',
+                    'message' => SweetAlertHelper::getValidationErrors($validator),
+                    'icon' => 'error',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
+        try {
+            $user = Auth::user();
 
-        return redirect()->back()->with('success', 'Password changed successfully.');
+            if (!Hash::check($request->current_password, $user->password)) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'title' => 'Invalid Password',
+                        'message' => 'Current password is incorrect.',
+                        'icon' => 'error'
+                    ], 422);
+                }
+                return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
+            }
+
+            $user->update([
+                'password' => Hash::make($request->password),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'title' => 'Success!',
+                    'message' => 'Password changed successfully.',
+                    'icon' => 'success'
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Password changed successfully.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'title' => 'Error',
+                    'message' => 'An error occurred while changing password.',
+                    'icon' => 'error'
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'An error occurred while changing password.');
+        }
     }
 
 

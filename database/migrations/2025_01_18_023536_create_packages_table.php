@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('name_package', 255);
             $table->string('slug')->unique(); 
             $table->text('description')->nullable();
-            $table->json('images')->nullable();      
+            $table->json('images')->nullable();
+            $table->text('location');
+            $table->string('phone');
             $table->decimal('nta', 15, 2); 
             $table->json('products_data')->nullable(); 
             $table->json('addons_data')->nullable();

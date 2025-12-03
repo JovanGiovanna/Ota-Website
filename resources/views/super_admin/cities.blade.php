@@ -41,7 +41,7 @@ Cities Management
                         </div>
                         <div class="flex items-center space-x-2">
                             <a href="{{ route('super_admin.cities.edit', $city) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">Edit</a>
-                            <form action="{{ route('super_admin.cities.destroy', $city) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this city?')">
+                            <form action="{{ route('super_admin.cities.destroy', $city) }}" method="POST" class="inline" data-delete-item="city: {{ $city->name }}" onsubmit="return confirmDeleteAction(this)">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>

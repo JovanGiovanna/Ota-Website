@@ -112,9 +112,9 @@
                     </div>
                 </div>
 
-                {{-- Price (Pax Paid) - Harga Jual Per Pax Final --}}
+                {{-- Total Price (Gross) --}}
                 <div class="space-y-2">
-                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Price (Pax Paid) - Harga Jual Per Pax Final</label>
+                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Total Price (Gross) - Total Harga Paket (NTA + Upsale - Diskon)</label>
                     <div class="relative rounded-lg shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">Rp</span>
@@ -122,44 +122,97 @@
                         {{-- Input field disesuaikan dengan 'pax_paid_input' --}}
                         <input type="number" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', $package->pax_paid) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('pax_paid_input') border-red-500 @enderror">
                     </div>
-                    <p class="text-xs text-gray-500">Harga ini dihitung dari Total Harga Pokok (NTA) dibagi total Pax, namun dapat diubah secara manual.</p>
+                    <p class="text-xs text-gray-500">Nilai ini menyimpan total harga paket (NTA + Upsale - Diskon). Untuk mendapatkan harga per orang, bagi nilai ini dengan total Pax.</p>
                     @error('pax_paid_input')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Tax Rate --}}
+                {{-- Upsale --}}
                 <div class="space-y-2">
-                    <label for="tax_rate" class="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
+                    <label for="upsale" class="block text-sm font-medium text-gray-700">Upsale (Fixed Amount)</label>
                     <div class="relative rounded-lg shadow-sm">
-                        <input type="number" name="tax_rate" id="tax_rate" value="{{ old('tax_rate', $package->tax_rate ?? 0) }}" step="0.01" min="0" max="100" placeholder="0.00" class="w-full pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('tax_rate') border-red-500 @enderror">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500 sm:text-sm">%</span>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">Rp</span>
                         </div>
+                        <input type="number" name="upsale" id="upsale" value="{{ old('upsale', $package->upsale ?? 0) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('upsale') border-red-500 @enderror">
                     </div>
-                    <p class="text-xs text-gray-500">Persentase pajak yang akan diterapkan pada harga paket (0-100%).</p>
-                    @error('tax_rate')
+                    <p class="text-xs text-gray-500">Nilai tambahan tetap (dalam Rupiah) yang akan ditambahkan ke NTA.</p>
+                    @error('upsale')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Tax Amount - Display --}}
+                {{-- Total Price with Upsale - Display --}}
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Tax Amount</label>
-                    <div class="p-3 bg-orange-100 border border-orange-400 rounded-lg">
-                        <span class="text-lg font-bold text-orange-700" id="tax_amount_display">Rp{{ number_format(($package->nta * ($package->tax_rate ?? 0) / 100), 0, ',', '.') }}</span>
-                        {{-- Input hidden tax_amount --}}
-                        <input type="hidden" name="tax_amount" id="tax_amount" value="{{ old('tax_amount', $package->nta * ($package->tax_rate ?? 0) / 100) }}">
+                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Upsale)</label>
+                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
+                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp{{ number_format($package->nta + ($package->upsale ?? 0), 0, ',', '.') }}</span>
+                        {{-- Input hidden total_price --}}
+                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', $package->nta + ($package->upsale ?? 0)) }}">
                     </div>
                 </div>
 
-                {{-- Total Price - Display --}}
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Tax)</label>
-                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
-                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp{{ number_format($package->nta + ($package->nta * ($package->tax_rate ?? 0) / 100), 0, ',', '.') }}</span>
-                        {{-- Input hidden total_price --}}
-                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', $package->nta + ($package->nta * ($package->tax_rate ?? 0) / 100)) }}">
+                {{-- DISCOUNT SECTION --}}
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Discount</h3>
+                    
+                    <div class="space-y-4">
+                        {{-- Discount Type --}}
+                        <div class="space-y-2">
+                            <label for="discount_type" class="block text-sm font-medium text-gray-700">Discount Type</label>
+                            <select name="discount_type" id="discount_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('discount_type') border-red-500 @enderror">
+                                <option value="">No Discount</option>
+                                <option value="percentage" {{ old('discount_type', $package->discount_type) == 'percentage' ? 'selected' : '' }}>Percentage (%)</option>
+                                <option value="fixed" {{ old('discount_type', $package->discount_type) == 'fixed' ? 'selected' : '' }}>Fixed Amount (Rp)</option>
+                            </select>
+                            @error('discount_type')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Discount Value --}}
+                        <div class="space-y-2">
+                            <label for="discount_value" class="block text-sm font-medium text-gray-700">Discount Value</label>
+                            <div class="relative rounded-lg shadow-sm">
+                                <input type="number" name="discount_value" id="discount_value" value="{{ old('discount_value', $package->discount_value) }}" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('discount_value') border-red-500 @enderror" {{ $package->discount_type ? '' : 'disabled' }}>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm" id="discount_unit">{{ $package->discount_type === 'percentage' ? '%' : ($package->discount_type === 'fixed' ? 'Rp' : '-') }}</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500">Enter the discount percentage or fixed amount.</p>
+                            @error('discount_value')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Discount Amount - Display --}}
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Discount Amount</label>
+                            <div class="p-3 bg-red-100 border border-red-400 rounded-lg">
+                                <span class="text-lg font-bold text-red-700" id="discount_amount_display">Rp{{ number_format($package->discount_amount ?? 0, 0, ',', '.') }}</span>
+                                <input type="hidden" name="discount_amount" id="discount_amount" value="{{ old('discount_amount', $package->discount_amount) }}">
+                            </div>
+                        </div>
+
+                        {{-- Final Total Price (After Discount) - Display --}}
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Final Total Price (After Discount)</label>
+                            <div class="p-3 bg-blue-100 border border-blue-400 rounded-lg">
+                                <span class="text-lg font-bold text-blue-700" id="final_total_price_display">Rp{{ number_format(($package->nta + ($package->upsale ?? 0)) - ($package->discount_amount ?? 0), 0, ',', '.') }}</span>
+                                <input type="hidden" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', ($package->nta + ($package->upsale ?? 0)) - ($package->discount_amount ?? 0)) }}">
+                            </div>
+                        </div>
+
+                        {{-- Discount Expires At --}}
+                        <div class="space-y-2">
+                            <label for="discount_expires_at" class="block text-sm font-medium text-gray-700">Discount Expires At (Optional)</label>
+                            <input type="datetime-local" name="discount_expires_at" id="discount_expires_at" value="{{ old('discount_expires_at', $package->discount_expires_at ? \Carbon\Carbon::parse($package->discount_expires_at)->format('Y-m-d\TH:i') : '') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('discount_expires_at') border-red-500 @enderror">
+                            <p class="text-xs text-gray-500">Leave empty if discount never expires.</p>
+                            @error('discount_expires_at')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 </div>
 
@@ -338,21 +391,37 @@
         document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
         document.getElementById('nta').value = totalNTA;
 
-        // 3. Hitung Tax Amount dan Total Price
-        const taxRateInput = document.getElementById('tax_rate');
-        const taxRate = parseFloat(taxRateInput.value) || 0;
-        const taxAmount = totalNTA * taxRate / 100;
-        const totalPrice = totalNTA + taxAmount;
-
-        // Update tax_amount display dan hidden
-        document.getElementById('tax_amount_display').textContent = formatRupiah(taxAmount);
-        document.getElementById('tax_amount').value = taxAmount;
+        // 3. Calculate Upsale dan Total Price
+        const upsaleInput = document.getElementById('upsale');
+        const upsale = parseFloat(upsaleInput.value) || 0;
+        const totalPrice = totalNTA + upsale;
 
         // Update total_price display dan hidden
         document.getElementById('total_price_display').textContent = formatRupiah(totalPrice);
         document.getElementById('total_price').value = totalPrice;
 
-        // 4. Hitung Harga Jual Per Pax (Pax Paid)
+        // 4. Calculate Discount
+        const discountTypeSelect = document.getElementById('discount_type');
+        const discountValueInput = document.getElementById('discount_value');
+        const discountType = discountTypeSelect.value;
+        const discountValue = parseFloat(discountValueInput.value) || 0;
+
+        let discountAmount = 0;
+        if (discountType === 'percentage' && discountValue > 0) {
+            discountAmount = (totalPrice * discountValue) / 100;
+        } else if (discountType === 'fixed' && discountValue > 0) {
+            discountAmount = discountValue;
+        }
+
+        document.getElementById('discount_amount_display').textContent = formatRupiah(discountAmount);
+        document.getElementById('discount_amount').value = discountAmount;
+
+        // 5. Calculate Final Total Price (after discount)
+        const finalTotalPrice = totalPrice - discountAmount;
+        document.getElementById('final_total_price_display').textContent = formatRupiah(finalTotalPrice);
+        document.getElementById('pax_paid_input').value = finalTotalPrice > 0 ? finalTotalPrice : 0;
+
+        // 6. Hitung Harga Jual Per Pax (Pax Paid)
         const paxPaidInput = document.getElementById('pax_paid_input');
         const currentPaxPaidValue = parseInt(paxPaidInput.value) || 0;
 
@@ -442,8 +511,35 @@
 
         // --- 4. TAX RATE LOGIC ---
         const taxRateInput = document.getElementById('tax_rate');
-        taxRateInput.addEventListener('input', function() {
-            calculatePrice(); // Recalculate when tax rate changes
+        // --- 5. UPSALE LOGIC ---
+        const upsaleInput = document.getElementById('upsale');
+        upsaleInput.addEventListener('input', function() {
+            calculatePrice(); // Recalculate when upsale changes
+        });
+
+        // --- 6. DISCOUNT LOGIC ---
+        const discountTypeSelect = document.getElementById('discount_type');
+        const discountValueInput = document.getElementById('discount_value');
+        const discountUnitSpan = document.getElementById('discount_unit');
+
+        // Update discount input state based on discount type
+        discountTypeSelect.addEventListener('change', function() {
+            if (this.value) {
+                discountValueInput.disabled = false;
+                discountUnitSpan.textContent = this.value === 'percentage' ? '%' : 'Rp';
+            } else {
+                discountValueInput.disabled = true;
+                discountValueInput.value = '';
+                discountUnitSpan.textContent = '-';
+                discountValueInput.dataset.manualEdit = 'false';
+            }
+            calculatePrice();
+        });
+
+        // Calculate discount when value changes
+        discountValueInput.addEventListener('input', function() {
+            this.dataset.manualEdit = 'true';
+            calculatePrice();
         });
 
         // Hitung harga saat halaman dimuat

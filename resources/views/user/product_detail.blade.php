@@ -154,12 +154,12 @@ Product Details
                     <span class="font-semibold text-gray-800">{{ $product->jumlah }}</span>
                 </div>
                 <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Max Adults</span>
-                    <span class="font-semibold text-gray-800">{{ $product->max_adults }}</span>
+                    <span class="text-gray-600">Location</span>
+                    <span class="font-semibold text-gray-800">{{ $product->location ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Max Children</span>
-                    <span class="font-semibold text-gray-800">{{ $product->max_children }}</span>
+                    <span class="text-gray-600">Phone</span>
+                    <span class="font-semibold text-gray-800">{{ $product->phone ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between items-center py-3 border-b border-gray-100">
                     <span class="text-gray-600">Status</span>
@@ -398,20 +398,8 @@ function toggleWishlist(type, id) {
 }
 
 function showMessage(message, type) {
-    // Create message element
-    const messageEl = document.createElement('div');
-    messageEl.className = `fixed top-4 right-4 px-6 py-3 rounded-lg font-semibold z-50 ${
-        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`;
-    messageEl.textContent = message;
-
-    // Add to page
-    document.body.appendChild(messageEl);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-        messageEl.remove();
-    }, 3000);
+    const icon = type === 'success' ? 'success' : 'error';
+    window.showToast(icon, message);
 }
 
 // Gallery Popup Functions

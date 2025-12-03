@@ -59,14 +59,27 @@ class CategoryController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            // Use realrashid/sweet-alert facade helper if available
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
         try {
             Category::create($validator->validated());
-            return redirect()->route('super_admin.types_categories')->with('success', 'Kategori berhasil ditambahkan.');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Category created successfully');
+            }
+            return redirect()->route('super_admin.types_categories');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan kategori: ' . $e->getMessage())->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Category creation failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
         }
     }
 
@@ -104,14 +117,26 @@ class CategoryController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
         try {
             $category->update($validator->validated());
-            return redirect()->route('super_admin.types_categories')->with('success', 'Kategori berhasil diperbarui!');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Category updated successfully');
+            }
+            return redirect()->route('super_admin.types_categories');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memperbarui kategori: ' . $e->getMessage())->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Category update failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
         }
     }
 
@@ -125,9 +150,15 @@ class CategoryController extends Controller
     {
         try {
             $category->delete();
-            return redirect()->route('super_admin.types_categories')->with('success', 'Kategori berhasil dihapus!');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Category deleted successfully');
+            }
+            return redirect()->route('super_admin.types_categories');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus kategori. Pastikan tidak ada data lain yang terkait: ' . $e->getMessage());
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Category deletion failed: ' . $e->getMessage());
+            }
+            return redirect()->back();
         }
     }
 }

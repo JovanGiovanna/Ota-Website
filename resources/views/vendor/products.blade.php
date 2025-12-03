@@ -78,14 +78,14 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                         Tax: {{ number_format($product->tax_rate ?? 0, 2, ',', '.') }}%
                                     </div>
                                 </td>
-                                {{-- KOLOM DISKON BARU (Menampilkan Rupiah Diskon Final) --}}
+                                {{-- KOLOM DISKON BARU (Menampilkan Rupiah Diskon Terhitung) --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    @if(($product->discount_value ?? 0) > 0)
+                                    @if(($product->discount_amount ?? 0) > 0)
                                         <span class="text-red-600 font-semibold">
-                                            - Rp {{ number_format($product->discount_value, 0, ',', '.') }}
+                                            - Rp {{ number_format($product->discount_amount, 0, ',', '.') }}
                                         </span>
                                         <div class="text-xs text-gray-500">
-                                            ({{ $product->discount_type === 'percentage' ? number_format($product->discount_value, 2) . '%' : 'Fixed' }})
+                                            ({{ $product->discount_type === 'percentage' ? $product->discount_value . '%' : 'Fixed' }})
                                         </div>
                                     @else
                                         <span class="text-gray-500">None</span>

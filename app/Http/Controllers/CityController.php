@@ -39,31 +39,72 @@ class CityController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'id_province' => 'required|exists:province,id',
             'name' => 'required|string|max:100',
         ]);
 
-        City::create($request->only(['id_province', 'name']));
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        return redirect()->route('super_admin.cities')->with('success', 'City created successfully');
+        try {
+            City::create($request->only(['id_province', 'name']));
+            if (function_exists('alert')) {
+                alert()->success('Success', 'City created successfully');
+            }
+            return redirect()->route('super_admin.cities');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'City creation failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function update(Request $request, $id)
     {
         $city = City::find($id);
         if (!$city) {
-            return redirect()->route('super_admin.cities')->with('error', 'City not found');
+            if (function_exists('alert')) {
+                alert()->error('Error', 'City not found');
+            }
+            return redirect()->route('super_admin.cities');
         }
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'id_province' => 'required|exists:province,id',
             'name' => 'required|string|max:100',
         ]);
 
-        $city->update($request->only(['id_province', 'name']));
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        return redirect()->route('super_admin.cities')->with('success', 'City updated successfully');
+        try {
+            $city->update($request->only(['id_province', 'name']));
+            if (function_exists('alert')) {
+                alert()->success('Success', 'City updated successfully');
+            }
+            return redirect()->route('super_admin.cities');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'City update failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function edit($id)
@@ -79,12 +120,25 @@ class CityController extends Controller
 
     public function destroy($id)
     {
-        $city = City::find($id);
-        if (!$city) {
-            return redirect()->route('super_admin.cities')->with('error', 'City not found');
-        }
+        try {
+            $city = City::find($id);
+            if (!$city) {
+                if (function_exists('alert')) {
+                    alert()->error('Error', 'City not found');
+                }
+                return redirect()->route('super_admin.cities');
+            }
 
-        $city->delete();
-        return redirect()->route('super_admin.cities')->with('success', 'City deleted successfully');
+            $city->delete();
+            if (function_exists('alert')) {
+                alert()->success('Success', 'City deleted successfully');
+            }
+            return redirect()->route('super_admin.cities');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'City deletion failed: ' . $e->getMessage());
+            }
+            return redirect()->back();
+        }
     }
 }

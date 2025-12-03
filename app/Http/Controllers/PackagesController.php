@@ -33,8 +33,8 @@ class PackagesController extends Controller
      */
     public function create()
     {
-        $products = Product::all();
-        $addons = Addon::all();
+        $products = Product::paginate(5);
+        $addons = Addon::paginate(5);
         return view('super_admin.packages.create', compact('products', 'addons'));
     }
 
@@ -51,9 +51,13 @@ class PackagesController extends Controller
             'description' => 'nullable|string',
             'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'pax_paid_input' => 'nullable|numeric|min:0',
-            'nta' => 'required|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'upsale' => 'nullable|numeric|min:0',
+            'location' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20', 
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date_format:Y-m-d\TH:i',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
             'is_active' => 'required|boolean',
@@ -127,10 +131,11 @@ class PackagesController extends Controller
                 ];
             }
 
-            $totalPricePublishCalculated = $totalNTA;
-            $paxPaidCalculated = ($totalPax > 0) ? $totalPricePublishCalculated / $totalPax : $totalPricePublishCalculated;
-            $finalNTA = $data['nta'];
-            $finalPaxPaid = $data['pax_paid_input'] ?? $paxPaidCalculated;
+            $upsaleValue = $data['upsale'] ?? 0;
+            $discountAmount = $data['discount_amount'] ?? 0;
+            $finalNTA = $totalNTA;
+
+            $grossTotal = $totalNTA + $upsaleValue - $discountAmount;
 
             // Generate unique slug
             $slug = Str::slug($data['name_package']);
@@ -146,9 +151,15 @@ class PackagesController extends Controller
                 'slug' => $slug,
                 'description' => $data['description'],
                 'images' => $uploadedImagePaths,
+                'location' => $data['location'] ?? null,
+                'phone' => $data['phone'] ?? null,
                 'nta' => $finalNTA,
-                'pax_paid' => round($finalPaxPaid, 2),
-                'tax_rate' => $data['tax_rate'] ?? 0,
+                'pax_paid' => round($grossTotal, 2),
+                'upsale' => $data['upsale'] ?? 0,
+                'discount_type' => $data['discount_type'] ?? null,
+                'discount_value' => $data['discount_value'] ?? null,
+                'discount_amount' => $data['discount_amount'] ?? null,
+                'discount_expires_at' => $data['discount_expires_at'] ?? null,
                 'start_publish' => $data['start_publish'],
                 'end_publish' => $data['end_publish'] ?? null,
                 'is_active' => $data['is_active'],
@@ -246,9 +257,12 @@ class PackagesController extends Controller
             'description' => 'nullable|string',
             'images' => 'nullable|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'pax_paid_input' => 'nullable|numeric|min:0',
             'nta' => 'required|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'upsale' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|in:percentage,fixed',
+            'discount_value' => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_expires_at' => 'nullable|date_format:Y-m-d\TH:i',
             'start_publish' => 'required|date',
             'end_publish' => 'nullable|date|after_or_equal:start_publish',
             'is_active' => 'required|boolean',
@@ -313,17 +327,26 @@ class PackagesController extends Controller
                 ];
             }
 
-            $totalPricePublishCalculated = $totalNTA;
-            $paxPaidCalculated = ($totalPax > 0) ? $totalPricePublishCalculated / $totalPax : $totalPricePublishCalculated;
+            // Compute gross total and store pax_paid as TOTAL gross (NTA + upsale - discount)
+            $upsaleValue = $data['upsale'] ?? 0;
+            $discountAmount = $data['discount_amount'] ?? 0;
             $finalNTA = $data['nta'];
-            $finalPaxPaid = $data['pax_paid_input'] ?? $paxPaidCalculated;
+            $grossTotal = $totalNTA + $upsaleValue - $discountAmount;
+            $finalPaxPaid = $data['pax_paid_input'] ?? $grossTotal;
+            if ($finalPaxPaid < 0) {
+                $finalPaxPaid = 0;
+            }
 
             $packageData = [
                 'name_package' => $data['name_package'],
                 'description' => $data['description'],
                 'nta' => $finalNTA,
                 'pax_paid' => round($finalPaxPaid, 2),
-                'tax_rate' => $data['tax_rate'] ?? 0,
+                'upsale' => $data['upsale'] ?? 0,
+                'discount_type' => $data['discount_type'] ?? null,
+                'discount_value' => $data['discount_value'] ?? null,
+                'discount_amount' => $data['discount_amount'] ?? null,
+                'discount_expires_at' => $data['discount_expires_at'] ?? null,
                 'start_publish' => $data['start_publish'],
                 'end_publish' => $data['end_publish'] ?? null,
                 'is_active' => $data['is_active'],

@@ -414,20 +414,28 @@ public function transactionProducts()
     }
 
     /**
-     * Index method for rekon
+     * Index method for rekon - Filter by completed status, date range, and vendor
+     * Display profit-only chart, ordered by newest first
      */
     public function rekon()
     {
         // Get filter parameters
         $search = request('search');
-        $status = request('status');
-        $period = request('period');
+        $vendorId = request('vendor_id');
+        $dateFrom = request('date_from');
+        $dateTo = request('date_to');
 
-        // Prepare an array to collect all booking records (products, packages, addons)
+        // Get all vendors for filter dropdown
+        $vendors = \App\Models\Vendor::pluck('name', 'id')->toArray();
+
+        // Prepare an array to collect all booking records (products, addons only - no packages for now)
         $rekonDetails = [];
 
-        // Fetch bookProducts with booking and product relations
-        $bookProducts = \App\Models\BookProduct::with(['booking', 'product'])
+        // Fetch bookProducts with booking and product relations (completed status only)
+        $bookProducts = \App\Models\BookProduct::with(['booking', 'product', 'product.vendor'])
+            ->whereHas('booking', function ($q) {
+                $q->where('status', 'completed');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -436,7 +444,7 @@ public function transactionProducts()
             $product = $bookProduct->product;
 
             if (!$product || !$booking) {
-                continue; // Skip if no product or booking linked
+                continue;
             }
 
             $basicPrice = $product->basic_price ?? 0;
@@ -474,77 +482,28 @@ public function transactionProducts()
             // Profit = total paid - total nta
             $profit = $totalPaid - $totalNta;
 
-            $rekonDetails[] = (object) [                                                                                                                                                                                                                                                                                                                                                                                                        
-                'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
-                'date' => $booking->created_at,
-                'product_name' => $product->name . ' (Product)',
-                'basic_price' => $basicPrice,
-                'tax' => $taxAmount,
-                'discount' => $discountAmount,
-                'nta' => $totalNta,
-                'pax_paid' => $totalPaid,
-                'profit' => $profit,
-                'status' => $booking->status
-            ];
-        }
-
-        // Fetch bookPackages with booking and package relations
-        $bookPackages = \App\Models\BookPackage::with(['booking', 'package'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        foreach ($bookPackages as $bookPackage) {
-            $booking = $bookPackage->booking;
-            $package = $bookPackage->package;
-
-            if (!$package || !$booking) {
-                continue; // Skip if no package or booking linked
-            }
-
-            // Get pax count from booking
-            $paxCount = ($booking->adults ?? 0) + ($booking->children ?? 0) ?: 1;
-
-            // For packages, basic price is pax_paid (selling price per pax)
-            $basicPrice = $package->pax_paid ?? 0;
-
-            // Calculate tax amount based on package's tax_rate (per pax)
-            $taxRate = $package->tax_rate ?? 0;
-            $taxAmount = $basicPrice * ($taxRate / 100);
-
-            // Packages have no discount in model
-            $discountAmount = 0;
-
-            // NTA is the total cost to vendor for the package, so per pax = total NTA / paxCount
-            $ntaPerUnit = $paxCount > 0 ? ($package->nta ?? 0) / $paxCount : 0;
-
-            // Final price is pax_paid (per pax)
-            $finalPrice = $basicPrice;
-
-            // Total paid
-            $totalPaid = $paxCount * $finalPrice;
-
-            // Total NTA
-            $totalNta = $paxCount * $ntaPerUnit;
-
-            // Profit = total paid - total nta
-            $profit = $totalPaid - $totalNta;
-
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
                 'date' => $booking->created_at,
-                'product_name' => $package->name_package . ' (Package)',
+                'product_name' => $product->name . ' (Product)',
+                'vendor_id' => $product->id_vendor,
+                'vendor_name' => $product->vendor->name ?? 'Unknown',
                 'basic_price' => $basicPrice,
                 'tax' => $taxAmount,
                 'discount' => $discountAmount,
                 'nta' => $totalNta,
                 'pax_paid' => $totalPaid,
                 'profit' => $profit,
-                'status' => $booking->status
+                'status' => $booking->status,
+                'type' => 'product'
             ];
         }
 
-        // Fetch bookAddons with booking and addon relations
-        $bookAddons = \App\Models\BookAddon::with(['booking', 'addon'])
+        // Fetch bookAddons with booking and addon relations (completed status only)
+        $bookAddons = \App\Models\BookAddon::with(['booking', 'addon', 'addon.vendor'])
+            ->whereHas('booking', function ($q) {
+                $q->where('status', 'completed');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -553,7 +512,7 @@ public function transactionProducts()
             $addon = $bookAddon->addon;
 
             if (!$addon || !$booking) {
-                continue; // Skip if no addon or booking linked
+                continue;
             }
 
             $basicPrice = $addon->basic_price ?? 0;
@@ -595,20 +554,23 @@ public function transactionProducts()
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
                 'date' => $booking->created_at,
                 'product_name' => $addon->addons . ' (Addon)',
+                'vendor_id' => $addon->id_vendor,
+                'vendor_name' => $addon->vendor->name ?? 'Unknown',
                 'basic_price' => $basicPrice,
                 'tax' => $taxAmount,
                 'discount' => $discountAmount,
                 'nta' => $totalNta,
                 'pax_paid' => $totalPaid,
                 'profit' => $profit,
-                'status' => $booking->status
+                'status' => $booking->status,
+                'type' => 'addon'
             ];
         }
 
         // Apply filters
         $rekonDetailsCollection = collect($rekonDetails);
 
-        // Search filter
+        // Search filter (transaction ID or product name)
         if ($search) {
             $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($search) {
                 return str_contains(strtolower($detail->product_name), strtolower($search)) ||
@@ -616,56 +578,24 @@ public function transactionProducts()
             });
         }
 
-        // Status filter
-        if ($status) {
-            $statusMap = [
-                'matched' => 'completed',
-                'unmatched' => 'cancelled',
-                'pending' => ['confirmed', 'pending']
-            ];
-
-            if (isset($statusMap[$status])) {
-                $targetStatus = $statusMap[$status];
-                if (is_array($targetStatus)) {
-                    $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($targetStatus) {
-                        return in_array($detail->status, $targetStatus);
-                    });
-                } else {
-                    $rekonDetailsCollection = $rekonDetailsCollection->where('status', $targetStatus);
-                }
-            }
+        // Vendor filter
+        if ($vendorId) {
+            $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($vendorId) {
+                return $detail->vendor_id === $vendorId;
+            });
         }
 
-        // Period filter
-        if ($period) {
-            $now = now();
-            $startDate = null;
-            $endDate = null;
-
-            switch ($period) {
-                case 'today':
-                    $startDate = $now->startOfDay();
-                    $endDate = $now->endOfDay();
-                    break;
-                case 'week':
-                    $startDate = $now->startOfWeek();
-                    $endDate = $now->endOfWeek();
-                    break;
-                case 'month':
-                    $startDate = $now->startOfMonth();
-                    $endDate = $now->endOfMonth();
-                    break;
-            }
-
-            if ($startDate && $endDate) {
-                $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($startDate, $endDate) {
-                    $detailDate = \Carbon\Carbon::parse($detail->date);
-                    return $detailDate->between($startDate, $endDate);
-                });
-            }
+        // Date range filter
+        if ($dateFrom && $dateTo) {
+            $startDate = \Carbon\Carbon::parse($dateFrom)->startOfDay();
+            $endDate = \Carbon\Carbon::parse($dateTo)->endOfDay();
+            $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($startDate, $endDate) {
+                $detailDate = \Carbon\Carbon::parse($detail->date);
+                return $detailDate->between($startDate, $endDate);
+            });
         }
 
-        // Sort all records by date descending
+        // Sort all records by date descending (newest first)
         $rekonDetails = $rekonDetailsCollection->sortByDesc('date')->values()->all();
 
         // Paginate the combined rekonDetails array
@@ -683,18 +613,37 @@ public function transactionProducts()
             ['path' => request()->url(), 'pageName' => 'page']
         );
 
-        // Calculate summary stats for bookings (not for details)
-        $totalRevenue = \App\Models\Booking::where('status', 'completed')->sum('total_price');
+        // Calculate profit chart data for last 6 months (completed only)
+        $monthlyProfit = [];
+        $labels = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->format('M');
+            $labels[] = $month;
+
+            $profit = collect($rekonDetails)->filter(function ($detail) use ($date) {
+                $detailDate = \Carbon\Carbon::parse($detail->date);
+                return $detailDate->month === $date->month && $detailDate->year === $date->year;
+            })->sum('profit');
+
+            $monthlyProfit[] = (int)$profit;
+        }
+
+        // Calculate summary stats (completed status only)
+        $totalProfit = collect($rekonDetails)->sum('profit');
         $completedTransactions = \App\Models\Booking::where('status', 'completed')->count();
-        $pendingReconciliation = \App\Models\Booking::where('status', '!=', 'completed')->count();
-        $discrepancies = \App\Models\Booking::where('status', 'cancelled')->count();
+        $totalRevenue = \App\Models\Booking::where('status', 'completed')->sum('total_price');
+        $avgProfit = $completedTransactions > 0 ? $totalProfit / $completedTransactions : 0;
 
         return view('super_admin.rekon', compact(
             'rekonDetailsPaginated',
-            'totalRevenue',
+            'vendors',
+            'totalProfit',
             'completedTransactions',
-            'pendingReconciliation',
-            'discrepancies'
+            'totalRevenue',
+            'avgProfit',
+            'monthlyProfit',
+            'labels'
         ));
     }
 }

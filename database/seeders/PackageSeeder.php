@@ -81,7 +81,8 @@ class PackageSeeder extends Seeder
             [
                 'name_package' => 'Comfort Travel Kit Plus',
                 'description' => 'Kombinasi bantal dan masker mata untuk perjalanan jarak jauh yang super nyaman. Harga dihitung dari NTA.',
-                
+                'location' => 'Jakarta',
+                'phone' => '021-1234567',
                 'nta' => $nta1, 
                 'pax_paid' => $paxPaid1, 
                 'start_publish' => now()->subDay(),
@@ -111,10 +112,10 @@ class PackageSeeder extends Seeder
             [
                 'name_package' => 'Ultimate Relaxation Bundle',
                 'description' => 'Sesi spa mewah ditambah bantal leher untuk pengalaman relaksasi total. Harga dihitung dari NTA.',
-                
+                'location' => 'Surabaya',
+                'phone' => '031-9876543',
                 'nta' => $nta2, 
                 'pax_paid' => $paxPaid2, 
-                
                 'start_publish' => now()->subWeek(),
                 'end_publish' => now()->addYear(),
                 'is_active' => true,
@@ -141,10 +142,10 @@ class PackageSeeder extends Seeder
             [
                 'name_package' => 'VIP Commute Experience',
                 'description' => 'Layanan bus premium dengan jaminan peningkatan kursi (seat upgrade) untuk kenyamanan maksimal. Harga dihitung dari NTA.',
-                
+                'location' => 'Bandung',
+                'phone' => '022-5555555',
                 'nta' => $nta3, 
                 'pax_paid' => $paxPaid3, 
-                
                 'start_publish' => now(),
                 'end_publish' => now()->addMonths(3),
                 'is_active' => true,

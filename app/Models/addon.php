@@ -23,24 +23,26 @@ class Addon extends Model
         'desc',
         'status',
         'basic_price', 
-        'nta',         
-        'tax_rate',
+        'nta',
+        'upsale',
         'discount_type',
         'discount_value',
+        'discount_amount',
         'discount_expires_at',    
         'pax',
-        'publish',
+        'location',
+        'phone',
         'images', 
     ];
 
     protected $casts = [
         'basic_price' => 'decimal:2', 
         'nta' => 'decimal:2',         
-        'tax_rate' => 'decimal:2',
-        'discount_value' => 'decimal:2', 
+        'upsale' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2', 
         'discount_expires_at' => 'datetime',    
         'pax' => 'integer',
-        'publish' => 'boolean',
         'deleted_at' => 'datetime',
         'images' => 'array',
     ];
@@ -60,25 +62,59 @@ class Addon extends Model
 
     public function getFinalPriceAttribute(): float
     {
-        $price = $this->basic_price; 
-        
+        $nta = $this->nta ?? $this->basic_price;
+        $upsale = $this->upsale ?? 0;
+
+        $priceBeforeDiscount = (float) $nta + (float) $upsale;
+
         // 1. Cek Diskon
+        $discountAmount = 0;
         if ($this->discount_type && $this->discount_value > 0) {
-            // Cek apakah diskon masih berlaku (jika tanggal kadaluarsa tidak null)
             if (!$this->discount_expires_at || $this->discount_expires_at->isFuture()) {
-                
                 if ($this->discount_type === 'percentage') {
-                    // Hitung harga setelah diskon persentase
-                    $price -= ($price * ($this->discount_value / 100));
+                    $discountAmount = $priceBeforeDiscount * ($this->discount_value / 100);
                 } elseif ($this->discount_type === 'fixed') {
-                    // Hitung harga setelah diskon harga tetap
-                    $price -= $this->discount_value;
+                    $discountAmount = $this->discount_value;
                 }
             }
         }
 
-        // Pastikan harga tidak negatif
-        return max(0, round($price, 2));
+        $final = $priceBeforeDiscount - $discountAmount;
+        return max(0, round($final, 2));
+    }
+
+    /**
+     * Hitung jumlah diskon berdasarkan tipe diskon.
+     * Perhitungan: basic_price + (basic_price * tax_rate / 100) - discount
+     */
+    public function getCalculatedDiscountAmountAttribute(): float
+    {
+        $basicPrice = $this->basic_price;
+        $upsale = $this->upsale ?? 0;
+        $discountType = $this->discount_type;
+        $discountValue = $this->discount_value ?? 0;
+        $expiry = $this->discount_expires_at;
+
+        // Cek kadaluarsa diskon
+        if ($expiry && $expiry->isPast()) {
+            return 0.00;
+        }
+
+        // Hitung harga sebelum diskon: basic_price + upsale
+        $priceBeforeDiscount = $basicPrice + $upsale;
+
+        $discountAmount = 0.00;
+
+        if ($discountType === 'percentage' && $discountValue > 0) {
+            // Diskon persentase dari harga sebelum diskon
+            $discountAmount = $priceBeforeDiscount * ($discountValue / 100);
+        } elseif ($discountType === 'fixed' && $discountValue > 0) {
+            // Diskon tetap
+            $discountAmount = $discountValue;
+        }
+
+        // Pastikan jumlah diskon tidak menjadi negatif
+        return max(0, round($discountAmount, 2));
     }
 
     // --- RELATIONS ---

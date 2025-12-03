@@ -24,10 +24,16 @@ class Package extends Model
         'name_package',
         'slug',
         'description',
+        'location',
+        'phone',
         'images',
-        'nta',           // ⬅️ Ditambahkan
-        'pax_paid',      // ⬅️ Ditambahkan
-        'tax_rate',      // ⬅️ Ditambahkan
+        'nta',
+        'pax_paid',
+        'upsale',
+        'discount_type',
+        'discount_value',
+        'discount_amount',
+        'discount_expires_at',
         'start_publish',
         'end_publish',
         'is_active',
@@ -40,15 +46,19 @@ class Package extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'nta' => 'decimal:2',           // ⬅️ Ditambahkan/Diubah
-        'pax_paid' => 'decimal:2',      // ⬅️ Ditambahkan/Diubah
-        'tax_rate' => 'decimal:2',      // ⬅️ Ditambahkan
+        'nta' => 'decimal:2',
+        'pax_paid' => 'decimal:2',
+        'upsale' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'discount_expires_at' => 'datetime',
         'start_publish' => 'datetime',
         'end_publish' => 'datetime',
         'is_active' => 'boolean',
         'products_data' => 'array',
         'addons_data' => 'array',
         'images' => 'array',
+        'deleted_at' => 'datetime',
     ];
     
     /**

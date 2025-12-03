@@ -12,6 +12,7 @@
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-indigo-50 to-blue-50">
+    <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <div class="flex h-full">
         <!-- Sidebar -->
         <div class="hidden md:flex md:w-72 md:flex-col">

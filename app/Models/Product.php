@@ -23,18 +23,19 @@ class Product extends Model
         'name',
         'images',
         'description',
+        'location',
+        'phone',
         'basic_price',
         'nta',
-        'tax_rate',
+        'upsale',
         'discount_type',
         'discount_value',
+        'discount_amount',
         'discount_expires_at', 
         'id_category',
         'id_vendor',
         'pax',
         'jumlah',
-        'max_adults',
-        'max_children',
         'status',
     ];
 
@@ -45,15 +46,15 @@ class Product extends Model
     protected $casts = [
         'basic_price'  => 'decimal:2',
         'nta'          => 'decimal:2',
-        'tax_rate'     => 'decimal:2',
+        'upsale'       => 'decimal:2',
         'discount_value'      => 'decimal:2',
+        'discount_amount'     => 'decimal:2',
         'discount_expires_at' => 'datetime',
         'pax'          => 'integer',
-        'max_adults'   => 'integer',
-        'max_children' => 'integer',
         'jumlah'       => 'integer',
         'status'       => 'string',
         'images'       => 'array',
+        'deleted_at'   => 'datetime',
     ];
 
    // --- Relasi ---
@@ -110,13 +111,11 @@ class Product extends Model
     {
         return Attribute::make(
             get: function ($value, $attributes) {
-                $nta = $attributes['nta'];
-                $taxRate = $attributes['tax_rate'];
-                
-                // Perhitungan: Total = NTA + (NTA * (Tax Rate / 100))
-                $taxAmount = $nta * ($taxRate / 100);
-                
-                return round($nta + $taxAmount, 2);
+                $nta = (float) ($attributes['nta'] ?? 0);
+                $upsale = (float) ($attributes['upsale'] ?? 0);
+
+                // Perhitungan: Total = NTA + Upsale
+                return round($nta + $upsale, 2);
             },
         );
     }
@@ -129,14 +128,13 @@ class Product extends Model
     {
         return Attribute::make(
             get: function ($value, $attributes) {
-                $totalPrice = $this->totalPriceBeforeDiscount; // Ambil total harga sebelum diskon
+                $totalPrice = $this->totalPriceBeforeDiscount; 
                 $discountType = $attributes['discount_type'];
                 $discountValue = (float) $attributes['discount_value'];
                 $expiry = $attributes['discount_expires_at'];
                 
-                // Cek kadaluarsa diskon
                 if ($expiry && strtotime($expiry) < time()) {
-                    return $totalPrice; // Diskon kadaluarsa, kembalikan harga penuh
+                    return $totalPrice; 
                 }
 
                 $discountAmount = 0.00;
@@ -149,8 +147,46 @@ class Product extends Model
                 
                 $finalPrice = $totalPrice - $discountAmount;
                 
-                // Pastikan harga tidak menjadi negatif
+
                 return round(max(0, $finalPrice), 2);
+            },
+        );
+    }
+
+    /**
+     * Hitung jumlah diskon berdasarkan tipe diskon.
+     * Digunakan seperti $product->calculated_discount_amount
+     */
+    protected function calculatedDiscountAmount(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                $basicPrice = (float) $attributes['basic_price'];
+                $upsale = (float) ($attributes['upsale'] ?? 0);
+                $discountType = $attributes['discount_type'];
+                $discountValue = (float) $attributes['discount_value'];
+                $expiry = $attributes['discount_expires_at'];
+                
+                // Cek kadaluarsa diskon
+                if ($expiry && strtotime($expiry) < time()) {
+                    return 0.00;
+                }
+
+                // Hitung harga sebelum diskon: use NTA + Upsale if provided, otherwise fallback to basic_price
+                $priceBeforDiscount = $basicPrice + $upsale;
+
+                $discountAmount = 0.00;
+
+                if ($discountType === 'percentage' && $discountValue > 0) {
+                    // Diskon persentase dari harga sebelum diskon
+                    $discountAmount = $priceBeforDiscount * ($discountValue / 100);
+                } elseif ($discountType === 'fixed' && $discountValue > 0) {
+                    // Diskon tetap
+                    $discountAmount = $discountValue;
+                }
+                
+                // Pastikan jumlah diskon tidak menjadi negatif
+                return round(max(0, $discountAmount), 2);
             },
         );
     }

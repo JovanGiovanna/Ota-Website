@@ -316,55 +316,61 @@ My Wishlist
 
 <script>
 function removeFromWishlist(type, id) {
-    if (confirm('Are you sure you want to remove this item from your wishlist?')) {
-        fetch(`{{ url('/wishlist/remove') }}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                type: type,
-                id: id
+    window.showConfirm('Hapus dari Wishlist?', 'Apakah Anda yakin ingin menghapus item ini dari wishlist Anda?').then(result => {
+        if (result.isConfirmed) {
+            fetch(`{{ url('/wishlist/remove') }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    type: type,
+                    id: id
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Failed to remove item from wishlist');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while removing the item');
-        });
-    }
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.showSuccess('Berhasil!', 'Item berhasil dihapus dari wishlist');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    window.showError('Gagal!', 'Gagal menghapus item dari wishlist');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                window.showError('Error!', 'Terjadi kesalahan saat menghapus item');
+            });
+        }
+    });
 }
 
 function clearAllWishlist() {
-    if (confirm('Are you sure you want to clear all items from your wishlist? This action cannot be undone.')) {
-        fetch(`{{ url('/wishlist/clear-all') }}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Failed to clear wishlist');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while clearing the wishlist');
-        });
-    }
+    window.showConfirm('Hapus Semua Wishlist?', 'Apakah Anda yakin ingin menghapus semua item dari wishlist Anda? Tindakan ini tidak dapat dibatalkan.').then(result => {
+        if (result.isConfirmed) {
+            fetch(`{{ url('/wishlist/clear-all') }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.showSuccess('Berhasil!', 'Wishlist berhasil dikosongkan');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    window.showError('Gagal!', 'Gagal mengosongkan wishlist');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                window.showError('Error!', 'Terjadi kesalahan saat mengosongkan wishlist');
+            });
+        }
+    });
 }
 </script>
 @endsection

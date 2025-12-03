@@ -30,13 +30,32 @@ class ProvinceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
         ]);
 
-        Province::create(['name' => $request->name]);
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        return redirect()->route('super_admin.provinces')->with('success', 'Province created successfully');
+        try {
+            Province::create(['name' => $request->name]);
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Province created successfully');
+            }
+            return redirect()->route('super_admin.provinces');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Province creation failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function edit($id)
@@ -53,26 +72,61 @@ class ProvinceController extends Controller
     {
         $province = Province::find($id);
         if (!$province) {
-            return redirect()->route('super_admin.provinces')->with('error', 'Province not found');
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Province not found');
+            }
+            return redirect()->route('super_admin.provinces');
         }
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
         ]);
 
-        $province->update($request->only('name'));
+        if ($validator->fails()) {
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
-        return redirect()->route('super_admin.provinces')->with('success', 'Province updated successfully');
+        try {
+            $province->update($request->only('name'));
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Province updated successfully');
+            }
+            return redirect()->route('super_admin.provinces');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Province update failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
+        }
     }
 
     public function destroy($id)
     {
-        $province = Province::find($id);
-        if (!$province) {
-            return redirect()->route('super_admin.provinces')->with('error', 'Province not found');
-        }
+        try {
+            $province = Province::find($id);
+            if (!$province) {
+                if (function_exists('alert')) {
+                    alert()->error('Error', 'Province not found');
+                }
+                return redirect()->route('super_admin.provinces');
+            }
 
-        $province->delete();
-        return redirect()->route('super_admin.provinces')->with('success', 'Province deleted successfully');
+            $province->delete();
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Province deleted successfully');
+            }
+            return redirect()->route('super_admin.provinces');
+        } catch (\Exception $e) {
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Province deletion failed: ' . $e->getMessage());
+            }
+            return redirect()->back();
+        }
     }
 }

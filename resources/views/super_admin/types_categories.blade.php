@@ -43,10 +43,10 @@ Types & Categories Management
                             </div>
                             <div class="flex items-center space-x-2">
                                 <a href="{{ route('super_admin.types.edit', $type) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">Edit</a>
-                                <form method="POST" action="{{ route('super_admin.types.destroy', $type) }}" style="display: inline;">
+                                <form method="POST" action="{{ route('super_admin.types.destroy', $type) }}" style="display: inline;" data-delete-item="type: {{ $type->type }}" onsubmit="return confirmDeleteAction(this)">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium" onclick="return confirm('Are you sure you want to delete this type?')">Delete</button>
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
                                 </form>
                             </div>
                         </div>
@@ -94,10 +94,10 @@ Types & Categories Management
                             </div>
                             <div class="flex items-center space-x-2">
                                 <a href="{{ route('super_admin.categories.edit', $category) }}" class="text-blue-600 hover:text-blue-900 text-sm font-medium">Edit</a>
-                                <form method="POST" action="{{ route('super_admin.categories.destroy', $category) }}" style="display: inline;">
+                                <form method="POST" action="{{ route('super_admin.categories.destroy', $category) }}" style="display: inline;" data-delete-item="category: {{ $category->categories }}" onsubmit="return confirmDeleteAction(this)">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium" onclick="return confirm('Are you sure you want to delete this category?')">Delete</button>
+                                    <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Delete</button>
                                 </form>
                             </div>
                         </div>

@@ -121,6 +121,19 @@ Route::middleware(['super_admin_access'])->group(function () {
     Route::put('/super-admin/packages/{package}', [PackagesController::class, 'update'])->name('super_admin.packages.update');
     Route::delete('/super-admin/packages/{package}', [PackagesController::class, 'destroy'])->name('super_admin.packages.destroy');
 
+    // Product Management (Top-Level)
+    Route::get('/super-admin/products', [VendorController::class, 'allProducts'])->name('super_admin.products');
+    Route::post('/super-admin/products/{product}/stock', [VendorController::class, 'addProductStockTop'])->name('super_admin.products.stock');
+    Route::get('/super-admin/products/{product}/edit', [VendorController::class, 'editProductTop'])->name('super_admin.products.edit');
+    Route::put('/super-admin/products/{product}', [VendorController::class, 'updateProductTop'])->name('super_admin.products.update');
+    Route::delete('/super-admin/products/{product}', [VendorController::class, 'deleteProductTop'])->name('super_admin.products.destroy');
+
+    // Addon Management (Top-Level)
+    Route::get('/super-admin/addons', [VendorController::class, 'allAddons'])->name('super_admin.addons');
+    Route::get('/super-admin/addons/{addon}/edit', [VendorController::class, 'editAddonTop'])->name('super_admin.addons.edit');
+    Route::put('/super-admin/addons/{addon}', [VendorController::class, 'updateAddonTop'])->name('super_admin.addons.update');
+    Route::delete('/super-admin/addons/{addon}', [VendorController::class, 'deleteAddonTop'])->name('super_admin.addons.destroy');
+
     // User Management
     Route::get('/super-admin/vendors', [VendorController::class, 'index'])->name('super_admin.vendors');
     Route::get('/super-admin/vendors/create', [VendorController::class, 'create'])->name('super_admin.vendors.create');
@@ -132,9 +145,17 @@ Route::middleware(['super_admin_access'])->group(function () {
     // Vendor-specific routes
     Route::get('/super-admin/vendors/{vendor}/products', [VendorController::class, 'vendorProducts'])->name('super_admin.vendors.products');
     Route::get('/super-admin/vendors/{vendor}/products/{product}/detail', [VendorController::class, 'vendorProductDetail'])->name('super_admin.vendors.products.detail');
+    Route::get('/super-admin/vendors/{vendor}/products/{product}/edit', [VendorController::class, 'editProductAdmin'])->name('super_admin.vendors.products.edit');
+    Route::put('/super-admin/vendors/{vendor}/products/{product}', [VendorController::class, 'updateProductAdmin'])->name('super_admin.vendors.products.update');
+    Route::delete('/super-admin/vendors/{vendor}/products/{product}', [VendorController::class, 'deleteProductAdmin'])->name('super_admin.vendors.products.destroy');
+    
     Route::get('/super-admin/vendors/{vendor}/addons', [VendorController::class, 'vendorAddons'])->name('super_admin.vendors.addons');
     Route::get('/super-admin/vendors/{vendor}/addons/{addon}/details', [VendorController::class, 'vendorAddonDetails'])->name('super_admin.vendors.addons.details');
     Route::get('/super-admin/vendors/{vendor}/addons/{addon}/detail', [VendorController::class, 'vendorAddonDetail'])->name('super_admin.vendors.addons.detail');
+    Route::get('/super-admin/vendors/{vendor}/addons/{addon}/edit', [VendorController::class, 'editAddonAdmin'])->name('super_admin.vendors.addons.edit');
+    Route::put('/super-admin/vendors/{vendor}/addons/{addon}', [VendorController::class, 'updateAddonAdmin'])->name('super_admin.vendors.addons.update');
+    Route::delete('/super-admin/vendors/{vendor}/addons/{addon}', [VendorController::class, 'deleteAddonAdmin'])->name('super_admin.vendors.addons.destroy');
+    
     Route::get('/super-admin/vendors/{vendor}/profile', [VendorController::class, 'vendorProfile'])->name('super_admin.vendors.profile');
     Route::get('/super-admin/vendors/{vendor}/transaction-products', [VendorController::class, 'vendorTransactionProducts'])->name('super_admin.vendors.transaction_products');
     Route::get('/super-admin/vendors/{vendor}/transaction-addons', [VendorController::class, 'vendorTransactionAddons'])->name('super_admin.vendors.transaction_addons');
@@ -306,9 +327,7 @@ Route::middleware(['super_admin_access'])->group(function () {
 
 Route::middleware(['super_admin_access:vendor'])->group(function () {
     // Vendor dashboard - accessible by vendor or super_admin
-    Route::get('/vendor/dashboard', function () {
-        return view('vendor.dashboard');
-    })->name('vendor.dashboard');
+    Route::get('/vendor/dashboard', [VendorController::class, 'dashboard'])->name('vendor.dashboard');
 
     // Vendor info routes
     Route::get('/vendor/info', [VendorInfoController::class, 'showInfoForm'])->name('vendor.info');
@@ -347,6 +366,9 @@ Route::middleware(['super_admin_access:vendor'])->group(function () {
     Route::get('/vendor/products/{product}/edit', [VendorController::class, 'editProduct'])->name('vendor.products.edit');
     Route::put('/vendor/products/{product}', [VendorController::class, 'updateProduct'])->name('vendor.products.update');
     Route::delete('/vendor/products/{product}', [VendorController::class, 'destroyProduct'])->name('vendor.products.destroy');
+    // Vendor stock management
+    Route::get('/vendor/stock', [VendorController::class, 'vendorStock'])->name('vendor.stock');
+    Route::post('/vendor/products/{product}/stock', [VendorController::class, 'addProductStockVendor'])->name('vendor.products.stock');
 
     Route::get('/vendor/addons', [VendorController::class, 'vendorAddonsDashboard'])->name('vendor.addons');
     Route::get('/vendor/addons/create', [VendorController::class, 'createAddon'])->name('vendor.addons.create');

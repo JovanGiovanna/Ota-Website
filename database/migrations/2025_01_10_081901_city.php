@@ -11,22 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Menggunakan 'cities' (plural) sesuai konvensi Laravel
         Schema::create('city', function (Blueprint $table) { 
-            
-            // Kolom Primary Key (UUID)
             $table->uuid('id')->primary();
-
-            // Kolom Foreign Key (Menggunakan helper foreignUuid() yang lebih ringkas)
-            // Asumsi: Nama tabel provinsi adalah 'provinces' (plural).
             $table->foreignUuid('id_province')
-                  ->constrained('province') // Menggantikan references()->on()
+                  ->constrained('province') 
                   ->onDelete('cascade');
                   
-            // Kolom Data
             $table->string('name', 100);
             
-            // Kolom timestamps
             $table->timestamps();
         });
     }

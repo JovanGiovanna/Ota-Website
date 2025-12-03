@@ -57,14 +57,26 @@ class TypesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
         try {
             Type::create($validator->validated());
-            return redirect()->route('super_admin.types_categories')->with('success', 'Jenis berhasil ditambahkan.');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Type created successfully');
+            }
+            return redirect()->route('super_admin.types_categories');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menyimpan jenis: ' . $e->getMessage())->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Type creation failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
         }
     }
 
@@ -98,14 +110,26 @@ class TypesController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Validation Failed', 'Please check the form and try again');
+            }
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
         try {
             $type->update($validator->validated());
-            return redirect()->route('super_admin.types_categories')->with('success', 'Jenis berhasil diperbarui.');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Type updated successfully');
+            }
+            return redirect()->route('super_admin.types_categories');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal memperbarui jenis: ' . $e->getMessage())->withInput();
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Type update failed: ' . $e->getMessage());
+            }
+            return redirect()->back()
+                ->withInput();
         }
     }
 
@@ -119,9 +143,15 @@ class TypesController extends Controller
     {
         try {
             $type->delete();
-            return redirect()->route('super_admin.types_categories')->with('success', 'Jenis berhasil dihapus.');
+            if (function_exists('alert')) {
+                alert()->success('Success', 'Type deleted successfully');
+            }
+            return redirect()->route('super_admin.types_categories');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Gagal menghapus jenis: ' . $e->getMessage());
+            if (function_exists('alert')) {
+                alert()->error('Error', 'Type deletion failed: ' . $e->getMessage());
+            }
+            return redirect()->back();
         }
     }
 }

@@ -125,20 +125,23 @@
                 @enderror
             </div>
 
-            <div class="mb-4">
-                <label for="max_adults" class="block text-sm font-medium text-gray-700 mb-2">Max Adults</label>
-                <input type="number" name="max_adults" id="max_adults" value="{{ old('max_adults', $product->max_adults ?? 2) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @error('max_adults')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </div>
+            {{-- Location and Phone Fields --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                    <input type="text" name="location" id="location" value="{{ old('location', $product->location) }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    @error('location')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            <div class="mb-4">
-                <label for="max_children" class="block text-sm font-medium text-gray-700 mb-2">Max Children</label>
-                <input type="number" name="max_children" id="max_children" value="{{ old('max_children', $product->max_children ?? 1) }}" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                @error('max_children')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="text" name="phone" id="phone" value="{{ old('phone', $product->phone) }}" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('phone')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             {{-- Existing Images --}}
