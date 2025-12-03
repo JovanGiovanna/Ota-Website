@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\SuperAdmin; // Menggunakan model SuperAdmin
 use App\Models\Rekon;
+use App\Models\BookPackage; // Pastikan model ini di-import
+use App\Models\BookAddon; // Pastikan model ini di-import
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
@@ -182,7 +184,7 @@ class SuperAdminController extends Controller
     {
         // Memastikan request.user() berhasil mengambil data pengguna yang terotentikasi melalui Sanctum
         if ($request->user()) {
-             /** @var \App\Models\SuperAdmin $user */
+            /** @var \App\Models\SuperAdmin $user */
             $user = $request->user();
             // Hapus token yang sedang digunakan
             $user->currentAccessToken()->delete();
@@ -464,22 +466,19 @@ public function transactionProducts()
                 $discountAmount = $discountValue;
             }
 
-            // NTA is the cost to vendor
-            $ntaPerUnit = $product->nta ?? 0;
+            // NTA = BasicPrice - Discount
+            $ntaPerUnit = $basicPrice - $discountAmount;
 
             // Pax paid
             $paxCount = $bookProduct->amount ?? 1;
 
-            // Final price after discount
-            $finalPrice = $product->finalPrice ?? ($totalPriceBeforeDiscount - $discountAmount);
-
-            // Total paid
-            $totalPaid = $paxCount * $finalPrice;
+            // TotalPaid = BasicPrice + Tax - Discount
+            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
 
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = total paid - total nta
+            // Profit = TotalPaid - NTA
             $profit = $totalPaid - $totalNta;
 
             $rekonDetails[] = (object) [
@@ -496,6 +495,64 @@ public function transactionProducts()
                 'profit' => $profit,
                 'status' => $booking->status,
                 'type' => 'product'
+            ];
+        }
+
+        // Fetch bookPackages with booking and package relations
+        $bookPackages = \App\Models\BookPackage::with(['booking', 'package', 'package.vendor']) // <-- Tambahkan 'package.vendor'
+        ->whereHas('booking', function ($q) { // <-- Tambahkan filter completed
+            $q->where('status', 'completed');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        foreach ($bookPackages as $bookPackage) {
+            $booking = $bookPackage->booking;
+            $package = $bookPackage->package;
+
+            if (!$package || !$booking || $booking->status !== 'completed') {
+                continue; // Skip if no package or booking linked or status is not completed
+            }
+
+            // Get pax count from booking
+            $paxCount = ($booking->adults ?? 0) + ($booking->children ?? 0) ?: 1;
+
+            // For packages, basic price is pax_paid (selling price per pax)
+            $basicPrice = $package->pax_paid ?? 0;
+
+            // Calculate tax amount based on package's tax_rate (per pax)
+            $taxRate = $package->tax_rate ?? 0;
+            $taxAmount = $basicPrice * ($taxRate / 100);
+
+            // Packages have no discount in model
+            $discountAmount = 0;
+
+            // NTA = BasicPrice - Discount
+            $ntaPerUnit = $basicPrice - $discountAmount;
+
+            // TotalPaid = BasicPrice + Tax - Discount
+            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
+
+            // Total NTA
+            $totalNta = $paxCount * $ntaPerUnit;
+
+            // Profit = TotalPaid - NTA
+            $profit = $totalPaid - $totalNta;
+
+            $rekonDetails[] = (object) [
+                'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
+                'date' => $booking->created_at,
+                'product_name' => $package->name . ' (Package)', // Menggunakan nama package, bukan product
+                'vendor_id' => $package->id_vendor,
+                'vendor_name' => $package->vendor->name ?? 'Unknown',
+                'basic_price' => $basicPrice,
+                'tax' => $taxAmount,
+                'discount' => $discountAmount,
+                'nta' => $totalNta,
+                'pax_paid' => $totalPaid,
+                'profit' => $profit,
+                'status' => $booking->status,
+                'type' => 'package' // Tipe 'package'
             ];
         }
 
@@ -532,22 +589,19 @@ public function transactionProducts()
                 $discountAmount = $discountValue;
             }
 
-            // NTA is the cost to vendor
-            $ntaPerUnit = $addon->nta ?? 0;
+            // NTA = BasicPrice - Discount
+            $ntaPerUnit = $basicPrice - $discountAmount;
 
             // Use amount from bookAddon as pax count
             $paxCount = $bookAddon->amount ?? 1;
 
-            // Final price after discount
-            $finalPrice = $addon->finalPrice ?? ($totalPriceBeforeDiscount - $discountAmount);
-
-            // Total paid
-            $totalPaid = $paxCount * $finalPrice;
+            // TotalPaid = BasicPrice + Tax - Discount
+            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
 
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Calculate profit = total paid - total nta
+            // Profit = TotalPaid - NTA
             $profit = $totalPaid - $totalNta;
 
             $rekonDetails[] = (object) [
@@ -574,7 +628,7 @@ public function transactionProducts()
         if ($search) {
             $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($search) {
                 return str_contains(strtolower($detail->product_name), strtolower($search)) ||
-                       str_contains(strtolower($detail->transaction_id), strtolower($search));
+                        str_contains(strtolower($detail->transaction_id), strtolower($search));
             });
         }
 
