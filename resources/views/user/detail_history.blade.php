@@ -299,11 +299,22 @@
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-lg font-semibold mb-4">Actions</h3>
                     <div class="space-y-2">
+                        @if($booking->status == 'book')
+                            <a href="{{ route('user.payment', $booking->id) }}" class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition inline-block text-center font-semibold">
+                                💳 Continue Payment
+                            </a>
+                        @endif
                         @if(in_array($booking->status, ['pending', 'confirmed']))
                             <form action="{{ route('booking.cancel', $booking->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">Cancel Booking</button>
+                            </form>
+                        @endif
+                        @if(in_array($booking->status, ['paid', 'cancelled']))
+                            <form action="{{ route('user.payment.request_refund', $booking->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin meminta pengembalian dana untuk booking ini?');">
+                                @csrf
+                                <button type="submit" class="w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition">Request Refund</button>
                             </form>
                         @endif
                         <a href="{{ route('invoice.download', $booking->id) }}" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition inline-block text-center">Download Invoice</a>

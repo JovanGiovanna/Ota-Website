@@ -158,6 +158,10 @@ Product Details
                     <span class="font-semibold text-gray-800">{{ $product->location ?? 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span class="text-gray-600">Address</span>
+                    <span class="font-semibold text-gray-800">{{ $product->address ?? 'N/A' }}</span>
+                </div>
+                <div class="flex justify-between items-center py-3 border-b border-gray-100">
                     <span class="text-gray-600">Phone</span>
                     <span class="font-semibold text-gray-800">{{ $product->phone ?? 'N/A' }}</span>
                 </div>

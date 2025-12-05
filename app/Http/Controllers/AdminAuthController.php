@@ -48,7 +48,33 @@ public function updateProfile(Request $request)
 
     public function showRegistrationForm()
     {
+        // Only allow super_admin to view the admin register form
+        if (!\Illuminate\Support\Facades\Auth::guard('super_admin')->check()) {
+            abort(403, 'Only super admin can create admin accounts.');
+        }
+
         return view('admin_auth.register');
+    }
+
+    // Web registration handler for admin (form)
+    public function registerWeb(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:admins',
+            'password' => 'required|string|min:6',
+            'role' => 'nullable|in:' . implode(',', \App\Models\Admin::ROLES),
+        ]);
+
+        $admin = Admin::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role ?? 'admin',
+        ]);
+
+        // Redirect to login page after registration
+        return redirect()->route('admin.login')->with('success', 'Admin registered successfully. You can now login.');
     }
 
     // --- Login Admin (Web/Form) ---
@@ -67,7 +93,7 @@ public function updateProfile(Request $request)
         if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('admin.dashboard'));
+            return redirect()->intended(route('super_admin.dashboard'));
         }
 
         return back()->withErrors([
@@ -83,6 +109,7 @@ public function updateProfile(Request $request)
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:admins',
             'password' => 'required|string|min:6',
+            'role' => 'nullable|in:' . implode(',', \App\Models\Admin::ROLES),
         ]);
 
         if ($validator->fails()) {
@@ -95,6 +122,7 @@ public function updateProfile(Request $request)
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role' => $request->role ?? 'admin',
         ]);
 
         $token = $admin->createToken('admin_token')->plainTextToken;
@@ -183,6 +211,6 @@ public function updateProfile(Request $request)
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login');
+        return redirect()->route('login');
     }
 }

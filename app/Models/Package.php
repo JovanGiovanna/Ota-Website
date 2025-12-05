@@ -16,11 +16,11 @@ class Package extends Model
 
     /**
      * Kolom-kolom yang dapat diisi secara massal (mass assignable).
-     * Telah Disesuaikan dengan kolom Migrasi: nta, pax_paid, discount_percentage, products_data, addons_data.
-     * Dihapus: price_real, price_publish, id_vendor_info (karena tidak ada di migrasi).
+     * Telah Disesuaikan dengan kolom Migrasi: nta, pax_paid, discount_percentage, products_data, addons_data, id_vendor_info.
      * @var array<int, string>
      */
     protected $fillable = [
+        'id_vendor_info',
         'name_package',
         'slug',
         'description',
@@ -74,12 +74,29 @@ class Package extends Model
         });
     }
 
-    // --- Relasi (Relasi yang tidak memiliki foreign key di Migrasi dinonaktifkan/dihapus) ---
+    // --- Relasi ---
 
-    // ❌ Relasi 'vendorInfo' dinonaktifkan karena 'id_vendor_info' TIDAK ada di Migrasi
+    /**
+     * Get the vendor info associated with the package.
+     */
     public function vendorInfo()
     {
         return $this->belongsTo(\App\Models\VendorInfo::class, 'id_vendor_info');
+    }
+
+    /**
+     * Get the vendor associated with the package through vendor info.
+     */
+    public function vendor()
+    {
+        return $this->hasOneThrough(
+            \App\Models\Vendor::class,
+            \App\Models\VendorInfo::class,
+            'id', // Foreign key on VendorInfo table
+            'id', // Foreign key on Vendor table
+            'id_vendor_info', // Local key on Package table
+            'id_vendor' // Local key on VendorInfo table
+        );
     }
 
     // ❌ Relasi 'type' dinonaktifkan karena 'id_type' TIDAK ada di Migrasi
@@ -118,5 +135,43 @@ public function bookPackageAddons()
 {
     return $this->hasMany(\App\Models\BookPackageAddon::class, 'id_package', 'id');
 }
+
+    /**
+     * Hitung total harga (NTA + Upsale) SEBELUM diskon.
+     */
+    public function getTotalPriceBeforeDiscountAttribute()
+    {
+        $nta = (float) ($this->nta ?? 0);
+        $upsale = (float) ($this->upsale ?? 0);
+
+        return round($nta + $upsale, 2);
+    }
+
+    /**
+     * Hitung harga akhir SETELAH diskon (jika ada dan belum kadaluarsa).
+     */
+    public function getFinalPriceAttribute()
+    {
+        $totalPrice = $this->totalPriceBeforeDiscount;
+        $discountType = $this->discount_type;
+        $discountValue = (float) $this->discount_value;
+        $expiry = $this->discount_expires_at;
+
+        if ($expiry && $expiry->isPast()) {
+            return $totalPrice;
+        }
+
+        $discountAmount = 0.00;
+
+        if ($discountType === 'percentage' && $discountValue > 0) {
+            $discountAmount = $totalPrice * ($discountValue / 100);
+        } elseif ($discountType === 'fixed' && $discountValue > 0) {
+            $discountAmount = $discountValue;
+        }
+
+        $finalPrice = $totalPrice - $discountAmount;
+
+        return round(max(0, $finalPrice), 2);
+    }
 
 }

@@ -17,10 +17,6 @@ class BookingsController extends Controller
     /** Simpan booking (Package + Product + Addons) */
     public function store(Request $request)
     {
-        if (!Auth::check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
-        }
-
         $validated = $request->validate([
             'booking_types' => 'required|array|min:1',
             'booking_types.*' => 'in:package,product,addon',
@@ -42,6 +38,33 @@ class BookingsController extends Controller
             'requests' => 'nullable|string',
         ]);
 
+        // Handle user authentication - create new user if not logged in
+        $user = Auth::user();
+        if (!$user) {
+            // Check if user with this email already exists
+            $existingUser = \App\Models\User::where('email', $validated['booker_email'])->first();
+
+            if ($existingUser) {
+                // If user exists but has no password (guest account), use it
+                if (is_null($existingUser->password)) {
+                    $user = $existingUser;
+                } else {
+                    // User exists and has password, redirect to login
+                    return redirect()->route('login')->with('error', 'Email sudah terdaftar. Silakan login untuk melanjutkan booking.');
+                }
+            } else {
+                // Create new guest user
+                $user = \App\Models\User::create([
+                    'name' => $validated['booker_name'],
+                    'email' => $validated['booker_email'],
+                    'phone' => $validated['booker_telp'],
+                    'password' => null, // NULL password for guest accounts
+                    'activation_token' => Str::random(60), // Generate activation token
+                    'status' => 'active',
+                ]);
+            }
+        }
+
         if (in_array('package', $validated['booking_types']) && empty($validated['id_package'])) {
             throw ValidationException::withMessages(['id_package' => 'Please select at least one package.']);
         }
@@ -59,7 +82,7 @@ class BookingsController extends Controller
 
             // 1️⃣ Buat master booking
             $booking = Booking::create([
-                'id_user' => Auth::id(),
+                'id_user' => $user->id,
                 'booker_name' => $validated['booker_name'],
                 'booker_email' => $validated['booker_email'],
                 'booker_telp' => $validated['booker_telp'],
@@ -69,7 +92,7 @@ class BookingsController extends Controller
                 'duration_days' => $validated['duration_days'],
                 'amount' => $validated['amount'],
                 'total_price' => 0, // akan dihitung
-                'status' => 'pending',
+                'status' => 'pending', // start with pending, will update to 'book' after creating related models
                 'note' => $validated['requests'] ?? null,
             ]);
 
@@ -89,7 +112,7 @@ class BookingsController extends Controller
                     $bookPackage = BookPackage::create([
                         'id' => (string) Str::uuid(), // UUID
                         'id_book' => $booking->id,
-                        'id_user' => Auth::id(),
+                        'id_user' => $user->id,
                         'id_package' => $packageId,
                         'booker_name' => $validated['booker_name'],
                         'booker_email' => $validated['booker_email'],
@@ -138,7 +161,7 @@ if (!empty($validated['product_id'])) {
 
         $bookProduct = BookProduct::create([
             'id_book' => $booking->id,
-            'id_user' => Auth::id(),
+            'id_user' => $user->id,
             'id_product' => $productId,
             'checkin_appointment_start_datetime' => $validated['checkin_appointment_start'],
             'checkout_appointment_end_datetime' => $validated['checkout_appointment_end'],
@@ -173,8 +196,9 @@ if (!empty($validated['product_id'])) {
                         $usedAddonIds[] = $addonId;
                     }
                 }
+
     }
-}
+                }
 
             // 4️⃣ Addon berdiri sendiri
 if (!empty($validated['addon_id'])) {
@@ -188,9 +212,9 @@ if (!empty($validated['addon_id'])) {
         $addonPrice = $addon->finalPrice * $qty;
         $totalPrice += $addonPrice;
 
-        BookAddon::create([
+            BookAddon::create([
             'id_book' => $booking->id,
-            'id_user' => Auth::id(),
+            'id_user' => $user->id,
             'id_addon' => $addonId,
             'checkin_appointment_start' => $validated['checkin_appointment_start'],
             'checkout_appointment_end' => $validated['checkout_appointment_end'],
@@ -214,15 +238,17 @@ if (!empty($validated['addon_id'])) {
             $booking->update(['total_price' => $totalPrice]);
 
             // 6️⃣ Kirim notifikasi email
-            $user = Auth::user();
             if ($user) {
                 $user->notify(new EmailNotification($booking));
             }
 
             DB::commit();
 
-            return redirect()->route('user.history')
-                ->with('success', 'Booking berhasil dibuat! Total: Rp ' . number_format($totalPrice,0,',','.'));
+            // 7️⃣ Set status to 'book' to decrease stock immediately
+            $booking->update(['status' => 'book']);
+
+            return redirect()->route('user.payment', $booking->id)
+                ->with('success', 'Booking berhasil dibuat! Silakan lanjutkan pembayaran.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -232,6 +258,52 @@ if (!empty($validated['addon_id'])) {
 
         
     }
+
+        /**
+         * Super-admin / Admin bookings index (manage all booking types)
+         */
+        public function index(Request $request)
+        {
+            $query = Booking::with(['user', 'packages', 'products', 'addons']);
+
+            // Filters
+            if ($request->filled('status')) {
+                $query->where('status', $request->input('status'));
+            }
+
+            if ($request->filled('type')) {
+                $type = $request->input('type');
+                if ($type === 'package') {
+                    $query->whereHas('packages');
+                } elseif ($type === 'product') {
+                    $query->whereHas('products');
+                } elseif ($type === 'addon') {
+                    $query->whereHas('addons');
+                }
+            }
+
+            if ($request->filled('search')) {
+                $s = $request->input('search');
+                $query->where(function ($q) use ($s) {
+                    $q->where('booking_code', 'like', "%{$s}%")
+                      ->orWhere('booker_name', 'like', "%{$s}%")
+                      ->orWhere('booker_email', 'like', "%{$s}%");
+                });
+            }
+
+            if ($request->filled('date_from')) {
+                $from = $request->input('date_from');
+                $query->whereDate('created_at', '>=', $from);
+            }
+            if ($request->filled('date_to')) {
+                $to = $request->input('date_to');
+                $query->whereDate('created_at', '<=', $to);
+            }
+
+            $bookings = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+
+            return view('super_admin.transaction.index', compact('bookings'));
+        }
 
     
     public function history()
@@ -252,7 +324,9 @@ if (!empty($validated['addon_id'])) {
 
     public function show(Booking $booking)
     {
-        if ($booking->id_user !== Auth::id()) {
+        // Allow access if user is authenticated and owns the booking, or if it's a guest booking (no auth required)
+        // Also allow if logged in user has the same email as the booker (handles guest-to-logged-in transition)
+        if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
             abort(403);
         }
 
@@ -297,8 +371,8 @@ if (!empty($validated['addon_id'])) {
 
     public function reject(Booking $booking)
     {
-        if ($booking->status !== 'pending') {
-            return back()->with('error', 'Booking tidak dalam status pending.');
+        if (!in_array($booking->status, ['pending', 'book'])) {
+            return back()->with('error', 'Booking tidak dalam status yang dapat ditolak.');
         }
 
         $booking->status = 'cancelled';
@@ -310,7 +384,7 @@ if (!empty($validated['addon_id'])) {
     public function showDetailAdmin(Booking $booking)
     {
         $booking->load(['user', 'packages', 'products', 'addons']);
-        return view('admin.transaction.detail', compact('booking'));
+        return view('super_admin.transaction.detail', compact('booking'));
     }
 
     public function support(Booking $booking)
@@ -347,12 +421,63 @@ if (!empty($validated['addon_id'])) {
             abort(403);
         }
 
-        if (!in_array($booking->status, ['pending', 'confirmed'])) {
+        // Allow cancel from book, confirmed, or paid (user paid then decides to cancel)
+        if (!in_array($booking->status, ['book', 'confirmed', 'paid'])) {
             return back()->with('error', 'Booking tidak dapat dibatalkan pada status ini.');
         }
 
         $booking->update(['status' => 'cancelled']);
         return back()->with('success', 'Booking berhasil dibatalkan.');
+    }
+
+    /**
+     * User requests a refund (after cancelling or when paid)
+     */
+    public function requestRefund(Request $request, Booking $booking)
+    {
+        // Allow only owner / matching email
+        if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
+            abort(403);
+        }
+
+        // Allow refund request when booking was paid or already cancelled
+        if (!in_array($booking->status, ['paid', 'cancelled'])) {
+            return back()->with('error', 'Refund hanya dapat diminta untuk booking yang telah dibayar atau telah dibatalkan.');
+        }
+
+        $booking->update(['status' => 'payment_return']);
+
+        return back()->with('success', 'Permintaan pengembalian dana berhasil dikirim. Tim admin akan memprosesnya.');
+    }
+
+    /**
+     * Admin verifies payment and marks booking completed
+     */
+    public function verifyPayment(Booking $booking)
+    {
+        if ($booking->status !== 'paid') {
+            return back()->with('error', 'Booking tidak dalam status paid.');
+        }
+
+        $booking->update(['status' => 'completed']);
+
+        return back()->with('success', 'Pembayaran diverifikasi. Booking ditandai sebagai completed.');
+    }
+
+    /**
+     * Admin processes refund (payment return) and marks as cancelled
+     */
+    public function processRefund(Booking $booking)
+    {
+        if ($booking->status !== 'payment_return') {
+            return back()->with('error', 'Booking tidak dalam status permintaan pengembalian dana.');
+        }
+
+        // Here you would integrate with payment gateway / refund logic.
+        // For now, we mark booking as cancelled after refund processed.
+        $booking->update(['status' => 'cancelled']);
+
+        return back()->with('success', 'Pengembalian dana diproses dan booking ditandai sebagai cancelled.');
     }
 
     public function destroy($id)
@@ -361,5 +486,83 @@ if (!empty($validated['addon_id'])) {
         $booking->delete();
 
         return back()->with('success', 'Booking berhasil dihapus.');
+    }
+
+    public function payment(Booking $booking)
+    {
+        // Allow access if user is authenticated and owns the booking, or if it's a guest booking (no auth required)
+        // Also allow if logged in user has the same email as the booker (handles guest-to-logged-in transition)
+        if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
+            abort(403);
+        }
+
+        $booking->load([
+            'packages.package',
+            'packages.bookPackageAddons.addon',
+            'products.product',
+            'products.bookProductAddons.addon',
+            'addons.addon'
+        ]);
+
+        return view('user.payment', compact('booking'));
+    }
+
+    public function confirmPayment(Booking $booking)
+    {
+        // Allow access if user is authenticated and owns the booking, or if it's a guest booking (no auth required)
+        // Also allow if logged in user has the same email as the booker (handles guest-to-logged-in transition)
+        if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
+            abort(403);
+        }
+
+        if (!in_array($booking->status, ['book', 'pending'])) {
+            return back()->with('error', 'Booking sudah diproses.');
+        }
+
+        $booking->update(['status' => 'paid']);
+
+        return redirect()->route('user.detail_history', $booking->id)
+            ->with('success', 'Payment berhasil! Booking Anda telah dibayar.');
+    }
+
+    public function activateAccount($token)
+    {
+        $user = \App\Models\User::where('activation_token', $token)->first();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Token aktivasi tidak valid.');
+        }
+
+        if (!is_null($user->password)) {
+            return redirect()->route('login')->with('error', 'Akun sudah diaktifkan.');
+        }
+
+        return view('user.activate', compact('user', 'token'));
+    }
+
+    public function setPassword(Request $request, $token)
+    {
+        $validated = $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = \App\Models\User::where('activation_token', $token)->first();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Token aktivasi tidak valid.');
+        }
+
+        if (!is_null($user->password)) {
+            return redirect()->route('login')->with('error', 'Akun sudah diaktifkan.');
+        }
+
+        $user->update([
+            'password' => bcrypt($validated['password']),
+            'activation_token' => null,
+        ]);
+
+        Auth::login($user);
+
+        return redirect()->route('user.history')->with('success', 'Akun berhasil diaktifkan! Selamat datang.');
     }
 }

@@ -23,6 +23,7 @@ class Product extends Model
         'name',
         'images',
         'description',
+        'address',
         'location',
         'phone',
         'basic_price',
@@ -52,6 +53,7 @@ class Product extends Model
         'discount_expires_at' => 'datetime',
         'pax'          => 'integer',
         'jumlah'       => 'integer',
+        'address'      => 'string',
         'status'       => 'string',
         'images'       => 'array',
         'deleted_at'   => 'datetime',
@@ -73,6 +75,14 @@ class Product extends Model
     public function vendor(): BelongsTo
     {
         return $this->belongsTo(Vendor::class, 'id_vendor');
+    }
+
+    /**
+     * Mendapatkan super admin yang menjual produk ini.
+     */
+    public function superAdmin(): BelongsTo
+    {
+        return $this->belongsTo(SuperAdmin::class, 'id_super_admin');
     }
 
     /**

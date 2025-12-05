@@ -80,6 +80,16 @@
                 </div>
             </div>
 
+            {{-- Address (Alamat Lengkap) --}}
+            <div class="mb-4">
+                <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address (Alamat Lengkap)</label>
+                <textarea name="address" id="address" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('address') }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Masukkan alamat lengkap lokasi produk (jalan, nomor, kecamatan/kabupaten, provinsi).</p>
+                @error('address')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- **BAGIAN DISKON BARU: Fixed vs Percentage** --}}
             <h4 class="text-md font-semibold text-gray-800 mb-3 mt-4">Pilih Tipe Diskon</h4>
 

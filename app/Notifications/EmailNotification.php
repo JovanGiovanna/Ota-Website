@@ -25,13 +25,21 @@ class EmailNotification extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject('Konfirmasi Pemesanan #' . $this->booking->booking_code)
             ->greeting('Halo ' . $this->booking->booker_name . '!')
             ->line('Terima kasih telah melakukan pemesanan.')
             ->line('Kode Booking: ' . $this->booking->booking_code)
             ->line('Total Harga: Rp ' . number_format($this->booking->total_price, 0, ',', '.'))
-            ->action('Lihat Riwayat Booking', url('/user/history'))
+            ->action('Lihat Detail Booking', url('/user/history/' . $this->booking->id))
             ->line('Terima kasih telah mempercayai layanan kami!');
+
+        // If user is a guest (has activation token), add activation link
+        if ($notifiable->activation_token && is_null($notifiable->password)) {
+            $mail->line('Untuk mengelola booking Anda di masa depan, silakan lengkapi akun Anda:')
+                ->action('Aktivasi Akun', url('/account/activate/' . $notifiable->activation_token));
+        }
+
+        return $mail;
     }
 }

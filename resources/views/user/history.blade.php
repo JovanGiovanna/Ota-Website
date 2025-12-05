@@ -117,7 +117,7 @@
                                             <ul class="ml-4 list-disc text-gray-500 text-sm">
                                                 @foreach($productAddons as $prAddon)
                                                     @php
-                                                        $addonPrice = $prAddon->addon?->finalPrice ?? ($prAddon->price ?? 0);
+                                                        $addonPrice = $prAddon->addon?->finalPrice ?? 0;
                                                         $addonQty = $prAddon->quantity ?? 1;
                                                     @endphp
                                                     <li>
@@ -164,7 +164,7 @@
                         $totalPrice = 0;
                         
                         foreach ($booking->packages as $bookPackage) {
-                            $pricePerNight = $bookPackage->package->nta ?? 0;
+                            $pricePerNight = $bookPackage->package->final_price ?? 0;
                             $totalPrice += $pricePerNight * $durationDays;
                             
                             foreach ($bookPackage->bookPackageAddons as $pAddon) {

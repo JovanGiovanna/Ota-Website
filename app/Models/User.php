@@ -57,6 +57,7 @@ class User extends Authenticatable
         'phone',
         'dob',
         'address',
+        'activation_token',
     ];
 
     /**

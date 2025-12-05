@@ -190,10 +190,17 @@ Find your perfect packages, products, and add-ons!
                 <div class="p-4">
                     <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
                     <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
-        <div class="flex items-center justify-between">
-            <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
-            <span class="text-xs text-gray-500">per package</span>
-        </div>
+                    <div class="flex items-center justify-between">
+                        @if($package->finalPrice < $package->totalPriceBeforeDiscount)
+                            <div class="text-lg font-bold text-blue-600">
+                                <span class="text-sm text-gray-500 line-through">Rp {{ number_format($package->totalPriceBeforeDiscount, 0, ',', '.') }}</span>
+                                Rp {{ number_format($package->finalPrice, 0, ',', '.') }}
+                            </div>
+                        @else
+                            <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->finalPrice, 0, ',', '.') }}</div>
+                        @endif
+                        <span class="text-xs text-gray-500">per package</span>
+                    </div>
                 </div>
             </a>
         @empty
@@ -381,8 +388,15 @@ Find your perfect packages, products, and add-ons!
                             <h3 class="text-lg font-bold text-gray-800 mb-1">{{ $package->name_package }}</h3>
                             <p class="text-gray-600 text-xs mb-3 line-clamp-2">{{ Str::limit($package->description, 60) }}</p>
                             <div class="flex items-center justify-between">
-                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
-                <span class="text-xs text-gray-500">per package</span>
+                                @if($package->finalPrice < $package->totalPriceBeforeDiscount)
+                                    <div class="text-lg font-bold text-blue-600">
+                                        <span class="text-sm text-gray-500 line-through">Rp {{ number_format($package->totalPriceBeforeDiscount, 0, ',', '.') }}</span>
+                                        Rp {{ number_format($package->finalPrice, 0, ',', '.') }}
+                                    </div>
+                                @else
+                                    <div class="text-lg font-bold text-blue-600">Rp {{ number_format($package->finalPrice, 0, ',', '.') }}</div>
+                                @endif
+                                <span class="text-xs text-gray-500">per package</span>
                             </div>
                         </div>
                     </a>

@@ -46,6 +46,7 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'loginWeb'])->name('login.web');
 Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [AuthController::class, 'registerWeb'])->name('register.web');
+Route::post('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 //notification
@@ -84,7 +85,7 @@ Route::post('/super-admin/register', [SuperAdminController::class, 'registerWeb'
 Route::post('/super-admin/logout', [SuperAdminController::class, 'logoutWeb'])->name('super_admin.logout');
 
 // Super Admin management routes
-Route::middleware(['super_admin_access'])->group(function () {
+Route::middleware(['super_admin_access:admin'])->group(function () {
     // Location Management
     Route::get('/super-admin/provinces', [ProvinceController::class, 'index'])->name('super_admin.provinces');
     Route::get('/super-admin/provinces/create', [ProvinceController::class, 'create'])->name('super_admin.provinces.create');
@@ -114,33 +115,33 @@ Route::middleware(['super_admin_access'])->group(function () {
     Route::put('/super-admin/categories/{category}', [CategoryController::class, 'update'])->name('super_admin.categories.update');
     Route::delete('/super-admin/categories/{category}', [CategoryController::class, 'destroy'])->name('super_admin.categories.destroy');
 
-    Route::get('/super-admin/packages', [PackagesController::class, 'index'])->name('super_admin.packages');
-    Route::get('/super-admin/packages/create', [PackagesController::class, 'create'])->name('super_admin.packages.create');
-    Route::post('/super-admin/packages', [PackagesController::class, 'store'])->name('super_admin.packages.store');
-    Route::get('/super-admin/packages/{package}/edit', [PackagesController::class, 'edit'])->name('super_admin.packages.edit');
-    Route::put('/super-admin/packages/{package}', [PackagesController::class, 'update'])->name('super_admin.packages.update');
-    Route::delete('/super-admin/packages/{package}', [PackagesController::class, 'destroy'])->name('super_admin.packages.destroy');
+    Route::get('/super-admin/packages', [PackagesController::class, 'index'])->name('super_admin.packages')->middleware('admin.permission:packages.manage');
+    Route::get('/super-admin/packages/create', [PackagesController::class, 'create'])->name('super_admin.packages.create')->middleware('admin.permission:packages.manage');
+    Route::post('/super-admin/packages', [PackagesController::class, 'store'])->name('super_admin.packages.store')->middleware('admin.permission:packages.manage');
+    Route::get('/super-admin/packages/{package}/edit', [PackagesController::class, 'edit'])->name('super_admin.packages.edit')->middleware('admin.permission:packages.manage');
+    Route::put('/super-admin/packages/{package}', [PackagesController::class, 'update'])->name('super_admin.packages.update')->middleware('admin.permission:packages.manage');
+    Route::delete('/super-admin/packages/{package}', [PackagesController::class, 'destroy'])->name('super_admin.packages.destroy')->middleware('admin.permission:packages.manage');
 
     // Product Management (Top-Level)
-    Route::get('/super-admin/products', [VendorController::class, 'allProducts'])->name('super_admin.products');
-    Route::post('/super-admin/products/{product}/stock', [VendorController::class, 'addProductStockTop'])->name('super_admin.products.stock');
-    Route::get('/super-admin/products/{product}/edit', [VendorController::class, 'editProductTop'])->name('super_admin.products.edit');
-    Route::put('/super-admin/products/{product}', [VendorController::class, 'updateProductTop'])->name('super_admin.products.update');
-    Route::delete('/super-admin/products/{product}', [VendorController::class, 'deleteProductTop'])->name('super_admin.products.destroy');
+    Route::get('/super-admin/products', [VendorController::class, 'allProducts'])->name('super_admin.products')->middleware('admin.permission:products.manage');
+    Route::post('/super-admin/products/{product}/stock', [VendorController::class, 'addProductStockTop'])->name('super_admin.products.stock')->middleware('admin.permission:products.manage');
+    Route::get('/super-admin/products/{product}/edit', [VendorController::class, 'editProductTop'])->name('super_admin.products.edit')->middleware('admin.permission:products.manage');
+    Route::put('/super-admin/products/{product}', [VendorController::class, 'updateProductTop'])->name('super_admin.products.update')->middleware('admin.permission:products.manage');
+    Route::delete('/super-admin/products/{product}', [VendorController::class, 'deleteProductTop'])->name('super_admin.products.destroy')->middleware('admin.permission:products.manage');
 
     // Addon Management (Top-Level)
-    Route::get('/super-admin/addons', [VendorController::class, 'allAddons'])->name('super_admin.addons');
-    Route::get('/super-admin/addons/{addon}/edit', [VendorController::class, 'editAddonTop'])->name('super_admin.addons.edit');
-    Route::put('/super-admin/addons/{addon}', [VendorController::class, 'updateAddonTop'])->name('super_admin.addons.update');
-    Route::delete('/super-admin/addons/{addon}', [VendorController::class, 'deleteAddonTop'])->name('super_admin.addons.destroy');
+    Route::get('/super-admin/addons', [VendorController::class, 'allAddons'])->name('super_admin.addons')->middleware('admin.permission:addons.manage');
+    Route::get('/super-admin/addons/{addon}/edit', [VendorController::class, 'editAddonTop'])->name('super_admin.addons.edit')->middleware('admin.permission:addons.manage');
+    Route::put('/super-admin/addons/{addon}', [VendorController::class, 'updateAddonTop'])->name('super_admin.addons.update')->middleware('admin.permission:addons.manage');
+    Route::delete('/super-admin/addons/{addon}', [VendorController::class, 'deleteAddonTop'])->name('super_admin.addons.destroy')->middleware('admin.permission:addons.manage');
 
     // User Management
-    Route::get('/super-admin/vendors', [VendorController::class, 'index'])->name('super_admin.vendors');
-    Route::get('/super-admin/vendors/create', [VendorController::class, 'create'])->name('super_admin.vendors.create');
-    Route::post('/super-admin/vendors', [VendorController::class, 'store'])->name('super_admin.vendors.store');
-    Route::get('/super-admin/vendors/{vendor}/edit', [VendorController::class, 'edit'])->name('super_admin.vendors.edit');
-    Route::put('/super-admin/vendors/{vendor}', [VendorController::class, 'update'])->name('super_admin.vendors.update');
-    Route::delete('/super-admin/vendors/{vendor}', [VendorController::class, 'destroy'])->name('super_admin.vendors.destroy');
+    Route::get('/super-admin/vendors', [VendorController::class, 'index'])->name('super_admin.vendors')->middleware('admin.permission:vendors.manage');
+    Route::get('/super-admin/vendors/create', [VendorController::class, 'create'])->name('super_admin.vendors.create')->middleware('admin.permission:vendors.manage');
+    Route::post('/super-admin/vendors', [VendorController::class, 'store'])->name('super_admin.vendors.store')->middleware('admin.permission:vendors.manage');
+    Route::get('/super-admin/vendors/{vendor}/edit', [VendorController::class, 'edit'])->name('super_admin.vendors.edit')->middleware('admin.permission:vendors.manage');
+    Route::put('/super-admin/vendors/{vendor}', [VendorController::class, 'update'])->name('super_admin.vendors.update')->middleware('admin.permission:vendors.manage');
+    Route::delete('/super-admin/vendors/{vendor}', [VendorController::class, 'destroy'])->name('super_admin.vendors.destroy')->middleware('admin.permission:vendors.manage');
 
     // Vendor-specific routes
     Route::get('/super-admin/vendors/{vendor}/products', [VendorController::class, 'vendorProducts'])->name('super_admin.vendors.products');
@@ -160,25 +161,41 @@ Route::middleware(['super_admin_access'])->group(function () {
     Route::get('/super-admin/vendors/{vendor}/transaction-products', [VendorController::class, 'vendorTransactionProducts'])->name('super_admin.vendors.transaction_products');
     Route::get('/super-admin/vendors/{vendor}/transaction-addons', [VendorController::class, 'vendorTransactionAddons'])->name('super_admin.vendors.transaction_addons');
 
-    Route::get('/super-admin/vendor-details', [VendorInfoController::class, 'index'])->name('super_admin.vendor_details');
-    Route::get('/super-admin/vendor-details/export', [VendorInfoController::class, 'export'])->name('super_admin.vendor_details.export');
-    Route::get('/super-admin/vendor-details/{vendorInfo}', [VendorInfoController::class, 'show'])->name('super_admin.vendor_details.show');
-    Route::get('/super-admin/vendor-details/{vendorInfo}/edit', [VendorInfoController::class, 'edit'])->name('super_admin.vendor_details.edit');
-    Route::put('/super-admin/vendor-details/{vendorInfo}', [VendorInfoController::class, 'update'])->name('super_admin.vendor_details.update');
-    Route::delete('/super-admin/vendor-details/{vendorInfo}', [VendorInfoController::class, 'destroy'])->name('super_admin.vendor_details.destroy');
-    Route::get('/super-admin/customers', [SuperAdminController::class, 'customers'])->name('super_admin.customers');
-    Route::post('/super-admin/customers/{id}/ban', [SuperAdminController::class, 'banCustomer'])->name('super_admin.customers.ban');
-    Route::post('/super-admin/customers/{id}/unban', [SuperAdminController::class, 'unbanCustomer'])->name('super_admin.customers.unban');
-    Route::get('/super-admin/customers/{id}/view', [SuperAdminController::class, 'viewCustomer'])->name('super_admin.customers.view');
+    Route::get('/super-admin/vendor-details', [VendorInfoController::class, 'index'])->name('super_admin.vendor_details')->middleware('admin.permission:vendors.manage');
+    Route::get('/super-admin/vendor-details/export', [VendorInfoController::class, 'export'])->name('super_admin.vendor_details.export')->middleware('admin.permission:vendors.manage');
+    Route::get('/super-admin/vendor-details/{vendorInfo}', [VendorInfoController::class, 'show'])->name('super_admin.vendor_details.show')->middleware('admin.permission:vendors.manage');
+    Route::get('/super-admin/vendor-details/{vendorInfo}/edit', [VendorInfoController::class, 'edit'])->name('super_admin.vendor_details.edit')->middleware('admin.permission:vendors.manage');
+    Route::put('/super-admin/vendor-details/{vendorInfo}', [VendorInfoController::class, 'update'])->name('super_admin.vendor_details.update')->middleware('admin.permission:vendors.manage');
+    Route::delete('/super-admin/vendor-details/{vendorInfo}', [VendorInfoController::class, 'destroy'])->name('super_admin.vendor_details.destroy')->middleware('admin.permission:vendors.manage');
+    Route::get('/super-admin/customers', [SuperAdminController::class, 'customers'])->name('super_admin.customers')->middleware('admin.permission:customers.manage');
+    Route::post('/super-admin/customers/{id}/ban', [SuperAdminController::class, 'banCustomer'])->name('super_admin.customers.ban')->middleware('admin.permission:customers.manage');
+    Route::post('/super-admin/customers/{id}/unban', [SuperAdminController::class, 'unbanCustomer'])->name('super_admin.customers.unban')->middleware('admin.permission:customers.manage');
+    Route::get('/super-admin/customers/{id}/view', [SuperAdminController::class, 'viewCustomer'])->name('super_admin.customers.view')->middleware('admin.permission:customers.manage');
 
     // Transaction Management
-    Route::get('/super-admin/transaction-packages', [SuperAdminController::class, 'transactionPackages'])->name('super_admin.transaction_packages');
-    Route::get('/super-admin/transaction-products', [SuperAdminController::class, 'transactionProducts'])->name('super_admin.transaction_products');
-    Route::get('/super-admin/transaction-addons', [SuperAdminController::class, 'transactionAddons'])->name('super_admin.transaction_addons');
+    Route::get('/super-admin/transaction-packages', [SuperAdminController::class, 'transactionPackages'])->name('super_admin.transaction_packages')->middleware('admin.permission:transactions.view');
+    Route::get('/super-admin/transaction-products', [SuperAdminController::class, 'transactionProducts'])->name('super_admin.transaction_products')->middleware('admin.permission:transactions.view');
+    Route::get('/super-admin/transaction-addons', [SuperAdminController::class, 'transactionAddons'])->name('super_admin.transaction_addons')->middleware('admin.permission:transactions.view');
+
+    // Unified Bookings Management (Super Admin) - dedicated routes
+    Route::get('/super-admin/bookings', [BookingsController::class, 'index'])->name('super_admin.bookings')->middleware('admin.permission:transactions.view');
+    Route::get('/super-admin/bookings/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('super_admin.bookings.detail')->middleware('admin.permission:transactions.view');
+    Route::post('/super-admin/bookings/{booking}/approve', [BookingsController::class, 'approve'])->name('super_admin.bookings.approve')->middleware('admin.permission:transactions.manage');
+    Route::post('/super-admin/bookings/{booking}/reject', [BookingsController::class, 'reject'])->name('super_admin.bookings.reject')->middleware('admin.permission:transactions.manage');
+    Route::post('/super-admin/bookings/{booking}/verify-payment', [BookingsController::class, 'verifyPayment'])->name('super_admin.bookings.verify_payment')->middleware('admin.permission:transactions.manage');
+    Route::post('/super-admin/bookings/{booking}/process-refund', [BookingsController::class, 'processRefund'])->name('super_admin.bookings.process_refund')->middleware('admin.permission:transactions.manage');
 
     // System Management
-    Route::get('/super-admin/rekon', [SuperAdminController::class, 'rekon'])->name('super_admin.rekon');
-    Route::get('/super-admin/system-settings', [DashboardController::class, 'systemSettings'])->name('super_admin.system_settings');
+    Route::get('/super-admin/rekon', [SuperAdminController::class, 'rekon'])->name('super_admin.rekon')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/system-settings', [DashboardController::class, 'systemSettings'])->name('super_admin.system_settings')->middleware('admin.permission:system.manage');
+
+    // Admin management (Super Admin)
+    Route::get('/super-admin/admins', [SuperAdminController::class, 'adminsIndex'])->name('super_admin.admins')->middleware('admin.permission:admins.manage');
+    Route::get('/super-admin/admins/create', [SuperAdminController::class, 'createAdminForm'])->name('super_admin.admins.create')->middleware('admin.permission:admins.manage');
+    Route::post('/super-admin/admins', [SuperAdminController::class, 'storeAdmin'])->name('super_admin.admins.store')->middleware('admin.permission:admins.manage');
+    Route::get('/super-admin/admins/{admin}/edit', [SuperAdminController::class, 'editAdminForm'])->name('super_admin.admins.edit')->middleware('admin.permission:admins.manage');
+    Route::put('/super-admin/admins/{admin}', [SuperAdminController::class, 'updateAdmin'])->name('super_admin.admins.update')->middleware('admin.permission:admins.manage');
+    Route::delete('/super-admin/admins/{admin}', [SuperAdminController::class, 'destroyAdmin'])->name('super_admin.admins.destroy')->middleware('admin.permission:admins.manage');
 });
 
 // Protected routes
@@ -211,6 +228,8 @@ Route::middleware(['super_admin_access:admin']) ->prefix('admin')
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 Route::prefix('super-admin/transactions')->middleware(['super_admin_access:admin'])->name('super_admin.transaction.')->group(function () {
+    // Unified transactions index for Super Admin
+    Route::get('/', [BookingsController::class, 'index'])->name('index')->middleware('admin.permission:transactions.view');
     // Index sudah ada di Controller Anda: $bookings = Booking::with...->paginate(10);
     Route::get('/packages', [BookingsController::class, 'index'])->name('packages'); // Mengarah ke view 'super_admin.transaction_packages'
 
@@ -224,6 +243,10 @@ Route::prefix('super-admin/transactions')->middleware(['super_admin_access:admin
 
     // Route Detail (Anda mungkin ingin membuat fungsi detail khusus Admin)
     // Route::get('/{booking}/detail', [BookingsController::class, 'showDetailAdmin'])->name('detail');
+    // Verify payment (admin) -> move from 'paid' to 'completed'
+    Route::post('/{booking}/verify-payment', [BookingsController::class, 'verifyPayment'])->name('verify_payment')->middleware('admin.permission:transactions.manage');
+    // Process refund (admin) -> process return and mark complete
+    Route::post('/{booking}/process-refund', [BookingsController::class, 'processRefund'])->name('process_refund')->middleware('admin.permission:transactions.manage');
 });
 
 // Admin transaction routes
@@ -272,40 +295,45 @@ Route::prefix('products')->name('super_admin.product.')->group(function () {
 // Search route
 Route::get('/search', [SearchController::class, 'index'])->name('user.search');
 
-Route::middleware(['super_admin_access'])->group(function () {
+// Product and Addon detail routes - accessible without authentication
+Route::get('/product/{product}', [ProductController::class, 'showDetail'])->name('user.product_detail');
+Route::get('/addon/{addon}', [AddonController::class, 'showDetail'])->name('user.addon_detail');
+Route::get('/package/{package}', [PackagesController::class, 'showDetail'])->name('user.package_detail');
+
+// Booking routes - accessible without authentication for guest booking
+Route::get('/book', function () {
+    $packages = \App\Models\Package::where('is_active', true)->get();
+    $products = \App\Models\Product::where('status', 'available')->get();
+    $addons = \App\Models\Addon::where('status', 'publish')->get();
+
+    return view('user.form_booker', compact('packages', 'products', 'addons'));
+})->name('user.form_booker');
+
+Route::post('/book', [BookingsController::class, 'store'])->name('user.book');
+
+// Payment and booking detail routes - accessible without authentication for guest bookings
+Route::get('/payment/{booking}', [BookingsController::class, 'payment'])->name('user.payment');
+Route::post('/payment/{booking}/confirm', [BookingsController::class, 'confirmPayment'])->name('user.payment.confirm');
+Route::post('/payment/{booking}/request-refund', [BookingsController::class, 'requestRefund'])->name('user.payment.request_refund');
+Route::get('/history/{booking}', [BookingsController::class, 'showDetail'])->name('user.detail_history');
+
+Route::middleware(['auth'])->group(function () {
     // User pages
     Route::get('/home', [App\Http\Controllers\SearchController::class, 'index'])->name('user.home');
 
-    Route::get('/book', function () {
-        $packages = \App\Models\Package::where('is_active', true)->get();
-        $products = \App\Models\Product::where('status', 'available')->get();
-        $addons = \App\Models\Addon::where('status', 'available')->where('publish', true)->get();
-
-        return view('user.form_booker', compact('packages', 'products', 'addons'));
-    })->name('user.form_booker');
-
-    Route::post('/book', [BookingsController::class, 'store'])->name('user.book');
-
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/profile', function () {
-            return view('user.profil');
-        })->name('user.profil');
-    });
+    Route::get('/profile', function () {
+        return view('user.profil');
+    })->name('user.profil');
 
     Route::put('/profile/update', [AuthController::class, 'updateProfile'])->name('user.profile.update');
     Route::put('/profile/change-password', [AuthController::class, 'changePassword'])->name('user.profile.change_password');
 
     Route::get('/history', [BookingsController::class, 'history'])->name('user.history');
-
-    Route::get('/history/{booking}', [BookingsController::class, 'showDetail'])->name('user.detail_history');
+    Route::get('/account/activate/{token}', [BookingsController::class, 'activateAccount'])->name('user.account.activate');
+    Route::post('/account/activate/{token}', [BookingsController::class, 'setPassword'])->name('user.account.set_password');
     Route::get('/support/{booking}', [BookingsController::class, 'support'])->name('user.support');
     Route::post('/support/{booking}', [BookingsController::class, 'submitSupport'])->name('user.support.submit');
     Route::delete('/booking/cancel/{booking}', [BookingsController::class, 'cancel'])->name('booking.cancel');
-
-    // Product and Addon detail routes
-    Route::get('/product/{product}', [ProductController::class, 'showDetail'])->name('user.product_detail');
-    Route::get('/addon/{addon}', [AddonController::class, 'showDetail'])->name('user.addon_detail');
-    Route::get('/package/{package}', [PackagesController::class, 'showDetail'])->name('user.package_detail');
 
     // User dashboard - accessible by user
     Route::get('/dashboard', function () {
@@ -371,6 +399,9 @@ Route::middleware(['super_admin_access:vendor'])->group(function () {
     Route::post('/vendor/products/{product}/stock', [VendorController::class, 'addProductStockVendor'])->name('vendor.products.stock');
 
     Route::get('/vendor/addons', [VendorController::class, 'vendorAddonsDashboard'])->name('vendor.addons');
+    // Vendor transactions report
+    Route::get('/vendor/transactions/report', [VendorController::class, 'transactionReport'])->name('vendor.transactions.report');
+    Route::get('/vendor/transactions/report/export', [VendorController::class, 'transactionReportExport'])->name('vendor.transactions.report.export');
     Route::get('/vendor/addons/create', [VendorController::class, 'createAddon'])->name('vendor.addons.create');
     Route::post('/vendor/addons', [VendorController::class, 'storeAddon'])->name('vendor.addons.store');
     Route::get('/vendor/addons/{addon}/edit', [VendorController::class, 'editAddon'])->name('vendor.addons.edit');
@@ -381,8 +412,8 @@ Route::middleware(['super_admin_access:vendor'])->group(function () {
     Route::get('/vendor/transaction-addons', [VendorController::class, 'vendorTransactionAddonsDashboard'])->name('vendor.transaction_addons');
 });
 
-Route::middleware(['auth:super_admin'])->group(function () {
-    // Super Admin dashboard - accessible by super_admin
+// Allow super_admin and admin (admin guard) to access the super-admin dashboard
+Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::get('/super-admin/dashboard', [SuperAdminController::class, 'dashboard'])->name('super_admin.dashboard');
 });
 

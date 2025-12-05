@@ -9,9 +9,10 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
 @section('logout_route', route('vendor.logout'))
 
 @section('content')
-<div class="px-4 py-6 sm:px-0">
+<div class="space-y-6">
+    <!-- Alert Messages -->
     @if (session('success'))
-        <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+        <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
             <div class="flex">
                 <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -19,7 +20,7 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
                     </svg>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium">{{ session('success') }}</p>
+                    <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
                 </div>
             </div>
         </div>
@@ -31,7 +32,7 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
     @endphp
 
     @if (!$hasVendorInfo)
-        <div class="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg">
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
             <div class="flex">
                 <div class="flex-shrink-0">
                     <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
@@ -39,7 +40,7 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
                     </svg>
                 </div>
                 <div class="ml-3">
-                    <p class="text-sm font-medium">
+                    <p class="text-sm font-medium text-yellow-800">
                         Lengkapi informasi vendor Anda untuk mulai menerima pesanan.
                         <a href="{{ route('vendor.info') }}" class="font-medium underline text-yellow-700 hover:text-yellow-600">
                             Lengkapi sekarang →
@@ -51,122 +52,62 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
     @endif
 
     <!-- Stats Cards Section -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Total Bookings Card -->
-        <div class="bg-white rounded-lg p-4 shadow-sm border border-emerald-100 hover:shadow-md transition-all">
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-gray-600">Total Bookings</p>
-                    <p class="text-2xl font-bold text-emerald-600 mt-1">{{ $totalBookings ?? 0 }}</p>
+                    <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Bookings</p>
+                    <p class="text-3xl font-bold text-emerald-600 mt-2">{{ $totalBookings ?? 0 }}</p>
+                    <p class="text-sm text-gray-500 mt-1">Active bookings</p>
                 </div>
-                <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-calendar-check text-emerald-600"></i>
+                <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-calendar-check text-emerald-600 text-lg"></i>
                 </div>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Active bookings</p>
         </div>
 
-        <!-- Cancellations Card -->
-        <div class="bg-white rounded-lg p-4 shadow-sm border border-red-100 hover:shadow-md transition-all">
+        <!-- Revenue Card (Nominal Transaksi) -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-medium text-gray-600">Cancellations</p>
-                    <p class="text-2xl font-bold text-red-600 mt-1">{{ $totalCancellations ?? 0 }}</p>
+                    <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Nominal Transaksi</p>
+                    <p class="text-2xl font-bold text-blue-600 mt-2">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</p>
+                    <p class="text-sm text-gray-500 mt-1">Total nominal dari transaksi yang selesai</p>
                 </div>
-                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-times-circle text-red-600"></i>
-                </div>
-            </div>
-            <p class="text-xs text-red-500 mt-2">{{ $totalBookings > 0 ? round(($totalCancellations / ($totalBookings + $totalCancellations)) * 100, 1) : 0 }}% rate</p>
-        </div>
-
-        <!-- Revenue Card -->
-        <div class="bg-white rounded-lg p-4 shadow-sm border border-blue-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-gray-600">Revenue</p>
-                    <p class="text-lg font-bold text-blue-600 mt-1">Rp {{ number_format($totalRevenue ?? 0, 0, ',', '.') }}</p>
-                </div>
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-dollar-sign text-blue-600"></i>
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-dollar-sign text-blue-600 text-lg"></i>
                 </div>
             </div>
-            <p class="text-xs text-gray-500 mt-2">Completed</p>
-        </div>
-
-        <!-- Active Services Card -->
-        <div class="bg-white rounded-lg p-4 shadow-sm border border-purple-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-gray-600">Active Services</p>
-                    <p class="text-2xl font-bold text-purple-600 mt-1">{{ $activeServices ?? 0 }}</p>
-                </div>
-                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-concierge-bell text-purple-600"></i>
-                </div>
-            </div>
-            <p class="text-xs text-gray-500 mt-2">Published</p>
-        </div>
-
-        <!-- Rating Card -->
-        <div class="bg-white rounded-lg p-4 shadow-sm border border-orange-100 hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-medium text-gray-600">Rating</p>
-                    <p class="text-2xl font-bold text-orange-600 mt-1">{{ $averageRating ?? 0 }}/5</p>
-                </div>
-                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-star text-orange-600"></i>
-                </div>
-            </div>
-            <p class="text-xs text-gray-500 mt-2">
-                @if($averageRating >= 4)
-                    Excellent
-                @elseif($averageRating >= 3)
-                    Good
-                @else
-                    Fair
-                @endif
-            </p>
         </div>
     </div>
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Monthly Performance Chart (Full Width on Mobile, 2/3 on Desktop) -->
-        <div class="lg:col-span-2 bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Monthly Performance</h3>
-                <i class="fas fa-chart-line text-green-600"></i>
+    <div class="space-y-6">
+        <!-- Performance Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Monthly Performance Chart -->
+            <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Monthly Performance</h3>
+                    <i class="fas fa-chart-line text-emerald-600 text-lg"></i>
+                </div>
+                <div class="relative" style="height: 320px;">
+                    <canvas id="performanceChart"></canvas>
+                </div>
             </div>
-            <div style="position: relative; height: 300px;">
-                <canvas id="performanceChart"></canvas>
-            </div>
-        </div>
 
-        <!-- Bookings vs Cancellations Chart -->
-        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Comparison</h3>
-                <i class="fas fa-chart-bar text-blue-600"></i>
+            <!-- Bookings vs Cancellations Chart -->
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Comparison</h3>
+                    <i class="fas fa-chart-bar text-blue-600 text-lg"></i>
+                </div>
+                <div class="relative" style="height: 320px;">
+                    <canvas id="bookingComparisonChart"></canvas>
+                </div>
             </div>
-            <div style="position: relative; height: 300px;">
-                <canvas id="bookingComparisonChart"></canvas>
-            </div>
         </div>
-    </div>
-
-    <!-- Revenue Chart -->
-    <div class="mt-4 bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800">Monthly Revenue Trend</h3>
-            <i class="fas fa-money-bill text-green-600"></i>
-        </div>
-        <div style="position: relative; height: 300px;">
-            <canvas id="revenueChart"></canvas>
-        </div>
-    </div>
-</div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
@@ -273,7 +214,7 @@ Welcome back, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()-
         data: {
             labels: {!! $labels !!},
             datasets: [{
-                label: 'Revenue (Rp)',
+                label: 'Nominal Transaksi (Rp)',
                 data: {!! $monthlyRevenue !!},
                 borderColor: 'rgb(59, 130, 246)',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',

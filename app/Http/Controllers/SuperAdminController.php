@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\Admin;
+use App\Models\Permission;
 
 class SuperAdminController extends Controller
 {
@@ -75,7 +77,7 @@ class SuperAdminController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('super_admin.login');
+        return redirect()->route('login');
     }
 
 
@@ -478,8 +480,8 @@ public function transactionProducts()
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = TotalPaid - NTA
-            $profit = $totalPaid - $totalNta;
+            // Profit = TotalPaid - NTA, ensure not negative
+            $profit = max(0, $totalPaid - $totalNta);
 
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
@@ -536,15 +538,15 @@ public function transactionProducts()
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = TotalPaid - NTA
-            $profit = $totalPaid - $totalNta;
+            // Profit = TotalPaid - NTA, ensure not negative
+            $profit = max(0, $totalPaid - $totalNta);
 
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
                 'date' => $booking->created_at,
-                'product_name' => $package->name . ' (Package)', // Menggunakan nama package, bukan product
-                'vendor_id' => $package->id_vendor,
-                'vendor_name' => $package->vendor->name ?? 'Unknown',
+                'product_name' => $package->name_package . ' (Package)', // Menggunakan nama package, bukan product
+                'vendor_id' => $package->vendorInfo->id_vendor ?? null,
+                'vendor_name' => $package->vendorInfo->name_corporate ?? 'Unknown',
                 'basic_price' => $basicPrice,
                 'tax' => $taxAmount,
                 'discount' => $discountAmount,
@@ -699,5 +701,153 @@ public function transactionProducts()
             'monthlyProfit',
             'labels'
         ));
+    }
+
+    // ---------------------------
+    // Admin management for Super Admin
+    // ---------------------------
+    public function adminsIndex(Request $request)
+    {
+        $query = Admin::query();
+
+        if ($request->filled('search')) {
+            $s = $request->input('search');
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('email', 'like', "%{$s}%");
+            });
+        }
+
+        $admins = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+
+        return view('super_admin.admins.index', compact('admins'));
+    }
+
+    public function createAdminForm()
+    {
+        $permissions = Permission::orderBy('name')->get();
+        $roles = \App\Models\Role::orderBy('name')->get();
+        return view('super_admin.admins.form', ['admin' => null, 'permissions' => $permissions, 'roles' => $roles]);
+    }
+
+    public function storeAdmin(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:admins,email',
+            'roles' => 'nullable|array',
+            'roles.*' => 'exists:roles,id',
+            'password' => 'nullable|string|min:6|confirmed',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
+
+        // determine legacy role column value: prefer first selected role key, otherwise default to 'admin'
+        $legacyRole = 'admin';
+        if (!empty($validated['roles'])) {
+            $firstRole = \App\Models\Role::find($validated['roles'][0]);
+            if ($firstRole) $legacyRole = $firstRole->key;
+        }
+
+        $admin = Admin::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $legacyRole,
+            'password' => isset($validated['password']) ? bcrypt($validated['password']) : null,
+        ]);
+
+        if (!empty($validated['permissions'])) {
+            $admin->permissions()->sync($validated['permissions']);
+        }
+
+        // Assign roles if provided
+        if (!empty($validated['roles'])) {
+            // Enforce super_admin limit: max 2
+            $superRole = \App\Models\Role::where('key', 'super_admin')->first();
+            if ($superRole && in_array($superRole->id, $validated['roles'])) {
+                $countSuper = \DB::table('admin_role')->where('role_id', $superRole->id)->count();
+                if ($countSuper >= 2) {
+                    // rollback created admin
+                    $admin->permissions()->detach();
+                    $admin->delete();
+                    return back()->withInput()->with('error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
+                }
+            }
+
+            $admin->roles()->sync($validated['roles']);
+        }
+
+        return redirect()->route('super_admin.admins')->with('success', 'Admin berhasil dibuat.');
+    }
+
+    public function editAdminForm(Admin $admin)
+    {
+        $permissions = Permission::orderBy('name')->get();
+        $roles = \App\Models\Role::orderBy('name')->get();
+        $admin->load('permissions', 'roles');
+        return view('super_admin.admins.form', compact('admin', 'permissions', 'roles'));
+    }
+
+    public function updateAdmin(Request $request, Admin $admin)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:admins,email,' . $admin->id,
+            'roles' => 'nullable|array',
+            'roles.*' => 'exists:roles,id',
+            'password' => 'nullable|string|min:6|confirmed',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
+
+        // Update legacy role column to first selected role key if roles provided
+        $legacyRole = $admin->role;
+        if (array_key_exists('roles', $validated) && !empty($validated['roles'])) {
+            $firstRole = \App\Models\Role::find($validated['roles'][0]);
+            if ($firstRole) $legacyRole = $firstRole->key;
+        }
+
+        $admin->update([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $legacyRole,
+        ]);
+
+        if (!empty($validated['password'])) {
+            $admin->update(['password' => bcrypt($validated['password'])]);
+        }
+
+        $admin->permissions()->sync($validated['permissions'] ?? []);
+
+        // Sync roles if provided
+        if (array_key_exists('roles', $validated)) {
+            // If roles include super_admin, enforce max 2
+            $superRole = \App\Models\Role::where('key', 'super_admin')->first();
+            if ($superRole && in_array($superRole->id, $validated['roles'] ?? [])) {
+                $countSuper = \DB::table('admin_role')->where('role_id', $superRole->id)->count();
+                // allow if current admin already has super role (editing), otherwise enforce max 2
+                $hasAlready = $admin->roles()->where('key', 'super_admin')->exists();
+                if (!$hasAlready && $countSuper >= 2) {
+                    return back()->withInput()->with('error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
+                }
+            }
+
+            $admin->roles()->sync($validated['roles'] ?? []);
+        }
+
+        return redirect()->route('super_admin.admins')->with('success', 'Admin berhasil diperbarui.');
+    }
+
+    public function destroyAdmin(Admin $admin)
+    {
+        if ($admin->hasRole('super_admin') || ($admin->role ?? null) === 'super_admin') {
+            return back()->with('error', 'Tidak dapat menghapus akun Super Admin.');
+        }
+
+        $admin->permissions()->detach();
+        $admin->roles()->detach();
+        $admin->delete();
+
+        return back()->with('success', 'Admin berhasil dihapus.');
     }
 }

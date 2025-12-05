@@ -72,12 +72,17 @@ class DashboardController extends Controller
 
 
         // -------------------------
-        // Return ke view
+        // Prepare view variables and return to super admin dashboard view
         // -------------------------
-        return view('admin.dashboard', compact(
+        // Map local variable names to what the dashboard view expects
+        $revenueData = $pendapatanData;
+        // Provide a default facilityData (12 months zeros) if not available
+        $facilityData = array_fill(0, 12, 0);
+
+        return view('super_admin.dashboard', compact(
             'totalPackages','totalBooking','totalUsers','totalRevenue',
-            'months','bookingData','pendapatanData',
-            'statusLabels','statusData',
+            'months','bookingData','revenueData',
+            'statusData','facilityData'
         ));
     }
 

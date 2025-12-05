@@ -491,6 +491,14 @@ class VendorController extends Controller
         return view('vendor.products', compact('products'));
     }
 
+    /**
+     * Legacy route support: redirect vendor stock page to main products page.
+     */
+    public function vendorStock()
+    {
+        return redirect()->route('vendor.products');
+    }
+
     public function vendorAddonsDashboard()
     {
         $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
@@ -943,103 +951,125 @@ class VendorController extends Controller
     public function dashboard()
     {
         $vendor = Auth::guard('vendor')->user();
-        
-        // Get all products for this vendor
-        $products = Product::where('id_vendor', $vendor->id)->pluck('id')->toArray();
-        
+
         // Initialize arrays for monthly data (last 6 months)
         $monthlyBookings = [];
         $monthlyCancellations = [];
         $monthlyRevenue = [];
         $labels = [];
-        
+
         // Generate data for last 6 months
         for ($i = 5; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $month = $date->format('M');
             $labels[] = $month;
-            
-            // Count product bookings for this month
-            $productBookings = BookProduct::whereHas('booking', function ($query) use ($date, $vendor) {
-                $query->whereMonth('created_at', $date->month)
-                      ->whereYear('created_at', $date->year)
-                      ->where('status', '!=', 'cancelled');
-            })->whereHas('product', function ($query) use ($vendor) {
-                $query->where('id_vendor', $vendor->id);
-            })->count();
-            
-            // Count package bookings containing this vendor's products (via PackageProduct)
-            $packageBookings = BookPackage::whereHas('bookPackageAddons', function ($query) use ($date) {
-                // This tracks packages - we need to count the booking if any product in it belongs to vendor
-            })->whereMonth('created_at', $date->month)
-              ->whereYear('created_at', $date->year)
-              ->where('status', '!=', 'cancelled')
-              ->count();
-            
-            // Alternative: Get bookings through booking_id and check if booking has vendor's products
-            $bookingIds = BookProduct::whereIn('id_product', $products)
-                ->whereMonth('created_at', $date->month)
-                ->whereYear('created_at', $date->year)
-                ->distinct('id_book')
-                ->pluck('id_book')
-                ->toArray();
-                
-            $vendorBookings = Booking::whereIn('id', $bookingIds)
-                ->where('status', '!=', 'cancelled')
-                ->count();
-            
-            // Count cancellations
-            $cancellations = BookProduct::whereHas('booking', function ($query) use ($date) {
-                $query->whereMonth('created_at', $date->month)
-                      ->whereYear('created_at', $date->year)
-                      ->where('status', 'cancelled');
-            })->whereHas('product', function ($query) use ($vendor) {
-                $query->where('id_vendor', $vendor->id);
-            })->count();
-            
-            $monthlyBookings[] = $vendorBookings + $productBookings;
-            $monthlyCancellations[] = $cancellations;
-            
-            // Calculate revenue (sum of completed bookings)
-            $revenue = DB::table('book_products')
-                ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
+
+            // Get booking IDs for direct products
+            $bookingIds = DB::table('book_products')
                 ->join('products', 'book_products.id_product', '=', 'products.id')
                 ->where('products.id_vendor', $vendor->id)
                 ->whereMonth('book_products.created_at', $date->month)
                 ->whereYear('book_products.created_at', $date->year)
-                ->where('bookings.status', 'completed')
+                ->distinct('id_book')
+                ->pluck('id_book')
+                ->toArray();
+
+            // Get booking IDs for packages from this vendor
+            $packageBookingIds = DB::table('book_packages')
+                ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+                ->join('vendor_info', 'packages.id_vendor_info', '=', 'vendor_info.id')
+                ->where('vendor_info.id_vendor', $vendor->id)
+                ->whereMonth('book_packages.created_at', $date->month)
+                ->whereYear('book_packages.created_at', $date->year)
+                ->distinct('id_book')
+                ->pluck('id_book')
+                ->toArray();
+
+            $allBookingIds = array_unique(array_merge($bookingIds, $packageBookingIds));
+
+            $monthlyBookings[] = Booking::whereIn('id', $allBookingIds)
+                ->where('status', '!=', 'cancelled')
+                ->count();
+
+            // Count cancellations
+            $cancellationBookingIds = DB::table('book_products')
+                ->join('products', 'book_products.id_product', '=', 'products.id')
+                ->where('products.id_vendor', $vendor->id)
+                ->whereMonth('book_products.created_at', $date->month)
+                ->whereYear('book_products.created_at', $date->year)
+                ->distinct('id_book')
+                ->pluck('id_book')
+                ->toArray();
+
+            $packageCancellationIds = DB::table('book_packages')
+                ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+                ->join('vendor_info', 'packages.id_vendor_info', '=', 'vendor_info.id')
+                ->where('vendor_info.id_vendor', $vendor->id)
+                ->whereMonth('book_packages.created_at', $date->month)
+                ->whereYear('book_packages.created_at', $date->year)
+                ->distinct('id_book')
+                ->pluck('id_book')
+                ->toArray();
+
+            $allCancellationIds = array_unique(array_merge($cancellationBookingIds, $packageCancellationIds));
+
+            $monthlyCancellations[] = Booking::whereIn('id', $allCancellationIds)
+                ->where('status', 'cancelled')
+                ->count();
+
+            // Calculate revenue (sum of completed bookings for direct products)
+            $revenue = DB::table('book_products')
+                ->join('products', 'book_products.id_product', '=', 'products.id')
+                ->where('products.id_vendor', $vendor->id)
+                ->whereMonth('book_products.created_at', $date->month)
+                ->whereYear('book_products.created_at', $date->year)
+                ->where('book_products.revenue_applied', true)
                 ->sum('book_products.total_price');
-            
+
             $monthlyRevenue[] = (int)$revenue;
         }
-        
+
         // Calculate total stats
-        $totalBookings = BookProduct::whereIn('id_product', $products)
-            ->whereHas('booking', function ($query) {
-                $query->where('status', '!=', 'cancelled');
-            })->count();
-        
-        $totalCancellations = BookProduct::whereIn('id_product', $products)
-            ->whereHas('booking', function ($query) {
-                $query->where('status', 'cancelled');
-            })->count();
-        
-        $totalRevenue = DB::table('book_products')
-            ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
+        $totalBookingIds = DB::table('book_products')
             ->join('products', 'book_products.id_product', '=', 'products.id')
             ->where('products.id_vendor', $vendor->id)
-            ->where('bookings.status', 'completed')
+            ->distinct('id_book')
+            ->pluck('id_book')
+            ->toArray();
+
+        $packageTotalBookingIds = DB::table('book_packages')
+            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+            ->join('vendor_info', 'packages.id_vendor_info', '=', 'vendor_info.id')
+            ->where('vendor_info.id_vendor', $vendor->id)
+            ->distinct('id_book')
+            ->pluck('id_book')
+            ->toArray();
+
+        $allTotalBookingIds = array_unique(array_merge($totalBookingIds, $packageTotalBookingIds));
+
+        $totalBookings = Booking::whereIn('id', $allTotalBookingIds)
+            ->where('status', '!=', 'cancelled')
+            ->count();
+
+        $totalCancellations = Booking::whereIn('id', $allTotalBookingIds)
+            ->where('status', 'cancelled')
+            ->count();
+
+        $totalRevenue = DB::table('book_products')
+            ->join('products', 'book_products.id_product', '=', 'products.id')
+            ->where('products.id_vendor', $vendor->id)
+            ->where('book_products.revenue_applied', true)
             ->sum('book_products.total_price');
-        
+
         $activeServices = Product::where('id_vendor', $vendor->id)
             ->where('status', 'active')
             ->count();
-        
+
         // Calculate average rating from reviews
         $averageRating = Review::whereHas('product', function ($query) use ($vendor) {
             $query->where('id_vendor', $vendor->id);
         })->avg('rating') ?? 0;
-        
+
         return view('vendor.dashboard', [
             'totalBookings' => $totalBookings,
             'totalCancellations' => $totalCancellations,
@@ -1051,6 +1081,200 @@ class VendorController extends Controller
             'monthlyRevenue' => json_encode($monthlyRevenue),
             'labels' => json_encode($labels),
         ]);
+    }
+
+    /**
+     * Transactions report for vendor (filterable by product name and date range)
+     */
+    public function transactionReport(Request $request)
+    {
+        $vendor = Auth::guard('vendor')->user();
+
+        // Query for direct product bookings
+        $productQuery = DB::table('book_products')
+            ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
+            ->join('products', 'book_products.id_product', '=', 'products.id')
+            ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
+            ->where('products.id_vendor', $vendor->id)
+            ->select(
+                'book_products.id as book_product_id',
+                'bookings.id as booking_id',
+                'bookings.booking_code as booking_code',
+                DB::raw("'Product' as type"),
+                'products.name as item_name',
+                'users.name as customer_name',
+                'bookings.created_at as transaction_date',
+                'book_products.total_price as price',
+                'book_products.amount as quantity',
+                'bookings.status as booking_status'
+            );
+
+        // Query for package bookings from this vendor
+        $packageQuery = DB::table('book_packages')
+            ->join('bookings', 'book_packages.id_book', '=', 'bookings.id')
+            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+            ->join('vendor_info', 'packages.id_vendor_info', '=', 'vendor_info.id')
+            ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
+            ->where('vendor_info.id_vendor', $vendor->id)
+            ->select(
+                'book_packages.id as book_product_id',
+                'bookings.id as booking_id',
+                'bookings.booking_code as booking_code',
+                DB::raw("'Package' as type"),
+                'packages.name_package as item_name',
+                'users.name as customer_name',
+                'bookings.created_at as transaction_date',
+                'book_packages.total_price as price',
+                DB::raw("1 as quantity"),
+                'bookings.status as booking_status'
+            );
+
+        // Combine queries
+        $combinedQuery = $productQuery->union($packageQuery);
+
+        // Apply filters to the combined query
+        $filteredQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
+            ->mergeBindings($combinedQuery);
+
+        if ($request->filled('product_name')) {
+            $filteredQuery->where('item_name', 'like', '%' . $request->input('product_name') . '%');
+        }
+
+        if ($request->filled('date_from')) {
+            $filteredQuery->whereDate('transaction_date', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $filteredQuery->whereDate('transaction_date', '<=', $request->input('date_to'));
+        }
+
+        $filteredQuery->orderBy('transaction_date', 'desc');
+
+        $transactions = $filteredQuery->paginate(20)->withQueryString();
+
+        return view('vendor.transactions_report', [
+            'transactions' => $transactions,
+            'product_name' => $request->input('product_name'),
+            'date_from' => $request->input('date_from'),
+            'date_to' => $request->input('date_to'),
+        ]);
+    }
+
+    /**
+     * Export transactions report as CSV or PDF
+     */
+    public function transactionReportExport(Request $request)
+    {
+        $vendor = Auth::guard('vendor')->user();
+
+        // Query for direct product bookings
+        $productQuery = DB::table('book_products')
+            ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
+            ->join('products', 'book_products.id_product', '=', 'products.id')
+            ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
+            ->where('products.id_vendor', $vendor->id)
+            ->select(
+                'bookings.id as booking_id',
+                'bookings.booking_code as booking_code',
+                DB::raw("'Product' as type"),
+                'products.name as item_name',
+                'users.name as customer_name',
+                'bookings.created_at as transaction_date',
+                'book_products.total_price as price',
+                'book_products.amount as quantity',
+                'bookings.status as booking_status'
+            );
+
+        // Query for package bookings containing vendor's products
+        $packageQuery = DB::table('book_packages')
+            ->join('bookings', 'book_packages.id_book', '=', 'bookings.id')
+            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+            ->join('package_products', 'packages.id', '=', 'package_products.id_package')
+            ->join('products', 'package_products.id_product', '=', 'products.id')
+            ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
+            ->where('products.id_vendor', $vendor->id)
+            ->select(
+                'bookings.id as booking_id',
+                'bookings.booking_code as booking_code',
+                DB::raw("'Package' as type"),
+                'packages.name_package as item_name',
+                'users.name as customer_name',
+                'bookings.created_at as transaction_date',
+                'book_packages.total_price as price',
+                DB::raw("1 as quantity"),
+                'bookings.status as booking_status'
+            );
+
+        // Combine queries
+        $combinedQuery = $productQuery->union($packageQuery);
+
+        // Apply filters to the combined query
+        $filteredQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
+            ->mergeBindings($combinedQuery);
+
+        if ($request->filled('product_name')) {
+            $filteredQuery->where('item_name', 'like', '%' . $request->input('product_name') . '%');
+        }
+        if ($request->filled('date_from')) {
+            $filteredQuery->whereDate('transaction_date', '>=', $request->input('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $filteredQuery->whereDate('transaction_date', '<=', $request->input('date_to'));
+        }
+
+        $rows = $filteredQuery->orderBy('transaction_date', 'desc')->get();
+
+        $format = $request->input('format', 'csv');
+
+        if ($format === 'pdf') {
+            // Render PDF using barryvdh/laravel-dompdf if available, else fallback to simple HTML
+            try {
+                $pdfView = view('vendor.transactions_report_pdf', ['transactions' => $rows])->render();
+                if (class_exists('\\Barryvdh\\DomPDF\\Facade\\Pdf')) {
+                    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($pdfView);
+                    return $pdf->download('transactions_report.pdf');
+                } else {
+                    // fallback: return HTML download as .html file
+                    return response($pdfView, 200, [
+                        'Content-Type' => 'text/html',
+                        'Content-Disposition' => 'attachment; filename="transactions_report.html"',
+                    ]);
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'PDF export failed: ' . $e->getMessage());
+            }
+        }
+
+        // CSV export
+        $filename = 'transactions_report_' . date('Ymd_His') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $columns = ['Booking ID', 'Type', 'Item', 'Customer', 'Transaction Date', 'Price', 'Quantity', 'Status'];
+
+        $callback = function () use ($rows, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($rows as $r) {
+                fputcsv($file, [
+                    $r->booking_id,
+                    $r->type,
+                    $r->item_name,
+                    $r->customer_name,
+                    \Carbon\Carbon::parse($r->transaction_date)->format('Y-m-d H:i'),
+                    number_format($r->price ?? 0, 2, '.', ''),
+                    $r->quantity ?? 1,
+                    $r->booking_status,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     // ========== TOP-LEVEL PRODUCT & ADDON MANAGEMENT (SUPER ADMIN) ==========
@@ -1075,14 +1299,6 @@ class VendorController extends Controller
         $product->save();
 
         return redirect()->back()->with('success', "Added {$amount} to product stock.");
-    }
-
-    // Vendor: list own products' stock and add stock
-    public function vendorStock()
-    {
-        $vendor = Auth::guard('vendor')->user();
-        $products = Product::where('id_vendor', $vendor->id)->paginate(15);
-        return view('vendor.products_stock', compact('products'));
     }
 
     // Vendor: add stock to own product
@@ -1192,7 +1408,8 @@ class VendorController extends Controller
             'location' => 'nullable|string',
             'phone' => 'nullable|string',
             'desc' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'nta' => 'required|numeric|min:0',
+            'upsale' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:fixed,percentage',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date',
@@ -1204,7 +1421,8 @@ class VendorController extends Controller
             'location' => $validated['location'] ?? $addon->location,
             'phone' => $validated['phone'] ?? $addon->phone,
             'desc' => $validated['desc'] ?? $addon->desc,
-            'price' => $validated['price'],
+            'nta' => $validated['nta'],
+            'upsale' => $validated['upsale'] ?? $addon->upsale,
             'discount_type' => $validated['discount_type'] ?? $addon->discount_type,
             'discount_value' => $validated['discount_value'] ?? $addon->discount_value,
             'discount_expires_at' => $validated['discount_expires_at'] ?? $addon->discount_expires_at,

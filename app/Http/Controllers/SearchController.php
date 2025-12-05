@@ -77,10 +77,10 @@ class SearchController extends Controller
 
         // Apply price filters
         if ($request->filled('price_min')) {
-            $packageQuery->where('price_publish', '>=', $request->price_min);
+            $packageQuery->where('nta', '>=', $request->price_min);
         }
         if ($request->filled('price_max')) {
-            $packageQuery->where('price_publish', '<=', $request->price_max);
+            $packageQuery->where('nta', '<=', $request->price_max);
         }
 
         // Apply rating filter
@@ -128,13 +128,13 @@ class SearchController extends Controller
 
         // Apply price filters
         if ($request->filled('price_min')) {
-            $productQuery->where('price', '>=', $request->price_min);
+            $productQuery->where('basic_price', '>=', $request->price_min);
         }
         if ($request->filled('price_max')) {
-            $productQuery->where('price', '<=', $request->price_max);
+            $productQuery->where('basic_price', '<=', $request->price_max);
         }
 
-        $products = $productQuery->where('status', 'available')->paginate(12);
+        $products = $productQuery->where('status', 'publish')->paginate(12);
 
         // Query addons with relationships
         $addonQuery = Addon::with(['vendor.vendorInfo.city', 'vendor.vendorInfo.province']);
@@ -168,7 +168,7 @@ class SearchController extends Controller
             $addonQuery->where('price', '<=', $request->price_max);
         }
 
-        $addons = $addonQuery->where('status', 'available')->where('publish', true)->paginate(12);
+        $addons = $addonQuery->where('status', 'publish')->paginate(12);
 
         // Popular packages: paginate 8 by highest average rating (most popular first)
         $popularPackages = Package::with(['reviews'])

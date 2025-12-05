@@ -43,7 +43,7 @@ My Wishlist
                         $image = $item->images[0] ?? null;
                         $name = $item->name_package;
                         $description = $item->description;
-                        $price = $item->nta;
+                        $price = $item->final_price;
                     @endphp
                     <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300">
                         <!-- Image -->
@@ -259,13 +259,13 @@ My Wishlist
 
                             <!-- Price and Rating -->
                             <div class="flex items-center justify-between mb-4">
-                                @if($item->final_price < $item->basic_price)
+                                @if($item->finalPrice < $item->basic_price)
                                     <div class="text-lg font-bold text-orange-600">
                                         <span class="text-sm text-gray-500 line-through">Rp {{ number_format($item->basic_price, 0, ',', '.') }}</span>
-                                        Rp {{ number_format($item->final_price, 0, ',', '.') }}
+                                        Rp {{ number_format($item->finalPrice, 0, ',', '.') }}
                                     </div>
                                 @else
-                                    <div class="text-lg font-bold text-orange-600">Rp {{ number_format($item->final_price, 0, ',', '.') }}</div>
+                                    <div class="text-lg font-bold text-orange-600">Rp {{ number_format($item->finalPrice, 0, ',', '.') }}</div>
                                 @endif
 
                                 <!-- Rating -->

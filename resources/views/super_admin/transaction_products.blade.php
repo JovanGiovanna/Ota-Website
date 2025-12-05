@@ -11,19 +11,21 @@ Transaction Products Management
 @section('content')
 <div class="px-4 py-6 sm:px-0">
     <div class="bg-white shadow overflow-hidden sm:rounded-md">
+
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
             <div>
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Transaction Products</h3>
                 <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage all product transactions</p>
             </div>
             <div class="flex space-x-3">
-                <button class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <button class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                     <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Export
                 </button>
-                <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+
+                <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
                     <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
@@ -43,11 +45,12 @@ Transaction Products Management
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </div>
-                        <input type="search" name="search" id="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search transactions...">
+                        <input type="search" name="search" id="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md" placeholder="Search transactions...">
                     </div>
                 </div>
+
                 <div>
-                    <select id="status" name="status" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    <select id="status" name="status" class="block w-full pl-3 pr-10 py-2 border-gray-300 rounded-md">
                         <option value="">All Status</option>
                         <option value="completed">Completed</option>
                         <option value="pending">Pending</option>
@@ -55,8 +58,9 @@ Transaction Products Management
                         <option value="refunded">Refunded</option>
                     </select>
                 </div>
+
                 <div>
-                    <select id="date_range" name="date_range" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    <select id="date_range" name="date_range" class="block w-full pl-3 pr-10 py-2 border-gray-300 rounded-md">
                         <option value="">All Dates</option>
                         <option value="today">Today</option>
                         <option value="week">This Week</option>
@@ -71,89 +75,112 @@ Transaction Products Management
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Price</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax Amount</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pax Paid</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="relative px-6 py-3">
-                            <span class="sr-only">Actions</span>
-                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Basic Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tax Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">NTA</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pax Paid</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profit</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                        <th class="px-6 py-3 relative"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
+
                 <tbody class="bg-white divide-y divide-gray-200">
+
                     @forelse($transactions as $transaction)
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $transaction->booking->id ? '#' . strtoupper(substr($transaction->booking->id, 0, 8)) : 'N/A' }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            {{ $transaction->booking->id ? '#' . strtoupper(substr($transaction->booking->id, 0, 8)) : 'N/A' }}
+                        </td>
+
+                        <td class="px-6 py-4">
                             <div class="flex items-center">
-                                <div class="flex-shrink-0 h-8 w-8">
-                                    <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                                        <span class="text-white text-xs font-medium">{{ substr($transaction->booking->user->name ?? $transaction->booker_name, 0, 2) }}</span>
-                                    </div>
+                                <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                    {{ substr($transaction->booking->user->name ?? $transaction->booker_name, 0, 2) }}
                                 </div>
                                 <div class="ml-3">
-                                    <div class="text-sm font-medium text-gray-900">{{ $transaction->booking->user->name ?? $transaction->booker_name }}</div>
-                                    <div class="text-sm text-gray-500">{{ $transaction->booking->user->email ?? $transaction->booking->booker_email }}</div>
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ $transaction->booking->user->name ?? $transaction->booker_name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ $transaction->booking->user->email ?? $transaction->booking->booker_email }}
+                                    </div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+
+                        <td class="px-6 py-4">
                             <div class="text-sm text-gray-900">{{ $transaction->product->name ?? 'N/A' }}</div>
                             <div class="text-sm text-gray-500">{{ $transaction->product->description ?? 'N/A' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+
+                        <td class="px-6 py-4">
                             <div class="text-sm text-gray-900">{{ $transaction->product->vendor->name ?? 'N/A' }}</div>
                             <div class="text-sm text-gray-500">{{ $transaction->product->vendor->vendorInfo->business_type ?? 'N/A' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">{{ $transaction->adults + $transaction->children }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            {{ $transaction->adults + $transaction->children }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->basic_price ?? 0, 0, ',', '.') }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            Rp {{ number_format($transaction->basic_price ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->tax_amount ?? 0, 0, ',', '.') }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            Rp {{ number_format($transaction->tax_amount ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->discount_amount ?? 0, 0, ',', '.') }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            Rp {{ number_format($transaction->discount_amount ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->nta ?? 0, 0, ',', '.') }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            Rp {{ number_format($transaction->nta ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">{{ $transaction->pax_paid ?? 0 }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            {{ $transaction->pax_paid ?? 0 }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div class="text-sm font-medium text-gray-900">Rp {{ number_format($transaction->profit ?? 0, 0, ',', '.') }}</div>
+
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            Rp {{ number_format($transaction->profit ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+
+                        <td class="px-6 py-4 text-sm text-gray-500">
                             {{ $transaction->created_at->format('M d, Y') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+                        <td class="px-6 py-4 text-right text-sm font-medium">
                             <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
                         </td>
                     </tr>
                     @empty
+
                     <tr>
                         <td colspan="16" class="px-6 py-4 text-center text-gray-500">
                             No transactions found.
+                        </td>
+                    </tr>
+
+                    @endforelse
+                </tbody>
             </table>
         </div>
 
         <!-- Pagination -->
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
             {{ $transactions->links() }}
         </div>
+
     </div>
 </div>
 @endsection

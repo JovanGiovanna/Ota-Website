@@ -42,12 +42,6 @@
                             </svg>
                             Product
                         </a>
-                        <a href="{{ route('vendor.stock') }}" class="text-emerald-200 hover:bg-emerald-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                            <svg class="text-emerald-400 group-hover:text-emerald-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
-                            </svg>
-                            Stock
-                        </a>
                         <a href="{{ route('vendor.addons') }}" class="text-emerald-200 hover:bg-emerald-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                             <svg class="text-emerald-400 group-hover:text-emerald-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -66,6 +60,12 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                             Transaction Addons
+                        </a>
+                        <a href="{{ route('vendor.transactions.report') }}" class="text-emerald-200 hover:bg-emerald-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                            <svg class="text-emerald-400 group-hover:text-emerald-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h6M9 7H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-2" />
+                            </svg>
+                            Transactions Report
                         </a>
                     </nav>
                 </div>

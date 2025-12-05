@@ -19,6 +19,9 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="p-6">
+            @if(session('success'))
+                <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-md">{{ session('success') }}</div>
+            @endif
             @if($products && count($products) > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -27,6 +30,8 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
                                 {{-- KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
@@ -64,6 +69,17 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $product->name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($product->description ?? 'N/A', 50) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($product->address ?? $product->location ?? 'N/A', 50) }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div class="text-sm font-medium text-gray-900">{{ $product->jumlah ?? 0 }}</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <form action="{{ route('vendor.products.stock', $product->id) }}" method="POST" class="inline-flex items-center space-x-2">
+                                            @csrf
+                                            <input type="number" name="amount" min="1" value="1" class="w-20 px-2 py-1 border border-gray-300 rounded-md text-sm">
+                                            <button type="submit" class="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">Add</button>
+                                        </form>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $product->category ? $product->category->categories : 'N/A' }}</td>
                                 
                                 {{-- ISI KOLOM HARGA BARU --}}
@@ -116,6 +132,10 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+
+                <div class="px-4 py-3 bg-white border-t border-gray-200">
+                    {{ $products->links() }}
                 </div>
             @else
                 <div class="text-center py-12">

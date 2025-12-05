@@ -23,7 +23,7 @@ class VendorInfoSeeder extends Seeder
                 'description' => 'Comfort-focused services for Vendor 1',
                 'address' => 'Comfort Address 1',
                 'phone' => '081234567890',
-                'id_city' => $cities->where('name', 'Jakarta')->first()->id,
+                'id_city' => $cities->where('name', 'Jakarta Selatan')->first()->id,
                 'coordinate_latitude' => -6.2088,
                 'coordinate_longitude' => 106.8456,
                 'landmark_description' => 'Near Comfort Central Park',

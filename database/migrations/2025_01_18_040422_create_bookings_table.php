@@ -34,8 +34,8 @@ return new class extends Migration
         
             $table->integer('amount')->unsigned()->default(1); 
             $table->decimal('total_price', 15, 2); 
-            $table->enum('status', ['pending', 'confirmed payment', 'completed', 'cancelled', 'payment return', 'maintenance'])
-                  ->default('pending');
+            $table->enum('status', ['book', 'paid', 'completed', 'cancelled', 'payment return', 'maintenance'])
+                  ->default('book');
             $table->string('note')->nullable();
 
             $table->timestamps();

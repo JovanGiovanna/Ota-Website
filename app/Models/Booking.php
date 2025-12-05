@@ -50,6 +50,7 @@ class Booking extends Model
     protected static function boot()
     {
         parent::boot();
+        static::observe(\App\Observers\BookingObserver::class);
         static::creating(function ($model) {
             if (empty($model->id)) {
                 $model->id = (string) \Illuminate\Support\Str::uuid();

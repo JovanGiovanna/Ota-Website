@@ -63,37 +63,81 @@ public function index(Request $request)
 
     public function registerWeb(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
+        $existingUser = User::where('email', $request->email)->first();
 
-        if ($validator->fails()) {
-            if (function_exists('alert')) {
-                alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+        if ($existingUser) {
+            // If user exists and has no password, allow setting password
+            if (is_null($existingUser->password)) {
+                $validator = Validator::make($request->all(), [
+                    'email' => 'required|string|email|max:255',
+                    'password' => 'required|string|min:6',
+                ]);
+
+                if ($validator->fails()) {
+                    if (function_exists('alert')) {
+                        alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+                    }
+                    return redirect()->back()
+                        ->withErrors($validator)
+                        ->withInput();
+                }
+
+                try {
+                    $existingUser->update([
+                        'password' => Hash::make($request->password),
+                    ]);
+
+                    Auth::login($existingUser);
+
+                    return SweetAlert::success('Password berhasil diset, Anda telah login!', route('user.search'));
+                } catch (\Exception $e) {
+                    if (function_exists('alert')) {
+                        alert()->error('Error', 'Gagal menyimpan password. Silakan coba lagi.');
+                    }
+                    return redirect()->back()
+                        ->withInput();
+                }
+            } else {
+                // If user exists and has password, redirect to login
+                if (function_exists('alert')) {
+                    alert()->error('Email sudah terdaftar', 'Silakan login dengan email dan password Anda.');
+                }
+                return redirect()->route('login')->withInput(['email' => $request->email]);
             }
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
+        } else {
+            // New user registration
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:6|confirmed',
             ]);
 
-            Auth::login($user);
-
-            return SweetAlert::created('Akun', route('dashboard'));
-        } catch (\Exception $e) {
-            if (function_exists('alert')) {
-                alert()->error('Error', 'Registrasi gagal. Silakan coba lagi.');
+            if ($validator->fails()) {
+                if (function_exists('alert')) {
+                    alert()->error('Validation Failed', 'Mohon periksa kembali form Anda');
+                }
+                return redirect()->back()
+                    ->withErrors($validator)
+                    ->withInput();
             }
-            return redirect()->back()
-                ->withInput();
+
+            try {
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                ]);
+
+                Auth::login($user);
+
+                return SweetAlert::created('Akun', route('user.search'));
+            } catch (\Exception $e) {
+                if (function_exists('alert')) {
+                    alert()->error('Error', 'Registrasi gagal. Silakan coba lagi.');
+                }
+                return redirect()->back()
+                    ->withInput();
+            }
         }
     }
 
@@ -197,7 +241,7 @@ public function loginWeb(Request $request)
 
         if (Auth::guard('web')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return SweetAlert::success('Login berhasil!', route('dashboard'));
+            return SweetAlert::success('Login berhasil!', route('user.search'));
         }
 
         if (function_exists('alert')) {

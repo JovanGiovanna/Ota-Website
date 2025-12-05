@@ -83,7 +83,7 @@ Book Your Package with Products and Add-ons!
             <div>
                 <h4 class="font-bold text-gray-800">{{ $preselectedPackageData->name_package }}</h4>
                 <p class="text-gray-600 text-sm">{{ Str::limit($preselectedPackageData->description, 100) }}</p>
-<div class="text-lg font-bold text-blue-600">Rp {{ number_format($preselectedPackageData->nta, 0, ',', '.') }}/night</div>
+                <div class="text-lg font-bold text-blue-600">Rp {{ number_format($preselectedPackageData->final_price, 0, ',', '.') }}/night</div>
             </div>
         </div>
         <input type="hidden" name="id_package[]" value="{{ $preselectedPackageData->id }}">
@@ -217,7 +217,7 @@ Book Your Package with Products and Add-ons!
                             </div>
                             <div class="flex items-center justify-between border-t border-gray-100 pt-2">
                                 <div>
-<div class="text-sm font-bold text-blue-600">Rp {{ number_format($package->nta, 0, ',', '.') }}</div>
+<div class="text-sm font-bold text-blue-600">Rp {{ number_format($package->final_price, 0, ',', '.') }}</div>
                                     <span class="text-gray-500 text-xs">per package</span>
                                 </div>
                                     <a href="{{ route('user.package_detail', $package->id) }}?from=form_booker" class="bg-blue-100 text-blue-700 px-2 py-1 rounded font-semibold hover:bg-blue-200 transition-all duration-200 text-xs">
@@ -355,6 +355,33 @@ Book Your Package with Products and Add-ons!
                 </div>
             </div>
         </div>
+
+        <!-- Optional Login Section -->
+        @guest
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-sign-in-alt text-green-600"></i>
+                </div>
+                Already have an account?
+            </h3>
+            <p class="text-gray-600 mb-4">Login to save your booking details and access your account history.</p>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <a href="{{ route('login') }}" class="bg-green-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-green-700 transition-all duration-200 text-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Login Now
+                </a>
+                <a href="{{ route('register') }}" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all duration-200 text-center">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Create Account
+                </a>
+            </div>
+            <p class="text-gray-500 text-sm mt-4">
+                <i class="fas fa-info-circle mr-1"></i>
+                You can continue booking as a guest below, but you'll need to create an account later to manage your bookings.
+            </p>
+        </div>
+        @endguest
 
         <!-- Personal Information -->
         <div>

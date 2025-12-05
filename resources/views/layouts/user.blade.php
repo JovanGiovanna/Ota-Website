@@ -32,15 +32,17 @@
                     <a href="{{ route('user.search') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.home') ? 'bg-blue-50 text-blue-600' : '' }}">
                         <i class="fas fa-home mr-2"></i>Home
                     </a>
-                    <a href="{{ route('user.form_booker') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.form_booker') ? 'bg-blue-50 text-blue-600' : '' }}">
-                        <i class="fas fa-calendar-plus mr-2"></i>Book
-                    </a>
-                    <a href="{{ route('user.history') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.history') ? 'bg-blue-50 text-blue-600' : '' }}">
-                        <i class="fas fa-history mr-2"></i>History
-                    </a>
-                    <a href="{{ route('user.wishlist') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.wishlist') ? 'bg-blue-50 text-blue-600' : '' }}">
-                        <i class="fas fa-heart mr-2"></i>Wishlist
-                    </a>
+                    @auth
+                        <a href="{{ route('user.form_booker') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.form_booker') ? 'bg-blue-50 text-blue-600' : '' }}">
+                            <i class="fas fa-calendar-plus mr-2"></i>Book
+                        </a>
+                        <a href="{{ route('user.history') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.history') ? 'bg-blue-50 text-blue-600' : '' }}">
+                            <i class="fas fa-history mr-2"></i>History
+                        </a>
+                        <a href="{{ route('user.wishlist') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.wishlist') ? 'bg-blue-50 text-blue-600' : '' }}">
+                            <i class="fas fa-heart mr-2"></i>Wishlist
+                        </a>
+                    @endauth
                 </div>
 
                 <!-- Right side -->
@@ -57,39 +59,51 @@
                         </form>
                     </div>
 
-                    <!-- Profile Dropdown -->
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
-                            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-medium">{{ substr(Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'S'), 0, 1) }}</span>
-                            </div>
-                            <span class="text-blue-700 font-medium hidden xl:block">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</span>
-                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
+                    @auth
+                        <!-- Profile Dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-medium">{{ substr(Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'S'), 0, 1) }}</span>
+                                </div>
+                                <span class="text-blue-700 font-medium hidden xl:block">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</span>
+                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
 
-                        <!-- Dropdown Menu -->
-                        <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-blue-200 py-1 z-50">
-                            <div class="px-4 py-2 border-b border-blue-100">
-                                <p class="text-sm font-medium text-gray-900">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</p>
-                                <p class="text-xs text-gray-500">{{ Auth::user() ? 'Customer' : 'Super Admin' }}</p>
-                            </div>
-                            @if(Auth::user())
-                            <a href="{{ route('user.profil') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
-                                <i class="fas fa-user mr-2"></i>View Profile
-                            </a>
-                            @endif
-                            <div class="border-t border-blue-100">
-                                <form method="POST" action="{{ route('logout') }}" class="inline w-full">
-                                    @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
-                                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                                    </button>
-                                </form>
+                            <!-- Dropdown Menu -->
+                            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-blue-200 py-1 z-50">
+                                <div class="px-4 py-2 border-b border-blue-100">
+                                    <p class="text-sm font-medium text-gray-900">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</p>
+                                    <p class="text-xs text-gray-500">{{ Auth::user() ? 'Customer' : 'Super Admin' }}</p>
+                                </div>
+                                @if(Auth::user())
+                                <a href="{{ route('user.profil') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                                    <i class="fas fa-user mr-2"></i>View Profile
+                                </a>
+                                @endif
+                                <div class="border-t border-blue-100">
+                                    <form method="POST" action="{{ route('logout') }}" class="inline w-full">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
+                                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @else
+                        <!-- Login/Register Links -->
+                        <div class="flex items-center space-x-3">
+                            <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Login
+                            </a>
+                            <a href="{{ route('register') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all duration-200">
+                                <i class="fas fa-user-plus mr-2"></i>Register
+                            </a>
+                        </div>
+                    @endauth
             </div>
         </div>
     </nav>

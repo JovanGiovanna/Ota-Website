@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             AddonSeeder::class,
             PackageSeeder::class,
+            \Database\Seeders\PermissionSeeder::class,
+            \Database\Seeders\RoleSeeder::class,
         ]);
     }
 }

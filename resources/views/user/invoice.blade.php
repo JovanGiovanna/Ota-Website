@@ -119,8 +119,8 @@
                 <tr>
                     <td>{{ $addon->addons }}</td>
                     <td>{{ $addon->pivot->quantity ?? 1 }}</td>
-                    <td>Rp {{ number_format($addon->price, 0, ',', '.') }}</td>
-                    <td>Rp {{ number_format($addon->price * ($addon->pivot->quantity ?? 1), 0, ',', '.') }}</td>
+                    <td>Rp {{ number_format($addon->finalPrice, 0, ',', '.') }}</td>
+                    <td>Rp {{ number_format($addon->finalPrice * ($addon->pivot->quantity ?? 1), 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
             @endif

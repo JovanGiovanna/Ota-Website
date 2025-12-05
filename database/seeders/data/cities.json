@@ -1,0 +1,132 @@
+[
+  {"id":1,"name":"Banda Aceh","id_province":1},
+  {"id":2,"name":"Sabang","id_province":1},
+  {"id":3,"name":"Langsa","id_province":1},
+  {"id":4,"name":"Lhokseumawe","id_province":1},
+  {"id":5,"name":"Subulussalam","id_province":1},
+
+  {"id":6,"name":"Medan","id_province":2},
+  {"id":7,"name":"Pematangsiantar","id_province":2},
+  {"id":8,"name":"Sibolga","id_province":2},
+  {"id":9,"name":"Tanjungbalai","id_province":2},
+  {"id":10,"name":"Binjai","id_province":2},
+  {"id":11,"name":"Tebing Tinggi","id_province":2},
+  {"id":12,"name":"Padangsidimpuan","id_province":2},
+  {"id":13,"name":"Gunungsitoli","id_province":2},
+
+  {"id":14,"name":"Padang","id_province":3},
+  {"id":15,"name":"Bukittinggi","id_province":3},
+  {"id":16,"name":"Padang Panjang","id_province":3},
+  {"id":17,"name":"Pariaman","id_province":3},
+  {"id":18,"name":"Payakumbuh","id_province":3},
+  {"id":19,"name":"Sawahlunto","id_province":3},
+  {"id":20,"name":"Solok","id_province":3},
+
+  {"id":21,"name":"Pekanbaru","id_province":4},
+  {"id":22,"name":"Dumai","id_province":4},
+
+  {"id":23,"name":"Tanjungpinang","id_province":5},
+  {"id":24,"name":"Batam","id_province":5},
+
+  {"id":25,"name":"Jambi","id_province":6},
+  {"id":26,"name":"Sungai Penuh","id_province":6},
+
+  {"id":27,"name":"Palembang","id_province":7},
+  {"id":28,"name":"Prabumulih","id_province":7},
+  {"id":29,"name":"Pagar Alam","id_province":7},
+  {"id":30,"name":"Lubuklinggau","id_province":7},
+
+  {"id":31,"name":"Pangkalpinang","id_province":8},
+
+  {"id":32,"name":"Bengkulu","id_province":9},
+
+  {"id":33,"name":"Bandar Lampung","id_province":10},
+  {"id":34,"name":"Metro","id_province":10},
+
+  {"id":35,"name":"Jakarta Selatan","id_province":11},
+  {"id":36,"name":"Jakarta Timur","id_province":11},
+  {"id":37,"name":"Jakarta Barat","id_province":11},
+  {"id":38,"name":"Jakarta Utara","id_province":11},
+  {"id":39,"name":"Jakarta Pusat","id_province":11},
+
+  {"id":40,"name":"Bandung","id_province":12},
+  {"id":41,"name":"Bekasi","id_province":12},
+  {"id":42,"name":"Bogor","id_province":12},
+  {"id":43,"name":"Cimahi","id_province":12},
+  {"id":44,"name":"Cirebon","id_province":12},
+  {"id":45,"name":"Depok","id_province":12},
+  {"id":46,"name":"Sukabumi","id_province":12},
+  {"id":47,"name":"Tasikmalaya","id_province":12},
+  {"id":48,"name":"Banjar","id_province":12},
+
+  {"id":49,"name":"Serang","id_province":13},
+  {"id":50,"name":"Cilegon","id_province":13},
+  {"id":51,"name":"Tangerang Selatan","id_province":13},
+  {"id":52,"name":"Tangerang","id_province":13},
+
+  {"id":53,"name":"Semarang","id_province":14},
+  {"id":54,"name":"Surakarta","id_province":14},
+  {"id":55,"name":"Salatiga","id_province":14},
+  {"id":56,"name":"Magelang","id_province":14},
+  {"id":57,"name":"Pekalongan","id_province":14},
+  {"id":58,"name":"Tegal","id_province":14},
+
+  {"id":59,"name":"Yogyakarta","id_province":15},
+
+  {"id":60,"name":"Surabaya","id_province":16},
+  {"id":61,"name":"Malang","id_province":16},
+  {"id":62,"name":"Mojokerto","id_province":16},
+  {"id":63,"name":"Batu","id_province":16},
+  {"id":64,"name":"Madiun","id_province":16},
+  {"id":65,"name":"Kediri","id_province":16},
+  {"id":66,"name":"Blitar","id_province":16},
+  {"id":67,"name":"Probolinggo","id_province":16},
+  {"id":68,"name":"Pasuruan","id_province":16},
+
+  {"id":69,"name":"Denpasar","id_province":17},
+
+  {"id":70,"name":"Mataram","id_province":18},
+  {"id":71,"name":"Bima","id_province":18},
+
+  {"id":72,"name":"Kupang","id_province":19},
+
+  {"id":73,"name":"Pontianak","id_province":20},
+  {"id":74,"name":"Singkawang","id_province":20},
+
+  {"id":75,"name":"Palangka Raya","id_province":21},
+
+  {"id":76,"name":"Banjarmasin","id_province":22},
+  {"id":77,"name":"Banjarbaru","id_province":22},
+
+  {"id":78,"name":"Samarinda","id_province":23},
+  {"id":79,"name":"Balikpapan","id_province":23},
+  {"id":80,"name":"Bontang","id_province":23},
+
+  {"id":81,"name":"Tarakan","id_province":24},
+
+  {"id":82,"name":"Manado","id_province":25},
+  {"id":83,"name":"Bitung","id_province":25},
+  {"id":84,"name":"Tomohon","id_province":25},
+  {"id":85,"name":"Kotamobagu","id_province":25},
+
+  {"id":86,"name":"Palu","id_province":26},
+
+  {"id":87,"name":"Makassar","id_province":27},
+  {"id":88,"name":"Parepare","id_province":27},
+  {"id":89,"name":"Palopo","id_province":27},
+
+  {"id":90,"name":"Kendari","id_province":28},
+  {"id":91,"name":"Bau-Bau","id_province":28},
+
+  {"id":92,"name":"Gorontalo","id_province":29},
+
+  {"id":93,"name":"Ambon","id_province":31},
+  {"id":94,"name":"Tual","id_province":31},
+
+  {"id":95,"name":"Ternate","id_province":32},
+  {"id":96,"name":"Tidore Kepulauan","id_province":32},
+
+  {"id":97,"name":"Sorong","id_province":34},
+
+  {"id":98,"name":"Jayapura","id_province":35}
+]

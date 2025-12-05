@@ -30,10 +30,14 @@ class BookPackage extends Model
         'total_price',
         'status',
         'notes',
+        'stock_applied',
+        'revenue_applied',
     ];
 
     protected $casts = [
         'total_price' => 'decimal:2',
+        'stock_applied' => 'boolean',
+        'revenue_applied' => 'boolean',
     ];
 
     /**

@@ -15,6 +15,22 @@
 <body class="h-full bg-gradient-to-br from-slate-50 to-blue-50">
     <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <div class="flex h-full">
+        @php
+            $adminUser = null;
+            $roleDisplay = 'Super Admin';
+            if (Auth::guard('super_admin')->check()) {
+                $adminUser = Auth::guard('super_admin')->user();
+                $roleDisplay = 'Super Admin';
+            } elseif (Auth::guard('admin')->check()) {
+                $adminUser = Auth::guard('admin')->user();
+                $primaryRole = $adminUser->roles()->first();
+                if ($primaryRole) {
+                    $roleDisplay = ucfirst($primaryRole->key);
+                } else {
+                    $roleDisplay = 'Admin';
+                }
+            }
+        @endphp
         <!-- Sidebar -->
         <div class="hidden md:flex md:w-72 md:flex-col">
             <div class="flex flex-col flex-grow bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 pt-6 pb-4 overflow-y-auto shadow-2xl">
@@ -24,8 +40,8 @@
                             <i class="fas fa-crown text-white text-lg"></i>
                         </div>
                         <div>
-                            <h1 class="text-white text-xl font-bold">Super Admin</h1>
-                            <p class="text-slate-300 text-xs">System Control</p>
+                            <h1 class="text-white text-xl font-bold">{{ $roleDisplay }}</h1>
+                            <p class="text-slate-300 text-xs">{{ $roleDisplay == 'Super Admin' ? 'System Control' : 'Management Panel' }}</p>
                         </div>
                     </div>
                 </div>
@@ -48,6 +64,7 @@
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Location Management</h3>
                             <div class="space-y-1">
+                               @if($adminUser && $adminUser->hasPermission('system.manage'))
                                <a href="{{ route('super_admin.cities') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                      <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -61,6 +78,7 @@
                                     </svg>
                                     Province
                                 </a>
+                               @endif
                             </div>
                         </div>
 
@@ -68,6 +86,7 @@
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Category & Type</h3>
                             <div class="space-y-1">
+                                @if($adminUser && $adminUser->hasPermission('system.manage'))
                                 <a href="{{ route('super_admin.types_categories') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -80,18 +99,26 @@
                                     </svg>
                                     Package
                                 </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('packages.manage'))
+                                <a href="{{ route('super_admin.packages') }}" class="hidden"></a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('products.manage'))
                                 <a href="{{ route('super_admin.products') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                     </svg>
                                     Product
                                 </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('addons.manage'))
                                 <a href="{{ route('super_admin.addons') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                     </svg>
                                     Addon
                                 </a>
+                                @endif
                             </div>
                         </div>
 
@@ -99,6 +126,7 @@
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">User Management</h3>
                             <div class="space-y-1">
+                                @if($adminUser && $adminUser->hasPermission('vendors.manage'))
                                 <a href="{{ route('super_admin.vendors') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -111,12 +139,15 @@
                                     </svg>
                                     Vendor Detail
                                 </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('customers.manage'))
                                 <a href="{{ route('super_admin.customers') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                                     </svg>
                                     Customer
                                 </a>
+                                @endif
                             </div>
                         </div>
 
@@ -124,6 +155,13 @@
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Transactions</h3>
                             <div class="space-y-1">
+                                @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage')))
+                                <a href="{{ route('super_admin.bookings') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
+                                    </svg>
+                                    Bookings
+                                </a>
                                 <a href="{{ route('super_admin.transaction_packages') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -142,6 +180,7 @@
                                     </svg>
                                     Transaction Addons
                                 </a>
+                                @endif
                             </div>
                         </div>
 
@@ -149,37 +188,29 @@
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">System</h3>
                             <div class="space-y-1">
+                                @if($adminUser && $adminUser->hasPermission('rekon.manage'))
                                 <a href="{{ route('super_admin.rekon') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                                     </svg>
                                     Rekon
                                 </a>
+                                @endif
                             </div>
                         </div>
 
-                        <!-- Dashboard Access -->
+                        <!-- Admin Management -->
                         <div class="px-2 py-2">
-                            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Dashboard Access</h3>
+                            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Administration</h3>
                             <div class="space-y-1">
-                                <a href="{{ route('admin.dashboard') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                @if($adminUser && $adminUser->hasPermission('admins.manage'))
+                                <a href="{{ route('super_admin.admins') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
-                                    Admin Panel
+                                    Admins
                                 </a>
-                                <a href="{{ route('vendor.dashboard') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                    </svg>
-                                    Vendor Panel
-                                </a>
-                                <a href="{{ route('user.home') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9m0 9c-1.657 0-3-4.03-3-9s1.343-9 3-9m0 18c1.657 0 3-4.03 3-9s-1.343-9-3-9" />
-                                    </svg>
-                                    User Landing
-                                </a>
+                                @endif
                             </div>
                         </div>
                     </nav>
@@ -190,8 +221,8 @@
                             <i class="fas fa-user-shield text-white text-xs"></i>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-white text-sm font-medium truncate">{{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Super Admin' }}</p>
-                            <p class="text-slate-400 text-xs">Super Administrator</p>
+                            <p class="text-white text-sm font-medium truncate">{{ $adminUser ? $adminUser->name : 'Admin' }}</p>
+                            <p class="text-slate-400 text-xs">{{ $roleDisplay }}</p>
                         </div>
                     </div>
                 </div>
@@ -213,9 +244,9 @@
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
                             <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-medium">{{ substr(Auth::guard('super_admin')->check() && Auth::guard('super_admin')->user() ? Auth::guard('super_admin')->user()->name : 'S', 0, 1) }}</span>
+                                <span class="text-white text-sm font-medium">{{ substr($adminUser ? $adminUser->name : 'A', 0, 1) }}</span>
                             </div>
-                            <span class="text-slate-700 font-medium hidden xl:block">{{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Super Admin' }}</span>
+                            <span class="text-slate-700 font-medium hidden xl:block">{{ $adminUser ? $adminUser->name : 'Admin' }}</span>
                             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
@@ -224,11 +255,11 @@
                         <!-- Dropdown Menu -->
                         <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
                             <div class="px-4 py-2 border-b border-slate-100">
-                                <p class="text-sm font-medium text-gray-900">{{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->user()->name : 'Super Admin' }}</p>
-                                <p class="text-xs text-gray-500">Super Administrator</p>
+                                <p class="text-sm font-medium text-gray-900">{{ $adminUser ? $adminUser->name : 'Admin' }}</p>
+                                <p class="text-xs text-gray-500">{{ $roleDisplay }}</p>
                             </div>
                             <div class="border-t border-slate-100">
-                                <form method="POST" action="{{ route('super_admin.logout') }}" class="inline w-full">
+                                <form method="POST" action="@if(Auth::guard('admin')->check()){{ route('admin.logout') }}@elseif(Auth::guard('super_admin')->check()){{ route('super_admin.logout') }}@endif" class="inline w-full">
                                     @csrf
                                     <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
                                         <i class="fas fa-sign-out-alt mr-2"></i>Logout
@@ -243,6 +274,11 @@
             <main class="flex-1 relative overflow-y-auto focus:outline-none">
                 <div class="py-8">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <!-- Role Display Header -->
+                        <div class="mb-8">
+                            <h1 class="text-3xl font-bold text-gray-900">{{ $roleDisplay }} Dashboard</h1>
+                            <p class="mt-2 text-sm text-gray-600">Welcome back, {{ $adminUser ? $adminUser->name : 'Admin' }}! You are logged in as {{ $roleDisplay }}.</p>
+                        </div>
                         @yield('content')
                     </div>
                 </div>

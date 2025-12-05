@@ -25,6 +25,18 @@ class VendorInfo extends Model
         'coordinate_longitude',
         'landmark_description',
         'is_verified',
+        'total_revenue',
+    ];
+
+    /**
+     * Atribut yang harus di-cast ke tipe data asli.
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'total_revenue' => 'decimal:2',
+        'coordinate_latitude' => 'decimal:8',
+        'coordinate_longitude' => 'decimal:8',
+        'is_verified' => 'boolean',
     ];
 
     public function vendor(): BelongsTo

@@ -76,15 +76,18 @@
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
                         Email
                     </label>
-                    <input 
-                        id="email" 
-                        type="email" 
-                        name="email" 
+                    <input
+                        id="email"
+                        type="email"
+                        name="email"
                         value="{{ old('email') }}"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-500"
                         placeholder="Masukkan alamat email Anda"
                         required
                     >
+                    <div id="email-status" class="mt-2 text-sm text-gray-600 hidden">
+                        <!-- Email status message will appear here -->
+                    </div>
                 </div>
 
                 <!-- Password Field -->
@@ -176,20 +179,37 @@
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
         const errorDiv = document.getElementById('error-message');
+        const emailInput = document.getElementById('email');
+        const emailStatus = document.getElementById('email-status');
+        const nameField = document.getElementById('name').parentElement;
+        const confirmPasswordField = document.getElementById('password_confirmation').parentElement;
+        const submitButton = document.querySelector('button[type="submit"]');
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('password_confirmation');
-        
+
+        let isExistingUser = false;
+
         // Show error message if there are Laravel errors
         @if ($errors->any())
             errorDiv.textContent = "{{ $errors->first() }}";
             errorDiv.classList.remove('hidden');
         @endif
-        
+
+        // Check email existence on blur
+        emailInput.addEventListener('blur', function() {
+            const email = this.value.trim();
+            if (email && isValidEmail(email)) {
+                checkEmailExistence(email);
+            } else {
+                resetFormToRegistration();
+            }
+        });
+
         // Password strength indicator
         passwordInput.addEventListener('input', function() {
             const password = this.value;
             const strengthIndicator = document.querySelector('.password-strength');
-            
+
             if (password.length >= 8) {
                 this.classList.remove('border-red-300');
                 this.classList.add('border-green-300');
@@ -200,12 +220,12 @@
                 this.classList.remove('border-red-300', 'border-green-300');
             }
         });
-        
+
         // Real-time password confirmation
         confirmPasswordInput.addEventListener('input', function() {
             const password = passwordInput.value;
             const confirmPassword = this.value;
-            
+
             if (confirmPassword === password && confirmPassword.length > 0) {
                 this.classList.remove('border-red-300');
                 this.classList.add('border-green-300');
@@ -216,67 +236,125 @@
                 this.classList.remove('border-red-300', 'border-green-300');
             }
         });
-        
+
         // Form validation
         form.addEventListener('submit', function(e) {
             const name = document.getElementById('name').value.trim();
-            const email = document.getElementById('email').value.trim();
+            const email = emailInput.value.trim();
             const password = passwordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            const termsAccepted = document.getElementById('terms').checked;
-            
+
             // Clear previous error
             errorDiv.classList.add('hidden');
-            
-            // Validate required fields
-            if (!name || !email || !password || !confirmPassword) {
-                e.preventDefault();
-                showError('Mohon lengkapi semua field yang diperlukan.');
-                return;
-            }
-            
-            // Validate name length
-            if (name.length < 2) {
-                e.preventDefault();
-                showError('Nama harus minimal 2 karakter.');
-                return;
-            }
-            
+
             // Validate email format
             if (!isValidEmail(email)) {
                 e.preventDefault();
                 showError('Format email tidak valid.');
                 return;
             }
-            
+
             // Validate password length
-            if (password.length < 8) {
+            if (password.length < 6) {
                 e.preventDefault();
-                showError('Password harus minimal 8 karakter.');
+                showError('Password harus minimal 6 karakter.');
                 return;
             }
-            
-            // Validate password confirmation
-            if (password !== confirmPassword) {
-                e.preventDefault();
-                showError('Konfirmasi password tidak cocok.');
-                return;
-            }
-            
-            // Validate terms acceptance
-            if (!termsAccepted) {
-                e.preventDefault();
-                showError('Anda harus menyetujui Terms of Service dan Privacy Policy.');
-                return;
+
+            // For new registration, validate name and confirmation
+            if (!isExistingUser) {
+                const confirmPassword = confirmPasswordInput.value;
+                if (!name) {
+                    e.preventDefault();
+                    showError('Mohon lengkapi nama lengkap.');
+                    return;
+                }
+                if (name.length < 2) {
+                    e.preventDefault();
+                    showError('Nama harus minimal 2 karakter.');
+                    return;
+                }
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    showError('Konfirmasi password tidak cocok.');
+                    return;
+                }
             }
         });
-        
+
+        function checkEmailExistence(email) {
+            fetch('/check-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    if (data.has_password) {
+                        emailStatus.textContent = 'Email sudah terdaftar. Silakan login.';
+                        emailStatus.className = 'mt-2 text-sm text-red-600';
+                        emailStatus.classList.remove('hidden');
+                        isExistingUser = false;
+                        resetFormToRegistration();
+                    } else {
+                        emailStatus.textContent = 'Email ditemukan. Silakan masukkan password untuk melanjutkan.';
+                        emailStatus.className = 'mt-2 text-sm text-green-600';
+                        emailStatus.classList.remove('hidden');
+                        adjustFormForExistingUser();
+                        isExistingUser = true;
+                    }
+                } else {
+                    emailStatus.textContent = 'Email tersedia untuk registrasi baru.';
+                    emailStatus.className = 'mt-2 text-sm text-blue-600';
+                    emailStatus.classList.remove('hidden');
+                    resetFormToRegistration();
+                    isExistingUser = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error checking email:', error);
+                resetFormToRegistration();
+                isExistingUser = false;
+            });
+        }
+
+        function adjustFormForExistingUser() {
+            // Hide name field
+            nameField.style.display = 'none';
+            document.getElementById('name').required = false;
+
+            // Hide confirm password field
+            confirmPasswordField.style.display = 'none';
+            confirmPasswordInput.required = false;
+
+            // Change button text
+            submitButton.textContent = 'Set Password & Login';
+        }
+
+        function resetFormToRegistration() {
+            // Show all fields
+            nameField.style.display = 'block';
+            document.getElementById('name').required = true;
+
+            confirmPasswordField.style.display = 'block';
+            confirmPasswordInput.required = true;
+
+            // Reset button text
+            submitButton.textContent = 'Create Account';
+
+            // Hide status
+            emailStatus.classList.add('hidden');
+        }
+
         function showError(message) {
             errorDiv.textContent = message;
             errorDiv.classList.remove('hidden');
             errorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-        
+
         function isValidEmail(email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(email);

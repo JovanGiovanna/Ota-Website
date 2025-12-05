@@ -10,35 +10,48 @@ class SuperAdminAccessMiddleware
     /**
      * Handle an incoming request.
      *
+     * Usage di route:
+     * ->middleware('super_admin_access')
+     * atau
+     * ->middleware('super_admin_access:admin')
+     * ->middleware('super_admin_access:vendor')
+     *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
-     * @param  string  $guard
+     * @param  string|null  $guard
      * @return mixed
      */
     public function handle($request, Closure $next, $guard = null)
     {
-        // Allow access if authenticated as super_admin
+        // 1. Super admin selalu diizinkan
         if (Auth::guard('super_admin')->check()) {
             return $next($request);
         }
 
-        // Otherwise, check the specific guard
-        if ($guard && Auth::guard($guard)->check()) {
-            return $next($request);
+        // 2. Jika route mensyaratkan guard tertentu (admin, vendor, user)
+        if ($guard !== null) {
+            if (Auth::guard($guard)->check()) {
+                return $next($request);
+            }
+
+            // Redirect ke login guard yang benar
+            return $this->redirectToLogin($guard);
         }
 
-        // If no guard specified, check default web guard
-        if (!$guard && Auth::check()) {
-            return $next($request);
-        }
+        // 3. Jika tidak sebut guard sama sekali → wajib login super_admin
+        return redirect()->route('login');
+    }
 
-        // Redirect to appropriate login if not authenticated
-        if ($guard === 'admin') {
-            return redirect()->route('admin.login');
-        } elseif ($guard === 'vendor') {
-            return redirect()->route('vendor.login');
-        } else {
-            return redirect()->route('login');
-        }
+    /**
+     * Redirect helper
+     */
+    private function redirectToLogin($guard)
+    {
+        return match ($guard) {
+            'admin'   => redirect()->route('admin.login'),
+            'vendor'  => redirect()->route('vendor.login'),
+            'user'    => redirect()->route('user.login'),
+            default   => redirect()->route('login'),
+        };
     }
 }

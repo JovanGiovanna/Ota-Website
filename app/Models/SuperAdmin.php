@@ -27,6 +27,7 @@ class SuperAdmin extends Authenticatable
         'name',
         'email',
         'password',
+        'total_revenue',
     ];
 
     /**
@@ -62,4 +63,20 @@ class SuperAdmin extends Authenticatable
      * @var bool
      */
     public $incrementing = false;
+
+    /**
+     * Super admin has full access — always return true for permission checks.
+     */
+    public function hasPermission(string $key): bool
+    {
+        return true;
+    }
+
+    /**
+     * Super admin role check helper.
+     */
+    public function hasRole(string $roleKey): bool
+    {
+        return $roleKey === 'super_admin';
+    }
 }
