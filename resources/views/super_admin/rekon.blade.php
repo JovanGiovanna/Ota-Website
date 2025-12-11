@@ -12,7 +12,7 @@ Rekon Management
 <div class="px-4 py-6 sm:px-0">
     <div class="space-y-6">
         <!-- Rekon Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="p-5">
                     <div class="flex items-center">
@@ -25,28 +25,8 @@ Rekon Management
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Profit</dt>
-                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($totalProfit, 0, ',', '.') }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Completed Transactions</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ number_format($completedTransactions) }}</dd>
+                                <dt class="text-sm font-medium text-gray-500 truncate">GMV (Gross Merchandise Value)</dt>
+                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($gmv, 0, ',', '.') }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -59,14 +39,14 @@ Rekon Management
                         <div class="flex-shrink-0">
                             <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12a1 1 0 100-2 1 1 0 000 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                 </svg>
                             </div>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Avg Profit</dt>
-                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($avgProfit, 0, ',', '.') }}</dd>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Margin Value</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ number_format($marginValue, 2) }}%</dd>
                             </dl>
                         </div>
                     </div>
@@ -79,14 +59,14 @@ Rekon Management
                         <div class="flex-shrink-0">
                             <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                             </div>
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($totalRevenue, 0, ',', '.') }}</dd>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Nominal Transaction</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ number_format($nominalTransaction) }}</dd>
                             </dl>
                         </div>
                     </div>

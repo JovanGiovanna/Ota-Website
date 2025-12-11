@@ -28,11 +28,13 @@ class Product extends Model
         'phone',
         'basic_price',
         'nta',
-        'upsale',
+        'upsell',
         'discount_type',
         'discount_value',
         'discount_amount',
-        'discount_expires_at', 
+        'discount_expires_at',
+        'total_price_before_discount',
+        'final_price',
         'id_category',
         'id_vendor',
         'pax',
@@ -47,9 +49,11 @@ class Product extends Model
     protected $casts = [
         'basic_price'  => 'decimal:2',
         'nta'          => 'decimal:2',
-        'upsale'       => 'decimal:2',
+        'upsell'       => 'decimal:2',
         'discount_value'      => 'decimal:2',
         'discount_amount'     => 'decimal:2',
+        'total_price_before_discount' => 'decimal:2',
+        'final_price'  => 'decimal:2',
         'discount_expires_at' => 'datetime',
         'pax'          => 'integer',
         'jumlah'       => 'integer',
@@ -122,10 +126,10 @@ class Product extends Model
         return Attribute::make(
             get: function ($value, $attributes) {
                 $nta = (float) ($attributes['nta'] ?? 0);
-                $upsale = (float) ($attributes['upsale'] ?? 0);
+                $upsell = (float) ($attributes['upsell'] ?? 0);
 
-                // Perhitungan: Total = NTA + Upsale
-                return round($nta + $upsale, 2);
+                // Perhitungan: Total = NTA + Upsell
+                return round($nta + $upsell, 2);
             },
         );
     }
@@ -172,7 +176,7 @@ class Product extends Model
         return Attribute::make(
             get: function ($value, $attributes) {
                 $basicPrice = (float) $attributes['basic_price'];
-                $upsale = (float) ($attributes['upsale'] ?? 0);
+                $upsell = (float) ($attributes['upsell'] ?? 0);
                 $discountType = $attributes['discount_type'];
                 $discountValue = (float) $attributes['discount_value'];
                 $expiry = $attributes['discount_expires_at'];
@@ -182,8 +186,8 @@ class Product extends Model
                     return 0.00;
                 }
 
-                // Hitung harga sebelum diskon: use NTA + Upsale if provided, otherwise fallback to basic_price
-                $priceBeforDiscount = $basicPrice + $upsale;
+                // Hitung harga sebelum diskon: use NTA + Upsell if provided, otherwise fallback to basic_price
+                $priceBeforDiscount = $basicPrice + $upsell;
 
                 $discountAmount = 0.00;
 

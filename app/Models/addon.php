@@ -24,25 +24,31 @@ class Addon extends Model
         'status',
         'basic_price', 
         'nta',
-        'upsale',
+        'upsell',
         'discount_type',
         'discount_value',
         'discount_amount',
-        'discount_expires_at',    
+        'discount_expires_at',
+        'total_price_before_discount',
+        'final_price',
         'pax',
         'location',
         'phone',
-        'images', 
+        'images',
+        'jumlah',
     ];
 
     protected $casts = [
         'basic_price' => 'decimal:2', 
         'nta' => 'decimal:2',         
-        'upsale' => 'decimal:2',
+        'upsell' => 'decimal:2',
         'discount_value' => 'decimal:2',
-        'discount_amount' => 'decimal:2', 
+        'discount_amount' => 'decimal:2',
+        'total_price_before_discount' => 'decimal:2',
+        'final_price' => 'decimal:2',
         'discount_expires_at' => 'datetime',    
         'pax' => 'integer',
+        'jumlah' => 'integer',
         'deleted_at' => 'datetime',
         'images' => 'array',
     ];
@@ -63,9 +69,9 @@ class Addon extends Model
     public function getFinalPriceAttribute(): float
     {
         $nta = $this->nta ?? $this->basic_price;
-        $upsale = $this->upsale ?? 0;
+        $upsell = $this->upsell ?? 0;
 
-        $priceBeforeDiscount = (float) $nta + (float) $upsale;
+        $priceBeforeDiscount = (float) $nta + (float) $upsell;
 
         // 1. Cek Diskon
         $discountAmount = 0;
@@ -90,7 +96,7 @@ class Addon extends Model
     public function getCalculatedDiscountAmountAttribute(): float
     {
         $basicPrice = $this->basic_price;
-        $upsale = $this->upsale ?? 0;
+        $upsell = $this->upsell ?? 0;
         $discountType = $this->discount_type;
         $discountValue = $this->discount_value ?? 0;
         $expiry = $this->discount_expires_at;
@@ -100,8 +106,8 @@ class Addon extends Model
             return 0.00;
         }
 
-        // Hitung harga sebelum diskon: basic_price + upsale
-        $priceBeforeDiscount = $basicPrice + $upsale;
+        // Hitung harga sebelum diskon: basic_price + upsell
+        $priceBeforeDiscount = $basicPrice + $upsell;
 
         $discountAmount = 0.00;
 

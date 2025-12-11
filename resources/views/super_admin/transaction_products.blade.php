@@ -24,13 +24,6 @@ Transaction Products Management
                     </svg>
                     Export
                 </button>
-
-                <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Transaction
-                </button>
             </div>
         </div>
 
@@ -72,24 +65,18 @@ Transaction Products Management
 
         <!-- Transactions Table -->
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-[1200px] w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Basic Price</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tax Amount</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">NTA</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pax Paid</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profit</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                        <th class="px-6 py-3 relative"><span class="sr-only">Actions</span></th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Booking Code</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Vendor</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Quantity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Total Price</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">Date</th>
+                        <th class="px-6 py-3 relative whitespace-nowrap"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
 
@@ -97,21 +84,21 @@ Transaction Products Management
 
                     @forelse($transactions as $transaction)
                     <tr>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            {{ $transaction->booking->id ? '#' . strtoupper(substr($transaction->booking->id, 0, 8)) : 'N/A' }}
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                            {{ $transaction->booking_code ?? 'N/A' }}
                         </td>
 
                         <td class="px-6 py-4">
                             <div class="flex items-center">
                                 <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                                    {{ substr($transaction->booking->user->name ?? $transaction->booker_name, 0, 2) }}
+                                    {{ substr($transaction->booking->user->name ?? 'NA', 0, 2) }}
                                 </div>
                                 <div class="ml-3">
                                     <div class="text-sm font-medium text-gray-900">
-                                        {{ $transaction->booking->user->name ?? $transaction->booker_name }}
+                                        {{ $transaction->booking->user->name ?? 'N/A' }}
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        {{ $transaction->booking->user->email ?? $transaction->booking->booker_email }}
+                                        {{ $transaction->booking->user->email ?? $transaction->booking->booker_email ?? 'N/A' }}
                                     </div>
                                 </div>
                             </div>
@@ -119,7 +106,9 @@ Transaction Products Management
 
                         <td class="px-6 py-4">
                             <div class="text-sm text-gray-900">{{ $transaction->product->name ?? 'N/A' }}</div>
-                            <div class="text-sm text-gray-500">{{ $transaction->product->description ?? 'N/A' }}</div>
+                            @if($transaction->notes)
+                                <div class="text-xs text-gray-500 italic mt-1">{{ $transaction->notes }}</div>
+                            @endif
                         </td>
 
                         <td class="px-6 py-4">
@@ -128,45 +117,60 @@ Transaction Products Management
                         </td>
 
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            {{ $transaction->adults + $transaction->children }}
+                            {{ $transaction->amount ?? 0 }}
                         </td>
 
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            Rp {{ number_format($transaction->basic_price ?? 0, 0, ',', '.') }}
+                            Rp {{ number_format($transaction->total_price ?? 0, 0, ',', '.') }}
                         </td>
 
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            Rp {{ number_format($transaction->tax_amount ?? 0, 0, ',', '.') }}
+                        <td class="px-6 py-4">
+                            @php
+                                $statusColors = [
+                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                    'book' => 'bg-blue-100 text-blue-800',
+                                    'paid' => 'bg-green-100 text-green-800',
+                                    'cancelled' => 'bg-red-100 text-red-800',
+                                    'payment_return' => 'bg-orange-100 text-orange-800',
+                                ];
+                                $color = $statusColors[$transaction->status] ?? 'bg-gray-100 text-gray-800';
+                            @endphp
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $color }}">
+                                {{ ucfirst($transaction->status) }}
+                            </span>
                         </td>
 
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            Rp {{ number_format($transaction->discount_amount ?? 0, 0, ',', '.') }}
-                        </td>
-
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            Rp {{ number_format($transaction->nta ?? 0, 0, ',', '.') }}
-                        </td>
-
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            {{ $transaction->pax_paid ?? 0 }}
-                        </td>
-
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                            Rp {{ number_format($transaction->profit ?? 0, 0, ',', '.') }}
-                        </td>
-
-                        <td class="px-6 py-4 text-sm text-gray-500">
+                        <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                             {{ $transaction->created_at->format('M d, Y') }}
                         </td>
 
-                        <td class="px-6 py-4 text-right text-sm font-medium">
-                            <button class="text-blue-600 hover:text-blue-900 mr-3">View</button>
+                        <td class="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                            <button
+                                type="button"
+                                class="text-blue-600 hover:text-blue-900 mr-3"
+                                data-modal-open
+                                data-booking-code="{{ $transaction->booking_code ?? 'N/A' }}"
+                                data-customer-name="{{ $transaction->booking->user->name ?? 'N/A' }}"
+                                data-customer-email="{{ $transaction->booking->user->email ?? $transaction->booking->booker_email ?? 'N/A' }}"
+                                data-product-name="{{ $transaction->product->name ?? 'N/A' }}"
+                                data-product-notes="{{ $transaction->notes ?? '' }}"
+                                data-vendor-name="{{ $transaction->product->vendor->name ?? 'N/A' }}"
+                                data-vendor-type="{{ $transaction->product->vendor->vendorInfo->business_type ?? 'N/A' }}"
+                                data-quantity="{{ $transaction->amount ?? 0 }}"
+                                data-total-price="{{ number_format($transaction->total_price ?? 0, 0, ',', '.') }}"
+                                data-status="{{ ucfirst($transaction->status) }}"
+                                data-date="{{ $transaction->created_at->format('M d, Y H:i') }}"
+                                data-checkin="{{ optional($transaction->booking->checkin_appointment_start)->format('M d, Y H:i') ?? 'N/A' }}"
+                                data-checkout="{{ optional($transaction->booking->checkout_appointment_end)->format('M d, Y H:i') ?? 'N/A' }}"
+                            >
+                                View
+                            </button>
                         </td>
                     </tr>
                     @empty
 
                     <tr>
-                        <td colspan="16" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                             No transactions found.
                         </td>
                     </tr>
@@ -180,6 +184,124 @@ Transaction Products Management
         <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
             {{ $transactions->links() }}
         </div>
+
+        <!-- Detail Modal -->
+        <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-40 items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl mx-4 overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <div>
+                        <p class="text-xs text-gray-500">Booking Code</p>
+                        <h3 id="modalBookingCode" class="text-lg font-semibold text-gray-800">-</h3>
+                    </div>
+                    <button type="button" id="modalClose" class="text-gray-500 hover:text-gray-700">✕</button>
+                </div>
+
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-800">
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Customer</p>
+                        <p class="font-semibold" id="modalCustomerName">-</p>
+                        <p class="text-gray-600" id="modalCustomerEmail">-</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Status</p>
+                        <p class="font-semibold" id="modalStatus">-</p>
+                        <p class="text-xs text-gray-500">Date</p>
+                        <p class="text-gray-700" id="modalDate">-</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Product</p>
+                        <p class="font-semibold" id="modalProductName">-</p>
+                        <p class="text-gray-600" id="modalProductNotes"></p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Vendor</p>
+                        <p class="font-semibold" id="modalVendorName">-</p>
+                        <p class="text-gray-600" id="modalVendorType">-</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Quantity</p>
+                        <p class="font-semibold" id="modalQuantity">-</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Total Price</p>
+                        <p class="font-semibold text-blue-700" id="modalTotalPrice">-</p>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Check-in</p>
+                        <p class="text-gray-700" id="modalCheckin">-</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs text-gray-500">Check-out</p>
+                        <p class="text-gray-700" id="modalCheckout">-</p>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                    <button type="button" id="modalCloseBottom" class="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('transactionModal');
+                const closeButtons = [document.getElementById('modalClose'), document.getElementById('modalCloseBottom')];
+
+                const fields = {
+                    bookingCode: document.getElementById('modalBookingCode'),
+                    customerName: document.getElementById('modalCustomerName'),
+                    customerEmail: document.getElementById('modalCustomerEmail'),
+                    productName: document.getElementById('modalProductName'),
+                    productNotes: document.getElementById('modalProductNotes'),
+                    vendorName: document.getElementById('modalVendorName'),
+                    vendorType: document.getElementById('modalVendorType'),
+                    quantity: document.getElementById('modalQuantity'),
+                    totalPrice: document.getElementById('modalTotalPrice'),
+                    status: document.getElementById('modalStatus'),
+                    date: document.getElementById('modalDate'),
+                    checkin: document.getElementById('modalCheckin'),
+                    checkout: document.getElementById('modalCheckout'),
+                };
+
+                function openModal(event) {
+                    const btn = event.currentTarget;
+                    fields.bookingCode.textContent = btn.dataset.bookingCode || '-';
+                    fields.customerName.textContent = btn.dataset.customerName || '-';
+                    fields.customerEmail.textContent = btn.dataset.customerEmail || '-';
+                    fields.productName.textContent = btn.dataset.productName || '-';
+                    fields.productNotes.textContent = btn.dataset.productNotes || '';
+                    fields.vendorName.textContent = btn.dataset.vendorName || '-';
+                    fields.vendorType.textContent = btn.dataset.vendorType || '-';
+                    fields.quantity.textContent = btn.dataset.quantity || '-';
+                    fields.totalPrice.textContent = btn.dataset.totalPrice ? 'Rp ' + btn.dataset.totalPrice : '-';
+                    fields.status.textContent = btn.dataset.status || '-';
+                    fields.date.textContent = btn.dataset.date || '-';
+                    fields.checkin.textContent = btn.dataset.checkin || '-';
+                    fields.checkout.textContent = btn.dataset.checkout || '-';
+
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+
+                function closeModal() {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+
+                document.querySelectorAll('[data-modal-open]').forEach(btn => {
+                    btn.addEventListener('click', openModal);
+                });
+
+                closeButtons.forEach(btn => btn && btn.addEventListener('click', closeModal));
+
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closeModal();
+                });
+            });
+        </script>
 
     </div>
 </div>

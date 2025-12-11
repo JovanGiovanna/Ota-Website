@@ -114,7 +114,7 @@
 
                 {{-- Total Price (Gross) --}}
                 <div class="space-y-2">
-                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Total Price (Gross) - Total Harga Paket (NTA + Upsale - Diskon)</label>
+                    <label for="pax_paid_input" class="block text-sm font-medium text-gray-700">Total Price (Gross) - Total Harga Paket (NTA + Upsell - Diskon)</label>
                     <div class="relative rounded-lg shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">Rp</span>
@@ -122,34 +122,34 @@
                         {{-- Input field disesuaikan dengan 'pax_paid_input' --}}
                         <input type="number" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', $package->pax_paid) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('pax_paid_input') border-red-500 @enderror">
                     </div>
-                    <p class="text-xs text-gray-500">Nilai ini menyimpan total harga paket (NTA + Upsale - Diskon). Untuk mendapatkan harga per orang, bagi nilai ini dengan total Pax.</p>
+                    <p class="text-xs text-gray-500">Nilai ini menyimpan total harga paket (NTA + Upsell - Diskon). Untuk mendapatkan harga per orang, bagi nilai ini dengan total Pax.</p>
                     @error('pax_paid_input')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Upsale --}}
+                {{-- Upsell --}}
                 <div class="space-y-2">
-                    <label for="upsale" class="block text-sm font-medium text-gray-700">Upsale (Fixed Amount)</label>
+                    <label for="upsell" class="block text-sm font-medium text-gray-700">Upsell (Fixed Amount)</label>
                     <div class="relative rounded-lg shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">Rp</span>
                         </div>
-                        <input type="number" name="upsale" id="upsale" value="{{ old('upsale', $package->upsale ?? 0) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('upsale') border-red-500 @enderror">
+                        <input type="number" name="upsell" id="upsell" value="{{ old('upsell', $package->upsell ?? 0) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('upsell') border-red-500 @enderror">
                     </div>
                     <p class="text-xs text-gray-500">Nilai tambahan tetap (dalam Rupiah) yang akan ditambahkan ke NTA.</p>
-                    @error('upsale')
+                    @error('upsell')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Total Price with Upsale - Display --}}
+                {{-- Total Price with Upsell - Display --}}
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Upsale)</label>
+                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Upsell)</label>
                     <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
-                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp{{ number_format($package->nta + ($package->upsale ?? 0), 0, ',', '.') }}</span>
+                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp{{ number_format($package->nta + ($package->upsell ?? 0), 0, ',', '.') }}</span>
                         {{-- Input hidden total_price --}}
-                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', $package->nta + ($package->upsale ?? 0)) }}">
+                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', $package->nta + ($package->upsell ?? 0)) }}">
                     </div>
                 </div>
 
@@ -199,8 +199,8 @@
                         <div class="space-y-2">
                             <label class="block text-sm font-medium text-gray-700">Final Total Price (After Discount)</label>
                             <div class="p-3 bg-blue-100 border border-blue-400 rounded-lg">
-                                <span class="text-lg font-bold text-blue-700" id="final_total_price_display">Rp{{ number_format(($package->nta + ($package->upsale ?? 0)) - ($package->discount_amount ?? 0), 0, ',', '.') }}</span>
-                                <input type="hidden" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', ($package->nta + ($package->upsale ?? 0)) - ($package->discount_amount ?? 0)) }}">
+                                <span class="text-lg font-bold text-blue-700" id="final_total_price_display">Rp{{ number_format(($package->nta + ($package->upsell ?? 0)) - ($package->discount_amount ?? 0), 0, ',', '.') }}</span>
+                                <input type="hidden" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', ($package->nta + ($package->upsell ?? 0)) - ($package->discount_amount ?? 0)) }}">
                             </div>
                         </div>
 
@@ -391,10 +391,10 @@
         document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
         document.getElementById('nta').value = totalNTA;
 
-        // 3. Calculate Upsale dan Total Price
-        const upsaleInput = document.getElementById('upsale');
-        const upsale = parseFloat(upsaleInput.value) || 0;
-        const totalPrice = totalNTA + upsale;
+        // 3. Calculate upsell dan Total Price
+            const upsellInput = document.getElementById('upsell');
+            const upsell = parseFloat(upsellInput.value) || 0;
+            const totalPrice = totalNTA + upsell;
 
         // Update total_price display dan hidden
         document.getElementById('total_price_display').textContent = formatRupiah(totalPrice);
@@ -511,10 +511,10 @@
 
         // --- 4. TAX RATE LOGIC ---
         const taxRateInput = document.getElementById('tax_rate');
-        // --- 5. UPSALE LOGIC ---
-        const upsaleInput = document.getElementById('upsale');
-        upsaleInput.addEventListener('input', function() {
-            calculatePrice(); // Recalculate when upsale changes
+        // --- 5. UPSELL LOGIC ---
+        const upsellInput = document.getElementById('upsell');
+        upsellInput.addEventListener('input', function() {
+            calculatePrice(); // Recalculate when upsell changes
         });
 
         // --- 6. DISCOUNT LOGIC ---

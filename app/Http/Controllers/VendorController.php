@@ -208,7 +208,7 @@ class VendorController extends Controller
     public function bookings()
     {
         $vendor = Auth::guard('vendor')->user();
-        $bookings = Booking::where('vendor_id', $vendor->id)->with('user')->paginate(10);
+        $bookings = Booking::where('vendor_id', $vendor->id)->with('user')->orderBy('created_at', 'desc')->paginate(10);
 
         return view('vendor.bookings', compact('bookings'));
     }
@@ -288,7 +288,7 @@ class VendorController extends Controller
     public function vendorProducts($vendorId)
     {
         $vendor = Vendor::findOrFail($vendorId);
-        $products = \App\Models\Product::where('id_vendor', $vendorId)->with('category')->paginate(10);
+        $products = \App\Models\Product::where('id_vendor', $vendorId)->with('category')->orderBy('created_at', 'desc')->paginate(10);
 
         return view('super_admin.vendors.products', compact('vendor', 'products'));
     }
@@ -296,7 +296,7 @@ class VendorController extends Controller
     public function vendorAddons($vendorId)
     {
         $vendor = Vendor::findOrFail($vendorId);
-        $addons = \App\Models\Addon::where('id_vendor', $vendorId)->paginate(10);
+        $addons = \App\Models\Addon::where('id_vendor', $vendorId)->orderBy('created_at', 'desc')->paginate(10);
 
         return view('super_admin.vendors.addons', compact('vendor', 'addons'));
     }
@@ -466,7 +466,7 @@ class VendorController extends Controller
         // Get transactions for vendor's products - using Detail_Booking which relates to products
         $transactions = \App\Models\Detail_Booking::whereHas('product', function($query) use ($vendorId) {
             $query->where('id_vendor', $vendorId);
-        })->with(['booking.user', 'product'])->paginate(10);
+        })->with(['booking.user', 'product'])->orderBy('created_at', 'desc')->paginate(10);
 
         return view('super_admin.vendors.transaction_products', compact('vendor', 'transactions'));
     }
@@ -477,7 +477,7 @@ class VendorController extends Controller
         // Get transactions for vendor's addons
         $transactions = \App\Models\BookAddon::whereHas('addon', function($query) use ($vendorId) {
             $query->where('id_vendor', $vendorId);
-        })->with(['user', 'addon'])->paginate(10);
+        })->with(['user', 'addon'])->orderBy('created_at', 'desc')->paginate(10);
 
         return view('super_admin.vendors.transaction_addons', compact('vendor', 'transactions'));
     }
@@ -486,7 +486,7 @@ class VendorController extends Controller
     public function vendorProductsDashboard()
     {
         $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
-        $products = \App\Models\Product::where('id_vendor', $vendor->id)->with('category')->paginate(10);
+        $products = \App\Models\Product::where('id_vendor', $vendor->id)->with('category')->orderBy('created_at', 'desc')->paginate(10);
 
         return view('vendor.products', compact('products'));
     }
@@ -502,7 +502,7 @@ class VendorController extends Controller
     public function vendorAddonsDashboard()
     {
         $vendor = Auth::guard('vendor')->user() ?? Auth::guard('super_admin')->user();
-        $addons = \App\Models\Addon::where('id_vendor', $vendor->id)->paginate(10);
+        $addons = \App\Models\Addon::where('id_vendor', $vendor->id)->orderBy('created_at', 'desc')->paginate(10);
 
         return view('vendor.addons', compact('addons'));
     }
@@ -510,8 +510,17 @@ class VendorController extends Controller
     public function vendorTransactionProductsDashboard()
     {
         $vendor = Auth::guard('vendor')->user();
-        // Assuming transactions are related to vendor products
-        $transactions = []; // Replace with actual transaction model query
+        
+        // Get all products owned by this vendor
+        $vendorProductIds = \App\Models\Product::where('id_vendor', $vendor->id)
+            ->pluck('id')
+            ->toArray();
+        
+        // Get BookProduct transactions for vendor's products, ordered newest first
+        $transactions = \App\Models\BookProduct::with(['booking', 'product', 'booking.user'])
+            ->whereIn('id_product', $vendorProductIds)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('vendor.transaction_products', compact('transactions'));
     }
@@ -519,8 +528,17 @@ class VendorController extends Controller
     public function vendorTransactionAddonsDashboard()
     {
         $vendor = Auth::guard('vendor')->user();
-        // Assuming transactions are related to vendor addons
-        $transactions = []; // Replace with actual transaction model query
+        
+        // Get all addons owned by this vendor
+        $vendorAddonIds = \App\Models\Addon::where('id_vendor', $vendor->id)
+            ->pluck('id')
+            ->toArray();
+        
+        // Get BookAddon transactions for vendor's addons, ordered newest first
+        $transactions = \App\Models\BookAddon::with(['booking', 'addon', 'booking.user'])
+            ->whereIn('id_addon', $vendorAddonIds)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('vendor.transaction_addons', compact('transactions'));
     }
@@ -785,6 +803,7 @@ class VendorController extends Controller
             'addons'        => 'sometimes|required|string|max:255',
             'basic_price'   => 'sometimes|required|numeric|min:0',
             'nta'           => 'sometimes|required|numeric|min:0',
+            'upsell'        => 'nullable|numeric|min:0',
             'tax_rate'      => 'nullable|numeric|min:0|max:100',
             'desc'          => 'nullable|string|max:500',
             'status'        => 'sometimes|string|in:available,unavailable,draft',
@@ -824,7 +843,7 @@ class VendorController extends Controller
 
         // Ambil semua data yang relevan, termasuk diskon
         $data = $request->only([
-            'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
+            'addons', 'basic_price', 'nta', 'upsell', 'tax_rate', 'desc', 'status', 'publish', 'pax',
             'discount_type', 'discount_expires_at' // KOLOM DISKON BARU
         ]);
 
@@ -882,6 +901,15 @@ class VendorController extends Controller
             if (!$request->filled('discount_expires_at')) {
                 $data['discount_expires_at'] = null;
             }
+            
+            // Calculate price fields
+            $nta = $data['nta'] ?? $addon->nta;
+            $upsell = $data['upsell'] ?? $addon->upsell;
+            $totalPrice = $nta + $upsell;
+            $discountAmount = $data['discount_amount'] ?? $addon->discount_amount ?? 0;
+            
+            $data['total_price_before_discount'] = $totalPrice;
+            $data['final_price'] = $totalPrice - $discountAmount;
 
             $addon->update($data);
 
@@ -1282,7 +1310,7 @@ class VendorController extends Controller
     // List all products across vendors (top-level)
     public function allProducts()
     {
-        $products = Product::with('vendor', 'category')->paginate(5);
+        $products = Product::with('vendor', 'category')->orderBy('created_at', 'desc')->paginate(5);
         return view('super_admin.products_list', compact('products'));
     }
 
@@ -1339,12 +1367,26 @@ class VendorController extends Controller
             'phone' => 'nullable|string',
             'basic_price' => 'required|numeric|min:0',
             'nta' => 'nullable|numeric|min:0',
-            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'upsell' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:fixed,percentage',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date',
             'status' => 'required|in:available,unavailable,draft,publish',
         ]);
+
+        $nta = $validated['nta'] ?? $product->nta;
+        $upsell = $validated['upsell'] ?? $product->upsell;
+        $discountType = $validated['discount_type'] ?? $product->discount_type;
+        $discountValue = $validated['discount_value'] ?? $product->discount_value;
+        
+        // Calculate discount amount
+        $discountAmount = 0;
+        $totalPrice = $nta + $upsell;
+        if ($discountType === 'percentage' && $discountValue > 0) {
+            $discountAmount = ($totalPrice * $discountValue) / 100;
+        } elseif ($discountType === 'fixed' && $discountValue > 0) {
+            $discountAmount = $discountValue;
+        }
 
         $product->update([
             'name' => $validated['name'],
@@ -1353,15 +1395,19 @@ class VendorController extends Controller
             'location' => $validated['location'] ?? $product->location,
             'phone' => $validated['phone'] ?? $product->phone,
             'basic_price' => $validated['basic_price'],
-            'nta' => $validated['nta'] ?? $product->nta,
-            'tax_rate' => $validated['tax_rate'] ?? $product->tax_rate,
-            'discount_type' => $validated['discount_type'] ?? $product->discount_type,
-            'discount_value' => $validated['discount_value'] ?? $product->discount_value,
+            'nta' => $nta,
+            'upsell' => $upsell,
+            'discount_type' => $discountType,
+            'discount_value' => $discountValue,
+            'discount_amount' => $discountAmount,
             'discount_expires_at' => $validated['discount_expires_at'] ?? $product->discount_expires_at,
+            'total_price_before_discount' => $totalPrice,
+            'final_price' => $totalPrice - $discountAmount,
             'status' => $validated['status'],
         ]);
 
-        return redirect()->route('super_admin.products')->with('success', 'Product updated successfully');
+        alert()->success('Success', 'Product updated successfully');
+        return redirect()->route('super_admin.products');
     }
 
     // Delete a top-level product
@@ -1381,13 +1427,14 @@ class VendorController extends Controller
 
         $product->delete();
 
-        return redirect()->route('super_admin.products')->with('success', 'Product deleted successfully');
+        alert()->success('Success', 'Product deleted successfully');
+        return redirect()->route('super_admin.products');
     }
 
     // List all addons across vendors (top-level)
     public function allAddons()
     {
-        $addons = Addon::with('vendor')->paginate(15);
+        $addons = Addon::with('vendor')->orderBy('created_at', 'desc')->paginate(15);
         return view('super_admin.addons_list', compact('addons'));
     }
 
@@ -1409,27 +1456,45 @@ class VendorController extends Controller
             'phone' => 'nullable|string',
             'desc' => 'nullable|string',
             'nta' => 'required|numeric|min:0',
-            'upsale' => 'nullable|numeric|min:0',
+            'upsell' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:fixed,percentage',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date',
             'status' => 'required|in:available,unavailable,draft,publish',
         ]);
 
+        $nta = $validated['nta'];
+        $upsell = $validated['upsell'] ?? $addon->upsell;
+        $discountType = $validated['discount_type'] ?? $addon->discount_type;
+        $discountValue = $validated['discount_value'] ?? $addon->discount_value;
+        
+        // Calculate discount amount
+        $discountAmount = 0;
+        $totalPrice = $nta + $upsell;
+        if ($discountType === 'percentage' && $discountValue > 0) {
+            $discountAmount = ($totalPrice * $discountValue) / 100;
+        } elseif ($discountType === 'fixed' && $discountValue > 0) {
+            $discountAmount = $discountValue;
+        }
+
         $addon->update([
             'addons' => $validated['addons'],
             'location' => $validated['location'] ?? $addon->location,
             'phone' => $validated['phone'] ?? $addon->phone,
             'desc' => $validated['desc'] ?? $addon->desc,
-            'nta' => $validated['nta'],
-            'upsale' => $validated['upsale'] ?? $addon->upsale,
-            'discount_type' => $validated['discount_type'] ?? $addon->discount_type,
-            'discount_value' => $validated['discount_value'] ?? $addon->discount_value,
+            'nta' => $nta,
+            'upsell' => $upsell,
+            'discount_type' => $discountType,
+            'discount_value' => $discountValue,
+            'discount_amount' => $discountAmount,
             'discount_expires_at' => $validated['discount_expires_at'] ?? $addon->discount_expires_at,
+            'total_price_before_discount' => $totalPrice,
+            'final_price' => $totalPrice - $discountAmount,
             'status' => $validated['status'],
         ]);
 
-        return redirect()->route('super_admin.addons')->with('success', 'Addon updated successfully');
+        alert()->success('Success', 'Addon updated successfully');
+        return redirect()->route('super_admin.addons');
     }
 
     // Delete a top-level addon
@@ -1443,6 +1508,7 @@ class VendorController extends Controller
 
         $addon->delete();
 
-        return redirect()->route('super_admin.addons')->with('success', 'Addon deleted successfully');
+        alert()->success('Success', 'Addon deleted successfully');
+        return redirect()->route('super_admin.addons');
     }
 }

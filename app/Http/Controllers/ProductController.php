@@ -53,7 +53,7 @@ class ProductController extends Controller
             'phone' => 'nullable|string',
             'basic_price' => 'required|numeric|min:0',
             'nta' => 'required|numeric|min:0',
-            'upsale' => 'nullable|numeric|min:0',
+            'upsell' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date',
@@ -87,14 +87,21 @@ class ProductController extends Controller
 
             $data['images'] = !empty($imagePaths) ? $imagePaths : null;
 
-            // Calculate discount_amount using NTA + upsale
+            // Calculate discount_amount using NTA + upsell
+            $nta = $data['nta'] ?? ($data['basic_price'] ?? 0);
+            $upsell = $data['upsell'] ?? 0;
+            
             $data['discount_amount'] = $this->calculateDiscountAmount(
-                $data['nta'] ?? ($data['basic_price'] ?? 0),
-                $data['upsale'] ?? 0,
+                $nta,
+                $upsell,
                 $data['discount_type'] ?? null,
                 $data['discount_value'] ?? null,
                 $data['discount_expires_at'] ?? null
             );
+            
+            // Calculate price fields
+            $data['total_price_before_discount'] = $nta + $upsell;
+            $data['final_price'] = $data['total_price_before_discount'] - $data['discount_amount'];
 
             $product = Product::create($data);
 
@@ -131,7 +138,7 @@ class ProductController extends Controller
             'phone' => 'nullable|string',
             'basic_price' => 'required|numeric|min:0',
             'nta' => 'required|numeric|min:0',
-            'upsale' => 'nullable|numeric|min:0',
+            'upsell' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_expires_at' => 'nullable|date',
@@ -188,14 +195,21 @@ class ProductController extends Controller
                 unset($data['images']);
             }
 
-            // Calculate discount_amount using NTA + upsale
+            // Calculate discount_amount using NTA + upsell
+            $nta = $data['nta'] ?? $product->nta ?? $product->basic_price;
+            $upsell = $data['upsell'] ?? $product->upsell ?? 0;
+            
             $data['discount_amount'] = $this->calculateDiscountAmount(
-                $data['nta'] ?? $product->nta ?? $product->basic_price,
-                $data['upsale'] ?? $product->upsale ?? 0,
+                $nta,
+                $upsell,
                 $data['discount_type'] ?? $product->discount_type,
                 $data['discount_value'] ?? $product->discount_value,
                 $data['discount_expires_at'] ?? $product->discount_expires_at
             );
+            
+            // Calculate price fields
+            $data['total_price_before_discount'] = $nta + $upsell;
+            $data['final_price'] = $data['total_price_before_discount'] - $data['discount_amount'];
 
             $product->update($data);
 
@@ -249,15 +263,15 @@ class ProductController extends Controller
     /**
      * Calculate discount amount based on discount type and value
      */
-    private function calculateDiscountAmount($nta, $upsale, $discountType, $discountValue, $expiresAt)
+    private function calculateDiscountAmount($nta, $upsell, $discountType, $discountValue, $expiresAt)
     {
         // Check if discount is expired
         if ($expiresAt && \Carbon\Carbon::parse($expiresAt)->isPast()) {
             return 0.00;
         }
 
-        // Calculate price before discount: NTA + Upsale
-        $priceBeforeDiscount = (float) $nta + (float) $upsale;
+        // Calculate price before discount: NTA + Upsell
+        $priceBeforeDiscount = (float) $nta + (float) $upsell;
 
         $discountAmount = 0.00;
 

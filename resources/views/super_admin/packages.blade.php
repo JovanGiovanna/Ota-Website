@@ -54,17 +54,10 @@ Packages Management
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($packages as $package)
                         <tr>
-                            {{-- Package Name & Description --}}
+                            {{-- Package Name --}}
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $package->name_package }}
-                                        </div>
-                                        <div class="text-sm text-gray-500 max-w-xs truncate" title="{{ $package->description ?? 'No description' }}">
-                                            {{ Str::limit($package->description ?? 'No description', 40) }}
-                                        </div>
-                                    </div>
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ $package->name_package }}
                                 </div>
                             </td>
 
@@ -72,21 +65,6 @@ Packages Management
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-semibold text-green-600">
                                     Rp {{ number_format($package->nta, 0, ',', '.') }}
-                                </div>
-                            </td>
-
-
-                            {{-- Tax Amount --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    Rp {{ number_format($package->pax_paid * ($package->tax_rate / 100), 0, ',', '.') }}
-                                </div>
-                            </td>
-
-                            {{-- Total Price --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-semibold text-green-600">
-                                    Rp {{ number_format($package->pax_paid + ($package->pax_paid * ($package->tax_rate / 100)), 0, ',', '.') }}
                                 </div>
                             </td>
 
@@ -137,7 +115,7 @@ Packages Management
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                                 No packages found.
                             </td>
                         </tr>

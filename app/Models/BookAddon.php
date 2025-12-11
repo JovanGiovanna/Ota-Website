@@ -50,6 +50,8 @@ class BookAddon extends Model
         'booking_code',
         'status',
         'notes',
+        'stock_applied',
+        'revenue_applied',
     ];
 
     /**
@@ -62,6 +64,8 @@ class BookAddon extends Model
         'checkout_appointment_end' => 'datetime',
         'total_price' => 'decimal:2',
         'amount' => 'integer',
+        'stock_applied' => 'boolean',
+        'revenue_applied' => 'boolean',
     ];
 
     // --- Booting Model ---

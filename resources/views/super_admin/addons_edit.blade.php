@@ -45,59 +45,18 @@ Edit Addon
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Upsale (Fixed Amount Rp)</label>
+                    <label class="block text-sm font-medium text-gray-700">Upsell (Fixed Amount Rp)</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500">Rp</span>
                         </div>
-                        <input id="upsale" type="number" step="0.01" name="upsale" value="{{ old('upsale', $addon->upsale ?? 0) }}" class="mt-1 block w-full pl-10 border border-gray-300 rounded-md p-2">
+                        <input id="upsell" type="number" step="0.01" name="upsell" value="{{ old('upsell', $addon->upsell ?? 0) }}" class="mt-1 block w-full pl-10 border border-gray-300 rounded-md p-2">
                     </div>
                 </div>
 
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        const ntaInput = document.getElementById('nta');
-                        const upsaleInput = document.getElementById('upsale');
-                        const discountTypeSelect = document.getElementById('discount_type');
-                        const discountValueInput = document.getElementById('discount_value');
-                        const finalDisplay = document.getElementById('final_total_display');
-                        const finalHidden = document.getElementById('final_total_price');
-                        const discountAmountHidden = document.getElementById('discount_amount');
-
-                        const formatter = new Intl.NumberFormat('id-ID');
-
-                        function calculate() {
-                            const nta = parseFloat(ntaInput.value) || 0;
-                            const upsale = parseFloat(upsaleInput.value) || 0;
-                            const discountType = discountTypeSelect ? discountTypeSelect.value : 'fixed';
-                            const discountValue = parseFloat(discountValueInput ? discountValueInput.value : 0) || 0;
-
-                            let discount = 0;
-                            const base = nta + upsale;
-                            if (discountType === 'percentage') {
-                                discount = (base * discountValue) / 100;
-                            } else {
-                                discount = discountValue;
-                            }
-
-                            const finalTotal = base - discount;
-                            finalDisplay.textContent = 'Rp' + formatter.format(Math.round(finalTotal));
-                            finalHidden.value = Math.round(finalTotal);
-                            discountAmountHidden.value = Math.round(discount);
-                        }
-
-                        [ntaInput, upsaleInput, discountTypeSelect, discountValueInput].forEach(el => {
-                            if (el) el.addEventListener('input', calculate);
-                        });
-
-                        // initial calc
-                        calculate();
-                    });
-                </script>
-
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Discount Type</label>
-                    <select name="discount_type" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                    <select id="discount_type" name="discount_type" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
                         <option value="" {{ $addon->discount_type ? '' : 'selected' }}>None</option>
                         <option value="fixed" {{ $addon->discount_type == 'fixed' ? 'selected' : '' }}>Fixed</option>
                         <option value="percentage" {{ $addon->discount_type == 'percentage' ? 'selected' : '' }}>Percentage</option>
@@ -115,11 +74,32 @@ Edit Addon
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Final Total Price (NTA + Upsale - Discount)</label>
+                    <label class="block text-sm font-medium text-gray-700">Final Total Price (NTA + upsell - Discount)</label>
                     <div class="p-2 bg-blue-50 rounded-md">
-                        <span class="font-bold text-lg" id="final_total_display">Rp{{ number_format(($addon->nta ?? $addon->price) + ($addon->upsale ?? 0) - ($addon->discount_amount ?? 0), 0, ',', '.') }}</span>
+                        <span class="font-bold text-lg" id="final_total_display">Rp{{ number_format(($addon->nta ?? $addon->price) + ($addon->upsell ?? 0) - ($addon->discount_amount ?? 0), 0, ',', '.') }}</span>
                     </div>
-                    <input type="hidden" name="final_total_price" id="final_total_price" value="{{ old('final_total_price', ($addon->nta ?? $addon->price) + ($addon->upsale ?? 0) - ($addon->discount_amount ?? 0)) }}">
+                    <input type="hidden" name="final_total_price" id="final_total_price" value="{{ old('final_total_price', ($addon->nta ?? $addon->price) + ($addon->upsell ?? 0) - ($addon->discount_amount ?? 0)) }}">
+                </div>
+
+                {{-- Price Summary Fields --}}
+                <div class="md:col-span-2 bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
+                    <h4 class="font-bold text-gray-800 mb-3">💰 Price Summary</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-3 rounded border-l-4 border-blue-500">
+                            <p class="text-xs text-gray-600">Total Price (NTA + Upsell)</p>
+                            <p class="text-lg font-bold text-blue-600">Rp{{ number_format(($addon->total_price_before_discount ?? (($addon->nta ?? 0) + ($addon->upsell ?? 0))), 0, ',', '.') }}</p>
+                            <input type="hidden" name="total_price_before_discount" id="total_price_before_discount" value="{{ $addon->total_price_before_discount ?? (($addon->nta ?? 0) + ($addon->upsell ?? 0)) }}">
+                        </div>
+                        <div class="bg-white p-3 rounded border-l-4 border-red-500">
+                            <p class="text-xs text-gray-600">Discount Amount</p>
+                            <p class="text-lg font-bold text-red-600">- Rp{{ number_format(($addon->discount_amount ?? 0), 0, ',', '.') }}</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border-l-4 border-green-500">
+                            <p class="text-xs text-gray-600">Final Price</p>
+                            <p class="text-lg font-bold text-green-600">Rp{{ number_format(($addon->final_price ?? (($addon->total_price_before_discount ?? (($addon->nta ?? 0) + ($addon->upsell ?? 0))) - ($addon->discount_amount ?? 0))), 0, ',', '.') }}</p>
+                            <input type="hidden" name="final_price" id="final_price" value="{{ $addon->final_price ?? (($addon->total_price_before_discount ?? (($addon->nta ?? 0) + ($addon->upsell ?? 0))) - ($addon->discount_amount ?? 0)) }}">
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Hidden discount amount field updated by JS --}}
@@ -143,4 +123,52 @@ Edit Addon
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ntaInput = document.getElementById('nta');
+        const upsellInput = document.getElementById('upsell');
+        const discountTypeSelect = document.getElementById('discount_type');
+        const discountValueInput = document.getElementById('discount_value');
+        const finalDisplay = document.getElementById('final_total_display');
+        const finalHidden = document.getElementById('final_total_price');
+        const discountAmountHidden = document.getElementById('discount_amount');
+
+        const formatter = new Intl.NumberFormat('id-ID');
+
+        function calculate() {
+            const nta = parseFloat(ntaInput.value) || 0;
+            const upsell = parseFloat(upsellInput.value) || 0;
+            const discountType = discountTypeSelect ? discountTypeSelect.value : 'fixed';
+            const discountValue = parseFloat(discountValueInput ? discountValueInput.value : 0) || 0;
+
+            let discount = 0;
+            const base = nta + upsell;
+            if (discountType === 'percentage') {
+                discount = (base * discountValue) / 100;
+            } else {
+                discount = discountValue;
+            }
+
+            const finalTotal = base - discount;
+            finalDisplay.textContent = 'Rp' + formatter.format(Math.round(finalTotal));
+            finalHidden.value = Math.round(finalTotal);
+            discountAmountHidden.value = Math.round(discount);
+            
+            // Save to price summary fields
+            const totalPriceBeforeDiscount = document.getElementById('total_price_before_discount');
+            const finalPriceField = document.getElementById('final_price');
+            if (totalPriceBeforeDiscount) totalPriceBeforeDiscount.value = base;
+            if (finalPriceField) finalPriceField.value = finalTotal;
+        }
+
+        [ntaInput, upsellInput, discountTypeSelect, discountValueInput].forEach(el => {
+            if (el) el.addEventListener('input', calculate);
+        });
+
+        // initial calc
+        calculate();
+    });
+</script>
+
 @endsection

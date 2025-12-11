@@ -86,7 +86,7 @@ Products Management
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-center space-x-2">
                                 <a href="{{ route('super_admin.products.edit', $product->id) }}" class="text-yellow-600 hover:text-yellow-900 text-sm">Edit</a>
-                                <form action="{{ route('super_admin.products.destroy', $product->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                <form action="{{ route('super_admin.products.destroy', $product->id) }}" method="POST" class="inline" onsubmit="return confirmDeleteAction(this);" data-delete-item="{{ $product->name }}">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900 text-sm">Delete</button>

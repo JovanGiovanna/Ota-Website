@@ -162,21 +162,21 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label for="upsale" class="block text-sm font-medium text-gray-700">Upsale (Fixed Amount)</label>
+                    <label for="upsell" class="block text-sm font-medium text-gray-700">Upsell (Fixed Amount)</label>
                     <div class="relative rounded-lg shadow-sm">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500 sm:text-sm">Rp</span>
                         </div>
-                        <input type="number" name="upsale" id="upsale" value="{{ old('upsale', 0) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('upsale') border-red-500 @enderror">
+                        <input type="number" name="upsell" id="upsell" value="{{ old('upsell', 0) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('upsell') border-red-500 @enderror">
                     </div>
                     <p class="text-xs text-gray-500">Nilai tambahan tetap (dalam Rupiah) yang akan ditambahkan ke NTA.</p>
-                    @error('upsale')
+                    @error('upsell')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Upsale)</label>
+                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Upsell)</label>
                     <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
                         <span class="text-lg font-bold text-green-700" id="total_price_display">Rp0</span>
                         <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', 0) }}">
@@ -329,9 +329,9 @@
         document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
         document.getElementById('nta').value = totalNTA;
         
-        const upsaleInput = document.getElementById('upsale');
-        const upsale = parseFloat(upsaleInput.value) || 0;
-        const totalPrice = totalNTA + upsale;
+        const upsellInput = document.getElementById('upsell');
+        const upsell = parseFloat(upsellInput.value) || 0;
+        const totalPrice = totalNTA + upsell;
         
         document.getElementById('total_price_display').textContent = formatRupiah(totalPrice);
         document.getElementById('total_price').value = totalPrice;
@@ -409,8 +409,8 @@
             });
         });
         
-        const upsaleInput = document.getElementById('upsale');
-        upsaleInput.addEventListener('input', function() {
+        const upsellInput = document.getElementById('upsell');
+        upsellInput.addEventListener('input', function() {
             calculatePrice();
         });
 

@@ -27,6 +27,7 @@ class BookPackage extends Model
         'booking_code',
         'checkin_appointment_start',
         'checkout_appointment_end',
+        'quantity',
         'total_price',
         'status',
         'notes',

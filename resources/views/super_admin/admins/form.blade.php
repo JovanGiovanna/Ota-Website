@@ -33,17 +33,17 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Roles</label>
-                <div class="mt-1">
+                <select name="roles[]" class="mt-1 block w-full border-gray-300 rounded-md p-2">
+                    <option value="" disabled @selected(empty(old('roles', $admin?->roles->pluck('id')->first())))>Pilih salah satu role</option>
                     @foreach($roles as $role)
-                        <label class="inline-flex items-center mr-4">
-                            <input type="checkbox" name="roles[]" value="{{ $role->id }}" class="mr-2" @if(in_array($role->id, old('roles', $admin?->roles->pluck('id')->toArray() ?? []))) checked @endif>
-                            <span class="text-sm">{{ $role->name }} <small class="text-gray-400">({{ $role->key }})</small></span>
-                        </label>
+                        <option value="{{ $role->id }}" @selected((old('roles') && in_array($role->id, old('roles'))) || (!old('roles') && $admin?->roles->pluck('id')->contains($role->id)))>
+                            {{ $role->name }} ({{ $role->key }})
+                        </option>
                     @endforeach
-                </div>
+                </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700">Password @if(!$admin) <small>(optional)</small> @endif</label>
+                <label class="block text-sm font-medium text-gray-700">Password @if(!$admin) @endif</label>
                 <input type="password" name="password" class="mt-1 block w-full border-gray-300 rounded-md p-2">
                 <input type="password" name="password_confirmation" class="mt-2 block w-full border-gray-300 rounded-md p-2" placeholder="Confirm password">
             </div>

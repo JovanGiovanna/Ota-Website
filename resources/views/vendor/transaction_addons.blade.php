@@ -33,13 +33,28 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($transactions as $transaction)
                             <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{{ $transaction->id ?? 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $transaction->user->name ?? 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $transaction->addon->addons ?? 'N/A' }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transaction->quantity ?? 0 }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $transaction->booking_code ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $transaction->booking->user->name ?? $transaction->booker_name ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {{ $transaction->addon->addons ?? 'N/A' }}
+                                    @if($transaction->notes)
+                                        <br><span class="text-xs text-gray-500 italic">{{ $transaction->notes }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transaction->amount ?? 0 }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rp {{ number_format($transaction->total_price ?? 0, 0, ',', '.') }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+                                    @php
+                                        $statusColors = [
+                                            'pending' => 'bg-yellow-100 text-yellow-800',
+                                            'book' => 'bg-blue-100 text-blue-800',
+                                            'paid' => 'bg-green-100 text-green-800',
+                                            'cancelled' => 'bg-red-100 text-red-800',
+                                            'payment_return' => 'bg-orange-100 text-orange-800',
+                                        ];
+                                        $color = $statusColors[$transaction->status] ?? 'bg-gray-100 text-gray-800';
+                                    @endphp
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $color }}">{{ ucfirst($transaction->status) }}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $transaction->created_at ? $transaction->created_at->format('M d, Y') : 'N/A' }}</td>
                             </tr>

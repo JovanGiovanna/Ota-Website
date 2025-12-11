@@ -415,6 +415,13 @@ Route::middleware(['super_admin_access:vendor'])->group(function () {
 // Allow super_admin and admin (admin guard) to access the super-admin dashboard
 Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::get('/super-admin/dashboard', [SuperAdminController::class, 'dashboard'])->name('super_admin.dashboard');
+    
+    // Email Notification Settings
+    Route::get('/super-admin/email-settings', [App\Http\Controllers\EmailSettingController::class, 'index'])->name('super_admin.email_settings');
+    Route::post('/super-admin/email-settings', [App\Http\Controllers\EmailSettingController::class, 'store'])->name('super_admin.email_settings.store');
+    Route::put('/super-admin/email-settings/{id}', [App\Http\Controllers\EmailSettingController::class, 'update'])->name('super_admin.email_settings.update');
+    Route::patch('/super-admin/email-settings/{id}/toggle', [App\Http\Controllers\EmailSettingController::class, 'toggleStatus'])->name('super_admin.email_settings.toggle');
+    Route::delete('/super-admin/email-settings/{id}', [App\Http\Controllers\EmailSettingController::class, 'destroy'])->name('super_admin.email_settings.destroy');
 });
 
 Route::get('/invoice/download/{bookingId}', [InvoiceController::class, 'download'])->name('invoice.download')->middleware('auth');

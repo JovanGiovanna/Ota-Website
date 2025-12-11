@@ -861,7 +861,136 @@ document.addEventListener('DOMContentLoaded', () => {
     calculateDuration();
 });
 
-// Pre-select URL
+// Handle form submission - create hidden inputs from selected items
+document.getElementById('booking-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Clear existing hidden inputs (but keep the csrf token and pre-selected ones)
+    this.querySelectorAll('input[type="hidden"][data-dynamic="true"]').forEach(input => {
+        input.remove();
+    });
+
+    // Collect selected types
+    const selectedTypes = [];
+    const selectedPackageIds = [];
+    const selectedProductIds = [];
+    const selectedAddonIds = [];
+    const quantities = {};
+
+    // Get booking types
+    document.querySelectorAll('.booking-type-option.selected').forEach(option => {
+        selectedTypes.push(option.dataset.type);
+    });
+
+    // Collect selected packages
+    document.querySelectorAll('.package-option.selected').forEach(option => {
+        const packageId = option.dataset.package;
+        selectedPackageIds.push(packageId);
+    });
+
+    // Collect selected products with quantities
+    document.querySelectorAll('.product-option.selected').forEach(option => {
+        const productId = option.dataset.product;
+        selectedProductIds.push(productId);
+        const qtyInput = option.querySelector('input[type="number"]');
+        const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+        quantities[productId] = qty;
+    });
+
+    // Collect selected addons with quantities
+    document.querySelectorAll('.addon-option.selected').forEach(option => {
+        const addonId = option.dataset.addon;
+        selectedAddonIds.push(addonId);
+        const qtyInput = option.querySelector('input[type="number"]');
+        const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+        quantities[addonId] = qty;
+    });
+
+    // Check for pre-selected items from PHP
+    const hasPreselectedPackage = document.querySelector('.bg-blue-50.border.border-blue-200');
+    const hasPreselectedProduct = document.querySelector('.bg-green-50.border.border-green-200');
+    const hasPreselectedAddon = document.querySelector('.bg-orange-50.border.border-orange-200');
+
+    // Debug logging
+    console.log('Selected Types:', selectedTypes);
+    console.log('Selected Package IDs:', selectedPackageIds);
+    console.log('Selected Product IDs:', selectedProductIds);
+    console.log('Selected Addon IDs:', selectedAddonIds);
+    console.log('Quantities:', quantities);
+    console.log('Has Preselected Package:', hasPreselectedPackage);
+    console.log('Has Preselected Product:', hasPreselectedProduct);
+    console.log('Has Preselected Addon:', hasPreselectedAddon);
+
+    // Validate that at least one booking type is selected OR there are pre-selected items
+    if (selectedTypes.length === 0 && !hasPreselectedPackage && !hasPreselectedProduct && !hasPreselectedAddon) {
+        alert('Please select at least one booking type (Package, Product, or Add-on)');
+        return false;
+    }
+
+    // Validate that at least one item is selected
+    if (selectedPackageIds.length === 0 && selectedProductIds.length === 0 && selectedAddonIds.length === 0) {
+        // Check if there are pre-selected items
+        if (!hasPreselectedPackage && !hasPreselectedProduct && !hasPreselectedAddon) {
+            alert('Please select at least one item');
+            return false;
+        }
+    }
+
+    // Add hidden inputs for booking types
+    selectedTypes.forEach(type => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'booking_types[]';
+        input.value = type;
+        input.dataset.dynamic = 'true';
+        this.appendChild(input);
+    });
+
+    // Add hidden inputs for selected packages
+    selectedPackageIds.forEach(packageId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'id_package[]';
+        input.value = packageId;
+        input.dataset.dynamic = 'true';
+        this.appendChild(input);
+    });
+
+    // Add hidden inputs for selected products
+    selectedProductIds.forEach(productId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'product_id[]';
+        input.value = productId;
+        input.dataset.dynamic = 'true';
+        this.appendChild(input);
+    });
+
+    // Add hidden inputs for selected addons
+    selectedAddonIds.forEach(addonId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'addon_id[]';
+        input.value = addonId;
+        input.dataset.dynamic = 'true';
+        this.appendChild(input);
+    });
+
+    // Add quantity inputs
+    Object.entries(quantities).forEach(([itemId, qty]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `quantity[${itemId}]`;
+        input.value = qty;
+        input.dataset.dynamic = 'true';
+        this.appendChild(input);
+    });
+
+    // Now submit the form
+    this.submit();
+});
+
+// Pre-select URL params
 const urlParams = new URLSearchParams(window.location.search);
 ['package','product','addon'].forEach(type=>{
     if(urlParams.has(type)){

@@ -51,7 +51,7 @@ class PackagesController extends Controller
             'description' => 'nullable|string',
             'images' => 'required|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'upsale' => 'nullable|numeric|min:0',
+            'upsell' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20', 
             'discount_type' => 'nullable|in:percentage,fixed',
@@ -131,11 +131,11 @@ class PackagesController extends Controller
                 ];
             }
 
-            $upsaleValue = $data['upsale'] ?? 0;
+            $upsellValue = $data['upsell'] ?? 0;
             $discountAmount = $data['discount_amount'] ?? 0;
             $finalNTA = $totalNTA;
 
-            $grossTotal = $totalNTA + $upsaleValue - $discountAmount;
+            $grossTotal = $totalNTA + $upsellValue - $discountAmount;
 
             // Generate unique slug
             $slug = Str::slug($data['name_package']);
@@ -155,7 +155,7 @@ class PackagesController extends Controller
                 'phone' => $data['phone'] ?? null,
                 'nta' => $finalNTA,
                 'pax_paid' => round($grossTotal, 2),
-                'upsale' => $data['upsale'] ?? 0,
+                'upsell' => $data['upsell'] ?? 0,
                 'discount_type' => $data['discount_type'] ?? null,
                 'discount_value' => $data['discount_value'] ?? null,
                 'discount_amount' => $data['discount_amount'] ?? null,
@@ -168,7 +168,8 @@ class PackagesController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil ditambahkan!');
+            alert()->success('Success', 'Paket berhasil ditambahkan!');
+            return redirect()->route('super_admin.packages');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -178,7 +179,8 @@ class PackagesController extends Controller
             }
 
             \Log::error('Package store failed: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal menyimpan paket: ' . $e->getMessage())->withInput();
+            alert()->error('Error', 'Gagal menyimpan paket: ' . $e->getMessage());
+            return redirect()->back()->withInput();
         }
     }
 
@@ -258,7 +260,7 @@ class PackagesController extends Controller
             'images' => 'nullable|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'nta' => 'required|numeric|min:0',
-            'upsale' => 'nullable|numeric|min:0',
+            'upsell' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:percentage,fixed',
             'discount_value' => 'nullable|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -327,11 +329,11 @@ class PackagesController extends Controller
                 ];
             }
 
-            // Compute gross total and store pax_paid as TOTAL gross (NTA + upsale - discount)
-            $upsaleValue = $data['upsale'] ?? 0;
+            // Compute gross total and store pax_paid as TOTAL gross (NTA + upsell - discount)
+            $upsellValue = $data['upsell'] ?? 0;
             $discountAmount = $data['discount_amount'] ?? 0;
             $finalNTA = $data['nta'];
-            $grossTotal = $totalNTA + $upsaleValue - $discountAmount;
+            $grossTotal = $totalNTA + $upsellValue - $discountAmount;
             $finalPaxPaid = $data['pax_paid_input'] ?? $grossTotal;
             if ($finalPaxPaid < 0) {
                 $finalPaxPaid = 0;
@@ -342,7 +344,7 @@ class PackagesController extends Controller
                 'description' => $data['description'],
                 'nta' => $finalNTA,
                 'pax_paid' => round($finalPaxPaid, 2),
-                'upsale' => $data['upsale'] ?? 0,
+                'upsell' => $data['upsell'] ?? 0,
                 'discount_type' => $data['discount_type'] ?? null,
                 'discount_value' => $data['discount_value'] ?? null,
                 'discount_amount' => $data['discount_amount'] ?? null,
@@ -396,11 +398,13 @@ class PackagesController extends Controller
             $package->update($packageData);
             DB::commit();
 
-            return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil diperbarui!');
+            alert()->success('Success', 'Paket berhasil diperbarui!');
+            return redirect()->route('super_admin.packages');
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Package update failed: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal memperbarui paket: ' . $e->getMessage())->withInput();
+            alert()->error('Error', 'Gagal memperbarui paket: ' . $e->getMessage());
+            return redirect()->back()->withInput();
         }
     }
 
@@ -426,7 +430,8 @@ class PackagesController extends Controller
 
         $package->delete();
 
-        return redirect()->route('super_admin.packages')->with('success', 'Paket berhasil dihapus!');
+        alert()->success('Success', 'Paket berhasil dihapus!');
+        return redirect()->route('super_admin.packages');
     }
 
     /**

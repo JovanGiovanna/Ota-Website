@@ -305,53 +305,10 @@ class SuperAdminController extends Controller
      */
 public function transactionProducts()
 {
-    // Fetch transaction products data from detail_booking table with relations
-    $transactions = \App\Models\Detail_Booking::with(['booking.user', 'product.vendor.vendorInfo'])
+    // Fetch transaction products data from book_products table with relations
+    $transactions = \App\Models\BookProduct::with(['booking.user', 'product.vendor.vendorInfo'])
         ->orderBy('created_at', 'desc')
         ->paginate(10);
-
-    // Add calculated fields to each transaction
-    $transactions->getCollection()->transform(function ($transaction) {
-        $product = $transaction->product;
-
-        $basicPrice = $product->basic_price ?? 0;
-        $taxRate = $product->tax_rate ?? 0;
-        $discountType = $product->discount_type;
-        $discountValue = $product->discount_value ?? 0;
-
-        // Calculate tax amount
-        $taxAmount = $basicPrice * ($taxRate / 100);
-
-        // Calculate discount amount
-        $totalPriceBeforeDiscount = $basicPrice + $taxAmount;
-        $discountAmount = 0;
-        if ($discountType === 'percentage' && $discountValue > 0) {
-            $discountAmount = $totalPriceBeforeDiscount * ($discountValue / 100);
-        } elseif ($discountType === 'fixed' && $discountValue > 0) {
-            $discountAmount = $discountValue;
-        }
-
-        // Calculate nta
-        $nta = $basicPrice + $taxAmount - $discountAmount;
-
-        // Calculate pax paid (sum of adults and children)
-        $paxPaid = ($transaction->adults ?? 0) + ($transaction->children ?? 0);
-
-        // Calculate profit = pax paid * (final price - nta)
-        // finalPrice includes discount, to get from product accessor if exists, otherwise calculate
-        $finalPrice = $product->finalPrice ?? ($totalPriceBeforeDiscount - $discountAmount);
-        $profit = $paxPaid * ($finalPrice - $nta);
-
-        // Attach to transaction object for view access
-        $transaction->basic_price = $basicPrice;
-        $transaction->tax_amount = $taxAmount;
-        $transaction->discount_amount = $discountAmount;
-        $transaction->nta = $nta;
-        $transaction->pax_paid = $paxPaid;
-        $transaction->profit = $profit;
-
-        return $transaction;
-    });
 
     return view('super_admin.transaction_products', compact('transactions'));
 }
@@ -362,7 +319,7 @@ public function transactionProducts()
     public function transactionAddons()
     {
         // Fetch transaction addons data from book_addons table with relations
-        $transactions = \App\Models\BookAddon::with(['user', 'addon.vendor.vendorInfo'])
+        $transactions = \App\Models\BookAddon::with(['booking.user', 'addon.vendor.vendorInfo'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -393,7 +350,8 @@ public function transactionProducts()
         $user = \App\Models\User::findOrFail($id);
         $user->update(['status' => 'banned']);
 
-        return redirect()->back()->with('success', 'Customer has been banned successfully.');
+        alert()->success('Success', 'Customer has been banned successfully.');
+        return redirect()->back();
     }
 
     /**
@@ -404,7 +362,8 @@ public function transactionProducts()
         $user = \App\Models\User::findOrFail($id);
         $user->update(['status' => 'active']);
 
-        return redirect()->back()->with('success', 'Customer has been unbanned successfully.');
+        alert()->success('Success', 'Customer has been unbanned successfully.');
+        return redirect()->back();
     }
 
     /**
@@ -435,10 +394,10 @@ public function transactionProducts()
         // Prepare an array to collect all booking records (products, addons only - no packages for now)
         $rekonDetails = [];
 
-        // Fetch bookProducts with booking and product relations (completed status only)
+        // Fetch bookProducts with booking and product relations (paid status only)
         $bookProducts = \App\Models\BookProduct::with(['booking', 'product', 'product.vendor'])
             ->whereHas('booking', function ($q) {
-                $q->where('status', 'completed');
+                $q->where('status', 'paid');
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -501,9 +460,9 @@ public function transactionProducts()
         }
 
         // Fetch bookPackages with booking and package relations
-        $bookPackages = \App\Models\BookPackage::with(['booking', 'package', 'package.vendor']) // <-- Tambahkan 'package.vendor'
-        ->whereHas('booking', function ($q) { // <-- Tambahkan filter completed
-            $q->where('status', 'completed');
+        $bookPackages = \App\Models\BookPackage::with(['booking', 'package', 'package.vendor'])
+        ->whereHas('booking', function ($q) {
+            $q->where('status', 'paid');
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -512,8 +471,8 @@ public function transactionProducts()
             $booking = $bookPackage->booking;
             $package = $bookPackage->package;
 
-            if (!$package || !$booking || $booking->status !== 'completed') {
-                continue; // Skip if no package or booking linked or status is not completed
+            if (!$package || !$booking) {
+                continue;
             }
 
             // Get pax count from booking
@@ -558,10 +517,10 @@ public function transactionProducts()
             ];
         }
 
-        // Fetch bookAddons with booking and addon relations (completed status only)
+        // Fetch bookAddons with booking and addon relations (paid status only)
         $bookAddons = \App\Models\BookAddon::with(['booking', 'addon', 'addon.vendor'])
             ->whereHas('booking', function ($q) {
-                $q->where('status', 'completed');
+                $q->where('status', 'paid');
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -655,7 +614,7 @@ public function transactionProducts()
         $rekonDetails = $rekonDetailsCollection->sortByDesc('date')->values()->all();
 
         // Paginate the combined rekonDetails array
-        $perPage = 10;
+        $perPage = 5;
         $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage('page');
         $rekonDetailsCollection = collect($rekonDetails);
         $total = $rekonDetailsCollection->count();
@@ -685,19 +644,27 @@ public function transactionProducts()
             $monthlyProfit[] = (int)$profit;
         }
 
-        // Calculate summary stats (completed status only)
+        // Calculate summary stats (paid status only)
+        // GMV = Gross Merchandise Value (total paid by users)
+        $gmv = collect($rekonDetails)->sum('pax_paid');
+        
+        // Nominal Transaction = total revenue (harga kotor yang dibeli user)
+        $nominalTransaction = \App\Models\Booking::where('status', 'paid')->sum('total_price');
+        
+        // Total Revenue = sum of all booking total prices (paid)
+        $totalRevenue = \App\Models\Booking::where('status', 'paid')->sum('total_price');
+        
+        // Margin Value = (Total Profit / GMV) * 100 (in percentage)
         $totalProfit = collect($rekonDetails)->sum('profit');
-        $completedTransactions = \App\Models\Booking::where('status', 'completed')->count();
-        $totalRevenue = \App\Models\Booking::where('status', 'completed')->sum('total_price');
-        $avgProfit = $completedTransactions > 0 ? $totalProfit / $completedTransactions : 0;
+        $marginValue = $gmv > 0 ? ($totalProfit / $gmv) * 100 : 0;
 
         return view('super_admin.rekon', compact(
             'rekonDetailsPaginated',
             'vendors',
-            'totalProfit',
-            'completedTransactions',
+            'gmv',
+            'nominalTransaction',
             'totalRevenue',
-            'avgProfit',
+            'marginValue',
             'monthlyProfit',
             'labels'
         ));
@@ -770,14 +737,16 @@ public function transactionProducts()
                     // rollback created admin
                     $admin->permissions()->detach();
                     $admin->delete();
-                    return back()->withInput()->with('error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
+                    alert()->error('Error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
+                    return back()->withInput();
                 }
             }
 
             $admin->roles()->sync($validated['roles']);
         }
 
-        return redirect()->route('super_admin.admins')->with('success', 'Admin berhasil dibuat.');
+        alert()->success('Success', 'Admin berhasil dibuat.');
+        return redirect()->route('super_admin.admins');
     }
 
     public function editAdminForm(Admin $admin)
@@ -828,26 +797,30 @@ public function transactionProducts()
                 // allow if current admin already has super role (editing), otherwise enforce max 2
                 $hasAlready = $admin->roles()->where('key', 'super_admin')->exists();
                 if (!$hasAlready && $countSuper >= 2) {
-                    return back()->withInput()->with('error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
+                    alert()->error('Error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
+                    return back()->withInput();
                 }
             }
 
             $admin->roles()->sync($validated['roles'] ?? []);
         }
 
-        return redirect()->route('super_admin.admins')->with('success', 'Admin berhasil diperbarui.');
+        alert()->success('Success', 'Admin berhasil diperbarui.');
+        return redirect()->route('super_admin.admins');
     }
 
     public function destroyAdmin(Admin $admin)
     {
         if ($admin->hasRole('super_admin') || ($admin->role ?? null) === 'super_admin') {
-            return back()->with('error', 'Tidak dapat menghapus akun Super Admin.');
+            alert()->error('Error', 'Tidak dapat menghapus akun Super Admin.');
+            return back();
         }
 
         $admin->permissions()->detach();
         $admin->roles()->detach();
         $admin->delete();
 
-        return back()->with('success', 'Admin berhasil dihapus.');
+        alert()->success('Success', 'Admin berhasil dihapus.');
+        return back();
     }
 }

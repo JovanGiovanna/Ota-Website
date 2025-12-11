@@ -29,7 +29,7 @@ class Package extends Model
         'images',
         'nta',
         'pax_paid',
-        'upsale',
+        'upsell',
         'discount_type',
         'discount_value',
         'discount_amount',
@@ -48,7 +48,7 @@ class Package extends Model
     protected $casts = [
         'nta' => 'decimal:2',
         'pax_paid' => 'decimal:2',
-        'upsale' => 'decimal:2',
+        'upsell' => 'decimal:2',
         'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'discount_expires_at' => 'datetime',
@@ -131,20 +131,41 @@ class Package extends Model
     }
 
     // app/Models/Package.php
-public function bookPackageAddons()
-{
-    return $this->hasMany(\App\Models\BookPackageAddon::class, 'id_package', 'id');
-}
+    public function bookPackageAddons()
+    {
+        return $this->hasMany(\App\Models\BookPackageAddon::class, 'id_package', 'id');
+    }
 
     /**
-     * Hitung total harga (NTA + Upsale) SEBELUM diskon.
+     * Get the products associated with the package (many-to-many through package_products).
+     */
+    public function products()
+    {
+        return $this->belongsToMany(\App\Models\Product::class, 'package_products', 'id_package', 'id_product');
+    }
+
+    /**
+     * Get the addons associated with the package (through BookPackageAddon).
+     */
+    public function addons()
+    {
+        return $this->hasManyThrough(
+            \App\Models\Addon::class,
+            \App\Models\BookPackageAddon::class,
+            'id_package',
+            'id',
+            'id',
+            'id_addons'
+        );
+    }    /**
+    * Hitung total harga (NTA + Upsell) SEBELUM diskon.
      */
     public function getTotalPriceBeforeDiscountAttribute()
     {
         $nta = (float) ($this->nta ?? 0);
-        $upsale = (float) ($this->upsale ?? 0);
+        $upsell = (float) ($this->upsell ?? 0);
 
-        return round($nta + $upsale, 2);
+        return round($nta + $upsell, 2);
     }
 
     /**
@@ -172,6 +193,72 @@ public function bookPackageAddons()
         $finalPrice = $totalPrice - $discountAmount;
 
         return round(max(0, $finalPrice), 2);
+    }
+
+    /**
+     * Get available stock for this package based on products and addons.
+     * Returns the minimum stock available from all products/addons in the package.
+     * Considers the pax (capacity per stock) for each item.
+     */
+    public function getAvailableStockAttribute()
+    {
+        $minStock = PHP_INT_MAX;
+        $hasAnyItem = false;
+        
+        // Check products stock
+        $productsData = is_array($this->products_data) ? $this->products_data : [];
+        foreach ($productsData as $productData) {
+            $productId = $productData['id'] ?? null;
+            if (!$productId) continue;
+            
+            $product = Product::find($productId);
+            if (!$product) continue;
+            
+            $currentStock = $product->jumlah ?? 0;
+            
+            // Skip items with NULL stock (considered unlimited)
+            if ($currentStock === null) continue;
+            
+            $hasAnyItem = true;
+            $packagesAvailable = $currentStock;
+            
+            $minStock = min($minStock, $packagesAvailable);
+        }
+        
+        // Check addons stock
+        $addonsData = is_array($this->addons_data) ? $this->addons_data : [];
+        foreach ($addonsData as $addonData) {
+            $addonId = $addonData['id'] ?? null;
+            if (!$addonId) continue;
+            
+            $addon = \App\Models\Addon::find($addonId);
+            if (!$addon) continue;
+            
+            $currentStock = $addon->jumlah ?? null;
+            
+            // Skip items with NULL stock (considered unlimited)
+            if ($currentStock === null) continue;
+            
+            $hasAnyItem = true;
+            $packagesAvailable = $currentStock;
+            
+            $minStock = min($minStock, $packagesAvailable);
+        }
+        
+        // If no products or addons with stock tracking, return unlimited (999)
+        if (!$hasAnyItem || $minStock === PHP_INT_MAX) {
+            return 999;
+        }
+        
+        return max(0, $minStock);
+    }
+
+    /**
+     * Check if package is available (has stock).
+     */
+    public function getIsAvailableAttribute()
+    {
+        return $this->availableStock > 0;
     }
 
 }

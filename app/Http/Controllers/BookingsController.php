@@ -101,11 +101,14 @@ class BookingsController extends Controller
 
             // 2️⃣ Booking Package
             if (!empty($validated['id_package'])) {
-                foreach ($validated['id_package'] as $packageId) {
+                foreach ($validated['id_package'] as $index => $packageId) {
                     $package = Package::find($packageId);
                     if (!$package) continue;
 
-                    $packagePrice = $package->nta * $validated['duration_days'];
+                    // Get quantity for this package (default to 1 if not specified)
+                    $packageQty = $validated['quantity'][$index] ?? 1;
+                    
+                    $packagePrice = $package->nta * $packageQty * $validated['duration_days'];
                     $totalPrice += $packagePrice;
 
                     // Simpan package
@@ -120,10 +123,63 @@ class BookingsController extends Controller
                         'booking_code' => $bookingCode,
                         'checkin_appointment_start' => $validated['checkin_appointment_start'],
                         'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                        'quantity' => $packageQty,
                         'total_price' => $packagePrice,
                         'status' => 'pending',
                         'notes' => $validated['requests'] ?? null,
                     ]);
+
+                    // Auto-create BookProduct for each product in package (for transaction reports)
+                    $productsData = is_array($package->products_data) ? $package->products_data : [];
+                    foreach ($productsData as $productData) {
+                        $productId = $productData['id'] ?? null;
+                        if (!$productId) continue;
+
+                        $product = Product::find($productId);
+                        if (!$product) continue;
+
+                        $paxInPackage = $productData['pax'] ?? 1;
+                        $productSubTotal = $productData['sub_total'] ?? ($product->finalPrice * $paxInPackage);
+
+                        BookProduct::create([
+                            'id_book' => $booking->id,
+                            'id_product' => $productId,
+                            'amount' => $paxInPackage * $packageQty,
+                            'total_price' => $productSubTotal * $packageQty,
+                            'booking_code' => $bookingCode,
+                            'status' => 'pending',
+                            'notes' => 'From package: ' . $package->name_package,
+                        ]);
+                    }
+
+                    // Auto-create BookAddon for each addon in package (for transaction reports)
+                    $addonsData = is_array($package->addons_data) ? $package->addons_data : [];
+                    foreach ($addonsData as $addonData) {
+                        $addonId = $addonData['id'] ?? null;
+                        if (!$addonId) continue;
+
+                        $addon = Addon::find($addonId);
+                        if (!$addon) continue;
+
+                        $paxInPackage = $addonData['pax'] ?? 1;
+                        $addonSubTotal = $addonData['sub_total'] ?? ($addon->finalPrice * $paxInPackage);
+
+                        \App\Models\BookAddon::create([
+                            'id_user' => $user->id,
+                            'id_book' => $booking->id,
+                            'id_addon' => $addonId,
+                            'checkin_appointment_start' => $validated['checkin_appointment_start'],
+                            'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                            'amount' => $paxInPackage * $packageQty,
+                            'total_price' => $addonSubTotal * $packageQty,
+                            'booker_name' => $validated['booker_name'],
+                            'booker_email' => $validated['booker_email'],
+                            'booker_telp' => $validated['booker_telp'],
+                            'booking_code' => $bookingCode,
+                            'status' => 'pending',
+                            'notes' => 'From package: ' . $package->name_package,
+                        ]);
+                    }
 
                     // Simpan addon untuk package ini
                     if (!empty($validated['addon_id'])) {
@@ -142,6 +198,64 @@ class BookingsController extends Controller
 
                             $addonQty = $validated['quantity'][$addonId] ?? 1;
                             $totalPrice += $addon->finalPrice * $addonQty;
+
+                            $usedAddonIds[] = $addonId;
+                        }
+                    }
+
+                    // 📌 Create BookProduct & BookAddon records for products and addons inside this package
+                    // This makes transactions appear in transactionProduct and transactionAddon views
+                    $packageProductIds = DB::table('package_products')->where('id_package', $packageId)->pluck('id_product');
+                    foreach ($packageProductIds as $productId) {
+                        $product = Product::find($productId);
+                        if (!$product) continue;
+
+                        // Create BookProduct for this package's product (with quantity applied)
+                        $productQtyInPackage = $packageQty; // Use package quantity
+                        $productPrice = $product->finalPrice * $productQtyInPackage;
+
+                        \App\Models\BookProduct::create([
+                            'id_book' => $booking->id,
+                            'id_user' => $user->id,
+                            'id_product' => $productId,
+                            'checkin_appointment_start_datetime' => $validated['checkin_appointment_start'],
+                            'checkout_appointment_end_datetime' => $validated['checkout_appointment_end'],
+                            'amount' => $productQtyInPackage,
+                            'booker_name' => $validated['booker_name'],
+                            'booker_email' => $validated['booker_email'],
+                            'booker_telp' => $validated['booker_telp'],
+                            'booking_code' => $bookingCode,
+                            'total_price' => $productPrice,
+                            'notes' => $validated['requests'] ?? null,
+                        ]);
+                    }
+
+                    // Create BookAddon for addons inside this package
+                    if (!empty($validated['addon_id'])) {
+                        foreach ($validated['addon_id'] as $addonId) {
+                            if (in_array($addonId, $usedAddonIds)) continue;
+
+                            $addon = Addon::find($addonId);
+                            if (!$addon) continue;
+
+                            $addonQty = $validated['quantity'][$addonId] ?? 1;
+                            $addonPrice = $addon->finalPrice * $addonQty;
+
+                            \App\Models\BookAddon::create([
+                                'id_user' => $user->id,
+                                'id_book' => $booking->id,
+                                'id_addon' => $addonId,
+                                'checkin_appointment_start' => $validated['checkin_appointment_start'],
+                                'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                                'amount' => $addonQty,
+                                'total_price' => $addonPrice,
+                                'booker_name' => $validated['booker_name'],
+                                'booker_email' => $validated['booker_email'],
+                                'booker_telp' => $validated['booker_telp'],
+                                'booking_code' => $bookingCode,
+                                'status' => 'pending',
+                                'notes' => $validated['requests'] ?? null,
+                            ]);
 
                             $usedAddonIds[] = $addonId;
                         }
@@ -237,15 +351,24 @@ if (!empty($validated['addon_id'])) {
             // 5️⃣ Update total_price master booking
             $booking->update(['total_price' => $totalPrice]);
 
-            // 6️⃣ Kirim notifikasi email
-            if ($user) {
-                $user->notify(new EmailNotification($booking));
-            }
+            // 6️⃣ Kirim notifikasi email - DISABLED for now
+            // try {
+            //     if ($user) {
+            //         $user->notify(new EmailNotification($booking));
+            //     }
+            // } catch (\Exception $e) {
+            //     \Log::warning('Email notification failed: ' . $e->getMessage());
+            // }
 
             DB::commit();
 
             // 7️⃣ Set status to 'book' to decrease stock immediately
             $booking->update(['status' => 'book']);
+            
+            // Also update all related bookings to 'book' status
+            BookPackage::where('id_book', $booking->id)->update(['status' => 'book']);
+            BookProduct::where('id_book', $booking->id)->update(['status' => 'book']);
+            \App\Models\BookAddon::where('id_book', $booking->id)->update(['status' => 'book']);
 
             return redirect()->route('user.payment', $booking->id)
                 ->with('success', 'Booking berhasil dibuat! Silakan lanjutkan pembayaran.');
@@ -316,7 +439,7 @@ if (!empty($validated['addon_id'])) {
                     'products.bookProductAddons.addon',
                     'addons.addon'
                  ])
-            ->latest()
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return view('user.history', compact('bookings'));

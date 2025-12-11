@@ -7,13 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script async src="https://cdn.jsdelivr.net/npm/sweetalert2@11.27.0/dist/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.27.0/dist/sweetalert2.min.css">
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 to-blue-50">
-    <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <div class="flex h-full">
         @php
             $adminUser = null;
@@ -84,7 +81,7 @@
 
                         <!-- Category & Type Management -->
                         <div class="px-2 py-2">
-                            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Category & Type</h3>
+                            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Items Management</h3>
                             <div class="space-y-1">
                                 @if($adminUser && $adminUser->hasPermission('system.manage'))
                                 <a href="{{ route('super_admin.types_categories') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
@@ -196,6 +193,12 @@
                                     Rekon
                                 </a>
                                 @endif
+                                <a href="{{ route('super_admin.email_settings') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    Email Notifications
+                                </a>
                             </div>
                         </div>
 
@@ -286,6 +289,9 @@
         </div>
     </div>
 
+    {{-- realrashid/sweet-alert blade include (renders alert scripts) --}}
+    @includeIf('sweetalert::alert')
+
     @stack('scripts')
 
     <script>
@@ -318,9 +324,6 @@
             return false;
         };
     </script>
-
-    {{-- realrashid/sweet-alert blade include (renders alert scripts) --}}
-    @includeIf('sweetalert::alert')
 
 </body>
 </html>

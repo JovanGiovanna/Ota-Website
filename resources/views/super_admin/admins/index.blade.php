@@ -13,6 +13,7 @@
     @if(session('error'))<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">{{ session('error') }}</div>@endif
 
     <div class="bg-white rounded shadow overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -44,6 +45,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
         <div class="p-4">{{ $admins->links() }}</div>
     </div>
 </div>

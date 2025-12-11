@@ -62,7 +62,8 @@ class ProvinceController extends Controller
     {
         $province = Province::find($id);
         if (!$province) {
-            return redirect()->route('super_admin.provinces')->with('error', 'Province not found');
+            alert()->error('Error', 'Province not found');
+            return redirect()->route('super_admin.provinces');
         }
 
         return view('super_admin.provinces.edit', compact('province'));

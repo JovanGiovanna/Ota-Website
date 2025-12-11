@@ -111,7 +111,8 @@ class CityController extends Controller
     {
         $city = City::find($id);
         if (!$city) {
-            return redirect()->route('super_admin.cities')->with('error', 'City not found');
+            alert()->error('Error', 'City not found');
+            return redirect()->route('super_admin.cities');
         }
 
         $provinces = \App\Models\Province::orderBy('name')->get();

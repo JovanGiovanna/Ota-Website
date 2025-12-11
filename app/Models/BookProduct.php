@@ -16,7 +16,7 @@ class BookProduct extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $fillable = ['id_book', 'id_product', 'amount', 'total_price', 'booking_code', 'stock_applied', 'revenue_applied'];
+    protected $fillable = ['id_book', 'id_product', 'amount', 'total_price', 'booking_code', 'status', 'notes', 'stock_applied', 'revenue_applied'];
 
     protected $casts = [
         'total_price' => 'decimal:2',

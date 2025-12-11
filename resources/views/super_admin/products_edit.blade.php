@@ -58,12 +58,12 @@ Edit Product
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Upsale (Fixed Amount Rp)</label>
+                    <label class="block text-sm font-medium text-gray-700">Upsell (Fixed Amount Rp)</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <span class="text-gray-500">Rp</span>
                         </div>
-                        <input type="number" step="0.01" name="upsale" id="upsale" value="{{ old('upsale', $product->upsale ?? 0) }}" class="mt-1 block w-full pl-10 border border-gray-300 rounded-md p-2">
+                        <input type="number" step="0.01" name="upsell" id="upsell" value="{{ old('upsell', $product->upsell ?? 0) }}" class="mt-1 block w-full pl-10 border border-gray-300 rounded-md p-2">
                     </div>
                 </div>
 
@@ -87,11 +87,32 @@ Edit Product
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Final Total Price (NTA + Upsale - Discount)</label>
+                    <label class="block text-sm font-medium text-gray-700">Final Total Price (NTA + upsell - Discount)</label>
                     <div class="p-2 bg-blue-50 rounded-md">
-                        <span class="font-bold text-lg" id="final_total_display">Rp{{ number_format(($product->nta ?? $product->basic_price) + ($product->upsale ?? 0) - ($product->discount_amount ?? 0), 0, ',', '.') }}</span>
+                        <span class="font-bold text-lg" id="final_total_display">Rp{{ number_format(($product->nta ?? $product->basic_price) + ($product->upsell ?? 0) - ($product->discount_amount ?? 0), 0, ',', '.') }}</span>
                     </div>
-                    <input type="hidden" name="final_total_price" id="final_total_price" value="{{ old('final_total_price', ($product->nta ?? $product->basic_price) + ($product->upsale ?? 0) - ($product->discount_amount ?? 0)) }}">
+                    <input type="hidden" name="final_total_price" id="final_total_price" value="{{ old('final_total_price', ($product->nta ?? $product->basic_price) + ($product->upsell ?? 0) - ($product->discount_amount ?? 0)) }}">
+                </div>
+
+                {{-- Price Summary Fields --}}
+                <div class="md:col-span-2 bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg border border-purple-200">
+                    <h4 class="font-bold text-gray-800 mb-3">💰 Price Summary</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-3 rounded border-l-4 border-blue-500">
+                            <p class="text-xs text-gray-600">Total Price (NTA + Upsell)</p>
+                            <p class="text-lg font-bold text-blue-600">Rp{{ number_format(($product->total_price_before_discount ?? (($product->nta ?? 0) + ($product->upsell ?? 0))), 0, ',', '.') }}</p>
+                            <input type="hidden" name="total_price_before_discount" id="total_price_before_discount" value="{{ $product->total_price_before_discount ?? (($product->nta ?? 0) + ($product->upsell ?? 0)) }}">
+                        </div>
+                        <div class="bg-white p-3 rounded border-l-4 border-red-500">
+                            <p class="text-xs text-gray-600">Discount Amount</p>
+                            <p class="text-lg font-bold text-red-600">- Rp{{ number_format(($product->discount_amount ?? 0), 0, ',', '.') }}</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border-l-4 border-green-500">
+                            <p class="text-xs text-gray-600">Final Price</p>
+                            <p class="text-lg font-bold text-green-600">Rp{{ number_format(($product->final_price ?? (($product->total_price_before_discount ?? (($product->nta ?? 0) + ($product->upsell ?? 0))) - ($product->discount_amount ?? 0))), 0, ',', '.') }}</p>
+                            <input type="hidden" name="final_price" id="final_price" value="{{ $product->final_price ?? (($product->total_price_before_discount ?? (($product->nta ?? 0) + ($product->upsell ?? 0))) - ($product->discount_amount ?? 0)) }}">
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Hidden discount amount field updated by JS --}}
@@ -119,7 +140,7 @@ Edit Product
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ntaInput = document.getElementById('nta');
-        const upsaleInput = document.getElementById('upsale');
+        const upsellInput = document.getElementById('upsell');
         const discountTypeSelect = document.getElementById('discount_type');
         const discountValueInput = document.getElementById('discount_value');
         const finalDisplay = document.getElementById('final_total_display');
@@ -132,8 +153,8 @@ Edit Product
 
         function calculate() {
             const nta = parseFloat(ntaInput.value) || 0;
-            const upsale = parseFloat(upsaleInput ? upsaleInput.value : 0) || 0;
-            const totalBefore = nta + upsale;
+            const upsell = parseFloat(upsellInput ? upsellInput.value : 0) || 0;
+            const totalBefore = nta + upsell;
 
             const discountType = discountTypeSelect ? discountTypeSelect.value : '';
             const discountValue = parseFloat(discountValueInput ? discountValueInput.value : 0) || 0;
@@ -150,11 +171,17 @@ Edit Product
             if (finalDisplay) finalDisplay.textContent = formatRupiah(finalTotal);
             if (finalHidden) finalHidden.value = finalTotal;
             if (discountAmountHidden) discountAmountHidden.value = Math.max(0, Math.round(discountAmount * 100) / 100);
+            
+            // Save to price summary fields
+            const totalPriceBeforeDiscount = document.getElementById('total_price_before_discount');
+            const finalPriceField = document.getElementById('final_price');
+            if (totalPriceBeforeDiscount) totalPriceBeforeDiscount.value = totalBefore;
+            if (finalPriceField) finalPriceField.value = finalTotal;
         }
 
         ['input', 'change'].forEach(evt => {
             if (ntaInput) ntaInput.addEventListener(evt, calculate);
-            if (upsaleInput) upsaleInput.addEventListener(evt, calculate);
+            if (upsellInput) upsellInput.addEventListener(evt, calculate);
             if (discountTypeSelect) discountTypeSelect.addEventListener(evt, calculate);
             if (discountValueInput) discountValueInput.addEventListener(evt, calculate);
         });
