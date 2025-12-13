@@ -80,17 +80,20 @@
                             $isProductChecked = is_array(old('products')) && in_array($product->id, old('products'));
                             $paxValue = old('product_pax.' . $product->id, $product->pax ?? 1);
                             $productNTA = $product->nta ?? $product->basic_price ?? 0;
+                            $outOfStock = ($product->jumlah ?? 0) <= 0;
                         @endphp
 
-                        <div class="flex items-start space-x-3 product-item" data-nta="{{ $productNTA }}" data-pax-min="{{ $product->pax ?? 1 }}">
-                            <input type="checkbox" id="product_{{ $product->id }}" name="products[]" value="{{ $product->id }}" class="mt-1 product-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isProductChecked ? 'checked' : '' }}>
-                            <label for="product_{{ $product->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
-                                {{ $product->name }} (<span class="font-bold text-green-700">Price: Rp{{ number_format($productNTA, 0, ',', '.') }}</span>)
+                        <div class="flex items-start space-x-3 product-item {{ $outOfStock ? 'opacity-50' : '' }}" data-nta="{{ $productNTA }}" data-pax-min="{{ $product->pax ?? 1 }}">
+                            <input type="checkbox" id="product_{{ $product->id }}" name="products[]" value="{{ $product->id }}" class="mt-1 product-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isProductChecked ? 'checked' : '' }} {{ $outOfStock ? 'disabled' : '' }}>
+                            <label for="product_{{ $product->id }}" class="flex-1 block text-sm font-medium {{ $outOfStock ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 cursor-pointer' }}">
+                                {{ $product->name }} (<span class="font-bold {{ $outOfStock ? 'text-red-500' : 'text-green-700' }}">Price: Rp{{ number_format($productNTA, 0, ',', '.') }}</span>)
+                                <span class="ml-2 text-xs {{ $outOfStock ? 'text-red-500 font-semibold' : 'text-gray-500' }}">Stok: {{ $product->jumlah ?? 0 }}{{ $outOfStock ? ' (Habis)' : '' }}</span>
                             </label>
                             
                             <div class="w-32">
-                                <label for="product_pax_{{ $product->id }}" class="block text-xs text-gray-500 mb-1">Jumlah</label>
+                                <label for="product_pax_{{ $product->id }}" class="block text-xs text-gray-500 mb-1">Jumlah (informasi saja)</label>
                                 <input type="number" id="product_pax_{{ $product->id }}" name="product_pax[{{ $product->id }}]" min="{{ $product->pax ?? 1 }}" value="{{ $paxValue }}" class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" required {{ $isProductChecked ? '' : 'disabled' }}>
+                                <p class="text-[11px] text-gray-500 mt-1">Tidak mempengaruhi harga; hanya pencatatan.</p>
                                 @error('product_pax.' . $product->id)
                                     <p class="text-red-500 text-xs mt-1">Wajib</p>
                                 @enderror
@@ -121,17 +124,20 @@
                             $isAddonChecked = is_array(old('addons')) && in_array($addon->id, old('addons'));
                             $paxValue = old('addon_pax.' . $addon->id, $addon->pax ?? 1);
                             $addonNTA = $addon->nta ?? $addon->basic_price ?? 0;
+                            $outOfStock = ($addon->jumlah ?? 0) <= 0;
                         @endphp
 
-                        <div class="flex items-start space-x-3 addon-item" data-nta="{{ $addonNTA }}" data-pax-min="{{ $addon->pax ?? 1 }}">
-                            <input type="checkbox" id="addon_{{ $addon->id }}" name="addons[]" value="{{ $addon->id }}" class="mt-1 addon-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isAddonChecked ? 'checked' : '' }}>
-                            <label for="addon_{{ $addon->id }}" class="flex-1 block text-sm font-medium text-gray-700 cursor-pointer">
-                                {{ $addon->addons }} (<span class="font-bold text-green-700">Price: Rp{{ number_format($addonNTA, 0, ',', '.') }}</span>)
+                        <div class="flex items-start space-x-3 addon-item {{ $outOfStock ? 'opacity-50' : '' }}" data-nta="{{ $addonNTA }}" data-pax-min="{{ $addon->pax ?? 1 }}">
+                            <input type="checkbox" id="addon_{{ $addon->id }}" name="addons[]" value="{{ $addon->id }}" class="mt-1 addon-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" {{ $isAddonChecked ? 'checked' : '' }} {{ $outOfStock ? 'disabled' : '' }}>
+                            <label for="addon_{{ $addon->id }}" class="flex-1 block text-sm font-medium {{ $outOfStock ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 cursor-pointer' }}">
+                                {{ $addon->addons }} (<span class="font-bold {{ $outOfStock ? 'text-red-500' : 'text-green-700' }}">Price: Rp{{ number_format($addonNTA, 0, ',', '.') }}</span>)
+                                <span class="ml-2 text-xs {{ $outOfStock ? 'text-red-500 font-semibold' : 'text-gray-500' }}">Stok: {{ $addon->jumlah ?? 0 }}{{ $outOfStock ? ' (Habis)' : '' }}</span>
                             </label>
                             
                             <div class="w-32">
-                                <label for="addon_pax_{{ $addon->id }}" class="block text-xs text-gray-500 mb-1">Jumlah</label>
+                                <label for="addon_pax_{{ $addon->id }}" class="block text-xs text-gray-500 mb-1">Jumlah (informasi saja)</label>
                                 <input type="number" id="addon_pax_{{ $addon->id }}" name="addon_pax[{{ $addon->id }}]" min="{{ $addon->pax ?? 1 }}" value="{{ $paxValue }}" class="pax-input w-full px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white" required {{ $isAddonChecked ? '' : 'disabled' }}>
+                                <p class="text-[11px] text-gray-500 mt-1">Tidak mempengaruhi harga; hanya pencatatan.</p>
                                 @error('addon_pax.' . $addon->id)
                                     <p class="text-red-500 text-xs mt-1">Wajib</p>
                                 @enderror
@@ -161,84 +167,8 @@
                     </div>
                 </div>
 
-                <div class="space-y-2">
-                    <label for="upsell" class="block text-sm font-medium text-gray-700">Upsell (Fixed Amount)</label>
-                    <div class="relative rounded-lg shadow-sm">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span class="text-gray-500 sm:text-sm">Rp</span>
-                        </div>
-                        <input type="number" name="upsell" id="upsell" value="{{ old('upsell', 0) }}" step="1" min="0" placeholder="0" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('upsell') border-red-500 @enderror">
-                    </div>
-                    <p class="text-xs text-gray-500">Nilai tambahan tetap (dalam Rupiah) yang akan ditambahkan ke NTA.</p>
-                    @error('upsell')
-                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Total Price (NTA + Upsell)</label>
-                    <div class="p-3 bg-green-100 border border-green-400 rounded-lg">
-                        <span class="text-lg font-bold text-green-700" id="total_price_display">Rp0</span>
-                        <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', 0) }}">
-                    </div>
-                </div>
-                
-                <div class="border-t pt-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Discount</h3>
-                    
-                    <div class="space-y-4">
-                        <div class="space-y-2">
-                            <label for="discount_type" class="block text-sm font-medium text-gray-700">Discount Type</label>
-                            <select name="discount_type" id="discount_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('discount_type') border-red-500 @enderror">
-                                <option value="">No Discount</option>
-                                <option value="percentage" {{ old('discount_type') == 'percentage' ? 'selected' : '' }}>Percentage (%)</option>
-                                <option value="fixed" {{ old('discount_type') == 'fixed' ? 'selected' : '' }}>Fixed Amount (Rp)</option>
-                            </select>
-                            @error('discount_type')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-2">
-                            <label for="discount_value" class="block text-sm font-medium text-gray-700">Discount Value</label>
-                            <div class="relative rounded-lg shadow-sm">
-                                <input type="number" name="discount_value" id="discount_value" value="{{ old('discount_value') }}" step="0.01" min="0" placeholder="0.00" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 @error('discount_value') border-red-500 @enderror" disabled>
-                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm" id="discount_unit">-</span>
-                                </div>
-                            </div>
-                            <p class="text-xs text-gray-500">Enter the discount percentage or fixed amount.</p>
-                            @error('discount_value')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Discount Amount</label>
-                            <div class="p-3 bg-red-100 border border-red-400 rounded-lg">
-                                <span class="text-lg font-bold text-red-700" id="discount_amount_display">Rp0</span>
-                                <input type="hidden" name="discount_amount" id="discount_amount" value="{{ old('discount_amount', 0) }}">
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">Final Total Price (After Discount)</label>
-                            <div class="p-3 bg-blue-100 border border-blue-400 rounded-lg">
-                                <span class="text-lg font-bold text-blue-700" id="final_total_price_display">Rp0</span>
-                                <input type="hidden" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', 0) }}">
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label for="discount_expires_at" class="block text-sm font-medium text-gray-700">Discount Expires At (Optional)</label>
-                            <input type="datetime-local" name="discount_expires_at" id="discount_expires_at" value="{{ old('discount_expires_at') }}" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('discount_expires_at') border-red-500 @enderror">
-                            <p class="text-xs text-gray-500">Leave empty if discount never expires.</p>
-                            @error('discount_expires_at')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
+                <input type="hidden" name="total_price" id="total_price" value="{{ old('total_price', 0) }}">
+                <input type="hidden" name="pax_paid_input" id="pax_paid_input" value="{{ old('pax_paid_input', 0) }}">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
@@ -299,65 +229,31 @@
 
     function calculatePrice() {
         let totalNTA = 0;
-        let totalPaxCount = 0;
 
+        // Price is sum of selected items only; quantity is informational
         document.querySelectorAll('.product-item').forEach(item => {
             const checkbox = item.querySelector('.product-checkbox');
-            const paxInput = item.querySelector('.pax-input');
-            
             if (checkbox.checked) {
                 const nta = parseFloat(item.dataset.nta) || 0;
-                const pax = parseInt(paxInput.value) || 1;
-                
-                totalNTA += nta * pax;
-                totalPaxCount += pax;
+                totalNTA += nta;
             }
         });
 
         document.querySelectorAll('.addon-item').forEach(item => {
             const checkbox = item.querySelector('.addon-checkbox');
-            const paxInput = item.querySelector('.pax-input');
-
             if (checkbox.checked) {
                 const nta = parseFloat(item.dataset.nta) || 0;
-                const pax = parseInt(paxInput.value) || 1;
-
-                totalNTA += nta * pax;
+                totalNTA += nta;
             }
         });
 
         document.getElementById('nta_display').textContent = formatRupiah(totalNTA);
         document.getElementById('nta').value = totalNTA;
         
-        const upsellInput = document.getElementById('upsell');
-        const upsell = parseFloat(upsellInput.value) || 0;
-        const totalPrice = totalNTA + upsell;
+        const totalPrice = totalNTA;
         
-        document.getElementById('total_price_display').textContent = formatRupiah(totalPrice);
         document.getElementById('total_price').value = totalPrice;
-
-        const discountTypeSelect = document.getElementById('discount_type');
-        const discountValueInput = document.getElementById('discount_value');
-        const discountType = discountTypeSelect.value;
-        const discountValue = parseFloat(discountValueInput.value) || 0;
-
-        let discountAmount = 0;
-        if (discountType === 'percentage' && discountValue > 0) {
-            discountAmount = (totalPrice * discountValue) / 100;
-        } else if (discountType === 'fixed' && discountValue > 0) {
-            discountAmount = discountValue;
-        }
-        
-        if (discountAmount > totalPrice) {
-            discountAmount = totalPrice;
-        }
-
-        document.getElementById('discount_amount_display').textContent = formatRupiah(discountAmount);
-        document.getElementById('discount_amount').value = discountAmount;
-
-        const finalTotalPrice = totalPrice - discountAmount;
-        document.getElementById('final_total_price_display').textContent = formatRupiah(finalTotalPrice);
-        document.getElementById('pax_paid_input').value = finalTotalPrice > 0 ? finalTotalPrice : 0;
+        document.getElementById('pax_paid_input').value = totalPrice > 0 ? totalPrice : 0;
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -409,39 +305,7 @@
             });
         });
         
-        const upsellInput = document.getElementById('upsell');
-        upsellInput.addEventListener('input', function() {
-            calculatePrice();
-        });
-
-        const discountTypeSelect = document.getElementById('discount_type');
-        const discountValueInput = document.getElementById('discount_value');
-        const discountUnitSpan = document.getElementById('discount_unit');
-
-        // Set initial state for discount value input and unit
-        if (discountTypeSelect.value) {
-            discountValueInput.disabled = false;
-            discountUnitSpan.textContent = discountTypeSelect.value === 'percentage' ? '%' : 'Rp';
-        } else {
-            discountValueInput.disabled = true;
-            discountUnitSpan.textContent = '-';
-        }
-
-        discountTypeSelect.addEventListener('change', function() {
-            if (this.value) {
-                discountValueInput.disabled = false;
-                discountUnitSpan.textContent = this.value === 'percentage' ? '%' : 'Rp';
-            } else {
-                discountValueInput.disabled = true;
-                discountValueInput.value = '';
-                discountUnitSpan.textContent = '-';
-            }
-            calculatePrice();
-        });
-
-        discountValueInput.addEventListener('input', function() {
-            calculatePrice();
-        });
+        // Upsell & discount fields removed: pricing derives only from selections
 
         calculatePrice();
     });

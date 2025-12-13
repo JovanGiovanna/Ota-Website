@@ -164,5 +164,6 @@
             setInterval(nextSlide, 5000);
         }
     </script>
+    @include('sweetalert::alert')
 </body>
 </html>

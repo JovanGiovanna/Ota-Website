@@ -33,6 +33,7 @@ class Addon extends Model
         'final_price',
         'pax',
         'location',
+        'address',
         'phone',
         'images',
         'jumlah',

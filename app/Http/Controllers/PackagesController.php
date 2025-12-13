@@ -46,40 +46,45 @@ class PackagesController extends Controller
      */
     public function store(Request $request)
     {
+        // Debug: Log incoming request data
+        \Log::info('Package Store Request Data:', $request->all());
+        
         $validator = Validator::make($request->all(), [
-            'name_package' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'images' => 'required|array|min:1|max:10',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'upsell' => 'nullable|numeric|min:0',
-            'location' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20', 
-            'discount_type' => 'nullable|in:percentage,fixed',
-            'discount_value' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_expires_at' => 'nullable|date_format:Y-m-d\TH:i',
-            'start_publish' => 'required|date',
-            'end_publish' => 'nullable|date|after_or_equal:start_publish',
-            'is_active' => 'required|boolean',
-            'products' => 'required|array|min:1',
-            'products.*' => 'uuid|exists:products,id',
-            'product_pax' => 'required|array',
-            'product_pax.*' => 'required|integer|min:1',
-            'addons' => 'nullable|array',
-            'addons.*' => 'uuid|exists:addons,id',
-            'addon_pax' => 'nullable|array',
-            'addon_pax.*' => 'nullable|integer|min:1',
+                'name_package' => 'required|string|max:255',
+                'slug' => 'nullable|string|max:255',
+                'description' => 'nullable|string',
+                'location' => 'nullable|string|max:255',
+                'phone' => 'nullable|string|max:50',
+                'images.*' => 'nullable|image|max:2048',
+                'products' => 'nullable|array',
+                'products.*' => 'string|exists:products,id',
+                'product_pax' => 'nullable|array',
+                'addons' => 'nullable|array',
+                'addons.*' => 'string|exists:addons,id',
+                'addon_pax' => 'nullable|array',
+                'start_publish' => 'nullable|date',
+                'end_publish' => 'nullable|date|after_or_equal:start_publish',
+                'is_active' => 'required|in:0,1',
         ]);
 
         if ($validator->fails()) {
+            \Log::error('Package Store Validation Failed:', $validator->errors()->toArray());
+            alert()->error('Error', 'Validasi gagal: ' . $validator->errors()->first());
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
         $data = $validator->validated();
-        $productsIds = $data['products'];
+        $productsIds = $data['products'] ?? [];
         $addonsIds = $data['addons'] ?? [];
         $totalNTA = 0;
         $totalPax = 0;
+        
+        \Log::info('Validated Data:', [
+            'products' => $productsIds,
+            'addons' => $addonsIds,
+            'product_pax' => $data['product_pax'] ?? [],
+            'addon_pax' => $data['addon_pax'] ?? []
+        ]);
 
         $uploadedImagePaths = [];
 
@@ -96,11 +101,10 @@ class PackagesController extends Controller
             $productsData = [];
             $selectedProducts = Product::whereIn('id', $productsIds)->get();
             foreach ($selectedProducts as $product) {
-                $pax = $data['product_pax'][$product->id] ?? 1;
+                $pax = $data['product_pax'][$product->id] ?? 1; // stored for info only
                 $productPrice = $product->nta ?? $product->basic_price ?? 0;
 
-                $subTotal = $productPrice * $pax;
-                $totalNTA += $subTotal;
+                $totalNTA += $productPrice; // price not multiplied by pax
                 $totalPax += $pax;
 
                 $productsData[] = [
@@ -108,7 +112,7 @@ class PackagesController extends Controller
                     'name' => $product->name,
                     'nta' => $productPrice,
                     'pax' => (int) $pax,
-                    'sub_total' => $subTotal,
+                    'sub_total' => $productPrice,
                 ];
             }
 
@@ -116,56 +120,51 @@ class PackagesController extends Controller
             $addonsData = [];
             $selectedAddons = Addon::whereIn('id', $addonsIds)->get();
             foreach ($selectedAddons as $addon) {
-                $pax = $data['addon_pax'][$addon->id] ?? 1;
+                $pax = $data['addon_pax'][$addon->id] ?? 1; // stored for info only
                 $addonPrice = $addon->nta ?? $addon->basic_price ?? 0;
 
-                $subTotal = $addonPrice * $pax;
-                $totalNTA += $subTotal;
+                $totalNTA += $addonPrice; // price not multiplied by pax
 
                 $addonsData[] = [
                     'id' => $addon->id,
                     'name' => $addon->addons,
                     'nta' => $addonPrice,
                     'pax' => (int) $pax,
-                    'sub_total' => $subTotal,
+                    'sub_total' => $addonPrice,
                 ];
             }
 
-            $upsellValue = $data['upsell'] ?? 0;
-            $discountAmount = $data['discount_amount'] ?? 0;
-            $finalNTA = $totalNTA;
-
-            $grossTotal = $totalNTA + $upsellValue - $discountAmount;
-
             // Generate unique slug
-            $slug = Str::slug($data['name_package']);
-            $originalSlug = $slug;
+            $baseSlug = $data['slug'] ?? Str::slug($data['name_package']);
+            $slug = $baseSlug;
             $count = 1;
+            
+            // Check for existing slug and increment if needed
             while (Package::where('slug', $slug)->exists()) {
-                $slug = $originalSlug . '-' . $count++;
+                $slug = $baseSlug . '-' . $count;
+                $count++;
             }
+            
+            \Log::info('Generated slug:', ['original' => $baseSlug, 'final' => $slug]);
 
-            // Create package
+            // Create package - pricing is just sum of selected items
             Package::create([
                 'name_package' => $data['name_package'],
                 'slug' => $slug,
-                'description' => $data['description'],
+                'description' => $data['description'] ?? '',
                 'images' => $uploadedImagePaths,
-                'location' => $data['location'] ?? null,
-                'phone' => $data['phone'] ?? null,
-                'nta' => $finalNTA,
-                'pax_paid' => round($grossTotal, 2),
-                'upsell' => $data['upsell'] ?? 0,
-                'discount_type' => $data['discount_type'] ?? null,
-                'discount_value' => $data['discount_value'] ?? null,
-                'discount_amount' => $data['discount_amount'] ?? null,
-                'discount_expires_at' => $data['discount_expires_at'] ?? null,
-                'start_publish' => $data['start_publish'],
+                'location' => $data['location'] ?? '-',
+                'phone' => $data['phone'] ?? '-',
+                'nta' => $totalNTA,
+                'pax_paid' => $totalNTA,
+                'start_publish' => $data['start_publish'] ?? now(),
                 'end_publish' => $data['end_publish'] ?? null,
                 'is_active' => $data['is_active'],
                 'products_data' => $productsData,
                 'addons_data' => $addonsData,
             ]);
+            
+            \Log::info('Package Created Successfully', ['nta' => $totalNTA, 'slug' => $slug]);
 
             DB::commit();
             alert()->success('Success', 'Paket berhasil ditambahkan!');
@@ -178,8 +177,19 @@ class PackagesController extends Controller
                 Storage::disk('public')->delete($uploadedImagePaths);
             }
 
-            \Log::error('Package store failed: ' . $e->getMessage());
-            alert()->error('Error', 'Gagal menyimpan paket: ' . $e->getMessage());
+            \Log::error('Package store failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            // User-friendly error messages
+            $errorMessage = $e->getMessage();
+            if (str_contains($errorMessage, 'Duplicate entry') && str_contains($errorMessage, 'slug')) {
+                $errorMessage = 'Slug paket sudah digunakan. Sistem akan otomatis membuat slug unik. Silakan coba lagi.';
+            }
+            
+            alert()->error('Error', 'Gagal menyimpan paket: ' . $errorMessage);
             return redirect()->back()->withInput();
         }
     }

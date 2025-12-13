@@ -47,7 +47,8 @@ class VendorAuthController extends Controller
             // Otomatis loginkan vendor setelah registrasi
             Auth::guard('vendor')->login($vendor);
 
-            return redirect()->intended(route('vendor.dashboard'))->with('success', 'Registrasi Vendor berhasil. Selamat datang!');
+            alert()->success('Success', 'Registrasi Vendor berhasil. Selamat datang!');
+            return redirect()->intended(route('vendor.dashboard'));
         } catch (\Exception $e) {
             // Tangani kegagalan sistem saat penyimpanan data (misalnya error database)
             Log::error('Vendor Web Registration Failed: ' . $e->getMessage());
@@ -71,6 +72,7 @@ class VendorAuthController extends Controller
         if (Auth::guard('vendor')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
+            alert()->success('Success', 'Login berhasil!');
             return redirect()->intended(route('vendor.dashboard')); 
         }
 
@@ -90,6 +92,7 @@ class VendorAuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        alert()->success('Success', 'Anda telah logout');
         return redirect()->route('login');
     }
 

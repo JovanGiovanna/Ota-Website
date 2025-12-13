@@ -300,7 +300,8 @@ public function loginWeb(Request $request)
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Profile updated successfully.');
+            alert()->success('Success', 'Profile updated successfully.');
+            return redirect()->back();
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -310,7 +311,8 @@ public function loginWeb(Request $request)
                     'icon' => 'error'
                 ], 500);
             }
-            return redirect()->back()->with('error', 'An error occurred while updating profile.');
+            alert()->error('Error', 'An error occurred while updating profile.');
+            return redirect()->back();
         }
     }
 
@@ -362,7 +364,8 @@ public function loginWeb(Request $request)
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Password changed successfully.');
+            alert()->success('Success', 'Password changed successfully.');
+            return redirect()->back();
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
                 return response()->json([
@@ -372,7 +375,8 @@ public function loginWeb(Request $request)
                     'icon' => 'error'
                 ], 500);
             }
-            return redirect()->back()->with('error', 'An error occurred while changing password.');
+            alert()->error('Error', 'An error occurred while changing password.');
+            return redirect()->back();
         }
     }
 

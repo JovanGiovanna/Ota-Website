@@ -225,19 +225,22 @@ class VendorController extends Controller
     public function storeService(Request $request)
     {
         // Implement service creation logic
-        return redirect()->back()->with('success', 'Service created successfully');
+        alert()->success('Success', 'Service created successfully');
+        return redirect()->back();
     }
 
     public function updateService(Request $request, $serviceId)
     {
         // Implement service update logic
-        return redirect()->back()->with('success', 'Service updated successfully');
+        alert()->success('Success', 'Service updated successfully');
+        return redirect()->back();
     }
 
     public function deleteService($serviceId)
     {
         // Implement service deletion logic
-        return redirect()->back()->with('success', 'Service deleted successfully');
+        alert()->success('Success', 'Service deleted successfully');
+        return redirect()->back();
     }
 
     public function pricing()
@@ -252,7 +255,8 @@ class VendorController extends Controller
     public function updatePricing(Request $request)
     {
         // Implement pricing update logic
-        return redirect()->back()->with('success', 'Pricing updated successfully');
+        alert()->success('Success', 'Pricing updated successfully');
+        return redirect()->back();
     }
 
     public function availability()
@@ -267,7 +271,8 @@ class VendorController extends Controller
     public function updateAvailability(Request $request)
     {
         // Implement availability update logic
-        return redirect()->back()->with('success', 'Availability updated successfully');
+        alert()->success('Success', 'Availability updated successfully');
+        return redirect()->back();
     }
 
     public function analytics()
@@ -593,7 +598,8 @@ class VendorController extends Controller
 
         Product::create($data);
 
-        return redirect()->route('vendor.products')->with('success', 'Product created successfully');
+        alert()->success('Success', 'Product created successfully');
+        return redirect()->route('vendor.products');
     }
 
     public function editProduct($id)
@@ -667,7 +673,8 @@ class VendorController extends Controller
 
         $product->update($data);
 
-        return redirect()->route('vendor.products')->with('success', 'Product updated successfully');
+        alert()->success('Success', 'Product updated successfully');
+        return redirect()->route('vendor.products');
     }
 
     public function destroyProduct($id)
@@ -686,7 +693,8 @@ class VendorController extends Controller
 
         $product->delete();
 
-        return redirect()->route('vendor.products')->with('success', 'Product deleted successfully (Soft Deleted)');
+        alert()->success('Success', 'Product deleted successfully (Soft Deleted)');
+        return redirect()->route('vendor.products');
     }
 
     // Addon CRUD methods
@@ -709,6 +717,8 @@ class VendorController extends Controller
             'status'        => 'sometimes|string|in:available,unavailable,draft',
             'publish'       => 'sometimes|boolean',
             'pax'           => 'sometimes|integer|min:1',
+            'location'      => 'nullable|string|max:1000',
+            'address'       => 'nullable|string',
 
             // --- VALIDASI DISKON BARU (ADDON) ---
             'discount_type' => 'nullable|in:percentage,fixed',
@@ -730,8 +740,13 @@ class VendorController extends Controller
         // Ambil semua data yang relevan, termasuk diskon
         $data = $request->only([
             'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
-            'discount_type', 'discount_expires_at' // KOLOM DISKON BARU
+            'discount_type', 'discount_expires_at', // KOLOM DISKON BARU
+            'location', 'address'
         ]);
+
+        // Pastikan kolom NOT NULL memiliki nilai default
+        $data['location'] = $data['location'] ?? '-';
+        $data['phone'] = $request->input('phone', '-');
 
         // Set id_vendor based on user type
         if (Auth::guard('super_admin')->check()) {
@@ -780,7 +795,8 @@ class VendorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('vendor.addons')->with('success', 'Addon created successfully');
+            alert()->success('Success', 'Addon created successfully');
+            return redirect()->route('vendor.addons');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -790,7 +806,8 @@ class VendorController extends Controller
                 }
             }
 
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat addon: ' . $e->getMessage());
+            alert()->error('Error', 'Gagal membuat addon: ' . $e->getMessage());
+            return redirect()->back()->withInput();
         }
     }
 
@@ -838,14 +855,20 @@ class VendorController extends Controller
         }
 
         if (!$addon) {
-            return redirect()->route('vendor.addons')->with('error', 'Addon tidak ditemukan atau akses ditolak');
+            alert()->error('Error', 'Addon tidak ditemukan atau akses ditolak');
+            return redirect()->route('vendor.addons');
         }
 
         // Ambil semua data yang relevan, termasuk diskon
         $data = $request->only([
             'addons', 'basic_price', 'nta', 'upsell', 'tax_rate', 'desc', 'status', 'publish', 'pax',
-            'discount_type', 'discount_expires_at' // KOLOM DISKON BARU
+            'discount_type', 'discount_expires_at', // KOLOM DISKON BARU
+            'location', 'address'
         ]);
+
+        // Defaults for NOT NULL fields
+        $data['location'] = $data['location'] ?? ($addon->location ?? '-');
+        $data['phone'] = $request->input('phone', $addon->phone ?? '-');
 
         if (Auth::guard('super_admin')->check() && $request->filled('id_vendor')) {
             $data['id_vendor'] = $request->id_vendor;
@@ -915,7 +938,8 @@ class VendorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('vendor.addons')->with('success', 'Addon updated successfully');
+            alert()->success('Success', 'Addon updated successfully');
+            return redirect()->route('vendor.addons');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -925,7 +949,8 @@ class VendorController extends Controller
                 }
             }
 
-            return redirect()->back()->withInput()->with('error', 'Gagal memperbarui addon: ' . $e->getMessage());
+            alert()->error('Error', 'Gagal memperbarui addon: ' . $e->getMessage());
+            return redirect()->back()->withInput();
         }
     }
 
@@ -969,7 +994,8 @@ class VendorController extends Controller
 
         $addon->delete();
 
-        return redirect()->route('vendor.addons')->with('success', 'Addon deleted successfully (Soft Deleted)');
+        alert()->success('Success', 'Addon deleted successfully (Soft Deleted)');
+        return redirect()->route('vendor.addons');
     }
 
     /**

@@ -25,7 +25,7 @@ Rekon Management
                         </div>
                         <div class="ml-5 w-0 flex-1">
                             <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">GMV (Gross Merchandise Value)</dt>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Gross Merchandise Value</dt>
                                 <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($gmv, 0, ',', '.') }}</dd>
                             </dl>
                         </div>
@@ -46,7 +46,7 @@ Rekon Management
                         <div class="ml-5 w-0 flex-1">
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Margin Value</dt>
-                                <dd class="text-lg font-medium text-gray-900">{{ number_format($marginValue, 2) }}%</dd>
+                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($marginValue, 0, ',', '.') }}</dd>
                             </dl>
                         </div>
                     </div>

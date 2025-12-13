@@ -654,9 +654,9 @@ public function transactionProducts()
         // Total Revenue = sum of all booking total prices (paid)
         $totalRevenue = \App\Models\Booking::where('status', 'paid')->sum('total_price');
         
-        // Margin Value = (Total Profit / GMV) * 100 (in percentage)
+        // Margin Value (Nominal) = Total Profit
         $totalProfit = collect($rekonDetails)->sum('profit');
-        $marginValue = $gmv > 0 ? ($totalProfit / $gmv) * 100 : 0;
+        $marginValue = $totalProfit;
 
         return view('super_admin.rekon', compact(
             'rekonDetailsPaginated',

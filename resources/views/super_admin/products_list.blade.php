@@ -38,7 +38,13 @@ Products Management
                             Category
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Price
+                            NTA
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Upsell
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Final Price
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Stock
@@ -66,6 +72,12 @@ Products Management
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             Rp {{ number_format($product->nta ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <span class="text-blue-600 font-medium">+ Rp {{ number_format($product->upsell ?? 0, 0, ',', '.') }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            Rp {{ number_format($product->final_price ?? (($product->nta ?? 0) + ($product->upsell ?? 0)), 0, ',', '.') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $product->jumlah ?? 0 }}
@@ -96,7 +108,7 @@ Products Management
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
                             No products found.
                         </td>
                     </tr>
