@@ -39,6 +39,7 @@ class Package extends Model
         'is_active',
         'products_data',
         'addons_data',
+        'refund_policy',
     ];
 
     /**

@@ -6,11 +6,18 @@
 <div class="px-4 py-6 sm:px-0">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Transactions Report</h1>
-        <a href="{{ route('vendor.products') }}" class="px-3 py-2 bg-emerald-600 text-white rounded-md">Back to Products</a>
     </div>
 
     <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-6">
-        <form method="GET" action="{{ route('vendor.transactions.report') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <form method="GET" action="{{ route('vendor.transactions.report') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+            <div>
+                <label class="block text-xs font-medium text-gray-600">Type</label>
+                <select name="type" class="w-full mt-1 px-3 py-2 border rounded-md">
+                    <option value="all" {{ ($type ?? '') === 'all' ? 'selected' : '' }}>All</option>
+                    <option value="product" {{ ($type ?? '') === 'product' ? 'selected' : '' }}>Product</option>
+                    <option value="addon" {{ ($type ?? '') === 'addon' ? 'selected' : '' }}>Addon</option>
+                </select>
+            </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600">Item Name</label>
                 <input type="text" name="product_name" value="{{ old('product_name', $product_name ?? '') }}" class="w-full mt-1 px-3 py-2 border rounded-md">
@@ -26,7 +33,7 @@
             <div>
                 <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md">Filter</button>
             </div>
-            <div class="md:col-span-4 text-right">
+            <div class="md:col-span-5 text-right">
                 <a href="{{ route('vendor.transactions.report.export', array_merge(request()->all(), ['format' => 'csv'])) }}" class="inline-block mr-2 bg-gray-100 text-gray-700 px-3 py-2 rounded-md">Export CSV</a>
                 <a href="{{ route('vendor.transactions.report.export', array_merge(request()->all(), ['format' => 'pdf'])) }}" class="inline-block bg-gray-100 text-gray-700 px-3 py-2 rounded-md">Export PDF</a>
             </div>
@@ -39,10 +46,12 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction Date</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price (Rp)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Effect</th>
                     </tr>

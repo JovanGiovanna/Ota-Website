@@ -19,10 +19,12 @@
             <tr>
                 <th>#</th>
                 <th>Booking Code</th>
-                <th>Product</th>
+                <th>Type</th>
+                <th>Item</th>
                 <th>Customer</th>
                 <th>Transaction Date</th>
                 <th class="text-right">Price (Rp)</th>
+                <th>Quantity</th>
                 <th>Effect</th>
                 <th>Status</th>
             </tr>
@@ -32,10 +34,12 @@
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $t->booking_code ?? $t->booking_id }}</td>
-                <td>{{ $t->product_name }}</td>
+                <td>{{ $t->type }}</td>
+                <td>{{ $t->item_name }}</td>
                 <td>{{ $t->customer_name ?? '-' }}</td>
                 <td>{{ \Carbon\Carbon::parse($t->transaction_date)->format('Y-m-d H:i') }}</td>
                 <td style="text-align:right;">Rp {{ number_format($t->price ?? 0, 0, ',', '.') }}</td>
+                <td>{{ $t->quantity ?? 1 }}</td>
                 <td>
                     @php
                         $st = strtolower($t->booking_status ?? '');

@@ -26,10 +26,13 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Add-on</th>
+                                {{-- KOLOM HARGA BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
+                                {{-- END KOLOM HARGA BARU --}}
                                 {{-- KOLOM DISKON BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
                                 {{-- END KOLOM DISKON BARU --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refund Policy</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3">
                                     <span class="sr-only">Actions</span>
@@ -61,7 +64,7 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $addon->addons ?? 'N/A' }}</td>
                                 
-                                {{-- KOLOM HARGA --}}
+                                {{-- KOLOM HARGA BARU --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="font-bold text-gray-900">
                                         NTA: Rp {{ number_format($addon->nta ?? $addon->price ?? 0, 0, ',', '.') }}
@@ -73,6 +76,7 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                         Tax: {{ number_format($addon->tax_rate ?? 0, 2, ',', '.') }}%
                                     </div>
                                 </td>
+                                {{-- END KOLOM HARGA BARU --}}
 
                                 {{-- KOLOM DISKON DENGAN HANYA MENAMPILKAN discount_fixed --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -81,13 +85,17 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                             - Rp {{ number_format($addon->discount_value, 0, ',', '.') }}
                                         </span>
                                         <div class="text-xs text-gray-500">
-                                            (Fixed Discount) 
+                                            (Fixed Discount)
                                         </div>
                                     @else
                                         <span class="text-gray-500">None</span>
                                     @endif
                                 </td>
                                 {{-- END KOLOM DISKON --}}
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ Str::limit($addon->refund_policy ?? 'N/A', 50) }}
+                                </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     {{-- Status Add-on --}}

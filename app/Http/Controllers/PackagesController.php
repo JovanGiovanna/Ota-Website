@@ -55,6 +55,7 @@ class PackagesController extends Controller
                 'description' => 'nullable|string',
                 'location' => 'nullable|string|max:255',
                 'phone' => 'nullable|string|max:50',
+                'refund_policy' => 'nullable|string|in:,mendukung,tidak mendukung',
                 'images.*' => 'nullable|image|max:2048',
                 'products' => 'nullable|array',
                 'products.*' => 'string|exists:products,id',
@@ -152,6 +153,7 @@ class PackagesController extends Controller
                 'name_package' => $data['name_package'],
                 'slug' => $slug,
                 'description' => $data['description'] ?? '',
+                'refund_policy' => $data['refund_policy'] ?? null,
                 'images' => $uploadedImagePaths,
                 'location' => $data['location'] ?? '-',
                 'phone' => $data['phone'] ?? '-',
@@ -267,6 +269,7 @@ class PackagesController extends Controller
         $validator = Validator::make($request->all(), [
             'name_package' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'refund_policy' => 'nullable|string|in:,mendukung,tidak mendukung',
             'images' => 'nullable|array|min:1|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             'nta' => 'required|numeric|min:0',
@@ -352,6 +355,7 @@ class PackagesController extends Controller
             $packageData = [
                 'name_package' => $data['name_package'],
                 'description' => $data['description'],
+                'refund_policy' => $data['refund_policy'] ?? null,
                 'nta' => $finalNTA,
                 'pax_paid' => round($finalPaxPaid, 2),
                 'upsell' => $data['upsell'] ?? 0,

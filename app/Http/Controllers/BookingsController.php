@@ -94,6 +94,7 @@ class BookingsController extends Controller
                 'total_price' => 0, // akan dihitung
                 'status' => 'pending', // start with pending, will update to 'book' after creating related models
                 'note' => $validated['requests'] ?? null,
+                'payment_expires_at' => now()->addMinutes(30), // Payment expires in 30 minutes
             ]);
 
             $totalPrice = 0;
@@ -203,63 +204,7 @@ class BookingsController extends Controller
                         }
                     }
 
-                    // 📌 Create BookProduct & BookAddon records for products and addons inside this package
-                    // This makes transactions appear in transactionProduct and transactionAddon views
-                    $packageProductIds = DB::table('package_products')->where('id_package', $packageId)->pluck('id_product');
-                    foreach ($packageProductIds as $productId) {
-                        $product = Product::find($productId);
-                        if (!$product) continue;
 
-                        // Create BookProduct for this package's product (with quantity applied)
-                        $productQtyInPackage = $packageQty; // Use package quantity
-                        $productPrice = $product->finalPrice * $productQtyInPackage;
-
-                        \App\Models\BookProduct::create([
-                            'id_book' => $booking->id,
-                            'id_user' => $user->id,
-                            'id_product' => $productId,
-                            'checkin_appointment_start_datetime' => $validated['checkin_appointment_start'],
-                            'checkout_appointment_end_datetime' => $validated['checkout_appointment_end'],
-                            'amount' => $productQtyInPackage,
-                            'booker_name' => $validated['booker_name'],
-                            'booker_email' => $validated['booker_email'],
-                            'booker_telp' => $validated['booker_telp'],
-                            'booking_code' => $bookingCode,
-                            'total_price' => $productPrice,
-                            'notes' => $validated['requests'] ?? null,
-                        ]);
-                    }
-
-                    // Create BookAddon for addons inside this package
-                    if (!empty($validated['addon_id'])) {
-                        foreach ($validated['addon_id'] as $addonId) {
-                            if (in_array($addonId, $usedAddonIds)) continue;
-
-                            $addon = Addon::find($addonId);
-                            if (!$addon) continue;
-
-                            $addonQty = $validated['quantity'][$addonId] ?? 1;
-                            $addonPrice = $addon->finalPrice * $addonQty;
-
-                            \App\Models\BookAddon::create([
-                                'id_user' => $user->id,
-                                'id_book' => $booking->id,
-                                'id_addon' => $addonId,
-                                'checkin_appointment_start' => $validated['checkin_appointment_start'],
-                                'checkout_appointment_end' => $validated['checkout_appointment_end'],
-                                'amount' => $addonQty,
-                                'total_price' => $addonPrice,
-                                'booker_name' => $validated['booker_name'],
-                                'booker_email' => $validated['booker_email'],
-                                'booker_telp' => $validated['booker_telp'],
-                                'booking_code' => $bookingCode,
-                                'status' => 'pending',
-                                'notes' => $validated['requests'] ?? null,
-                            ]);
-
-                            $usedAddonIds[] = $addonId;
-                        }
-                    }
                 }
             }
 
@@ -568,6 +513,61 @@ if (!empty($validated['addon_id'])) {
             return back()->with('error', 'Refund hanya dapat diminta untuk booking yang telah dibayar atau telah dibatalkan.');
         }
 
+        // Check refund policy for all items in the booking
+        $refundAllowed = true;
+
+        // Check packages
+        if ($booking->packages->count() > 0) {
+            foreach ($booking->packages as $bookPackage) {
+                if ($bookPackage->package->refund_policy == 'tidak mendukung') {
+                    $refundAllowed = false;
+                    break;
+                }
+                // Check package addons
+                if ($bookPackage->bookPackageAddons->count() > 0) {
+                    foreach ($bookPackage->bookPackageAddons as $packageAddon) {
+                        if ($packageAddon->addon->refund_policy == 'tidak mendukung') {
+                            $refundAllowed = false;
+                            break 2;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check products
+        if ($refundAllowed && $booking->products->count() > 0) {
+            foreach ($booking->products as $bookProduct) {
+                if ($bookProduct->product->refund_policy == 'tidak mendukung') {
+                    $refundAllowed = false;
+                    break;
+                }
+                // Check product addons
+                if ($bookProduct->bookProductAddons->count() > 0) {
+                    foreach ($bookProduct->bookProductAddons as $productAddon) {
+                        if ($productAddon->addon->refund_policy == 'tidak mendukung') {
+                            $refundAllowed = false;
+                            break 2;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check standalone addons
+        if ($refundAllowed && $booking->addons->count() > 0) {
+            foreach ($booking->addons as $bookAddon) {
+                if ($bookAddon->addon->refund_policy == 'tidak mendukung') {
+                    $refundAllowed = false;
+                    break;
+                }
+            }
+        }
+
+        if (!$refundAllowed) {
+            return back()->with('error', 'Refund tidak tersedia untuk booking ini karena salah satu item tidak mendukung kebijakan refund.');
+        }
+
         $booking->update(['status' => 'payment_return']);
 
         return back()->with('success', 'Permintaan pengembalian dana berhasil dikirim. Tim admin akan memprosesnya.');
@@ -588,7 +588,7 @@ if (!empty($validated['addon_id'])) {
     }
 
     /**
-     * Admin processes refund (payment return) and marks as cancelled
+     * Admin processes refund (payment return) and marks as completed
      */
     public function processRefund(Booking $booking)
     {
@@ -597,10 +597,10 @@ if (!empty($validated['addon_id'])) {
         }
 
         // Here you would integrate with payment gateway / refund logic.
-        // For now, we mark booking as cancelled after refund processed.
-        $booking->update(['status' => 'cancelled']);
+        // For now, we mark booking as completed after refund processed.
+        $booking->update(['status' => 'completed']);
 
-        return back()->with('success', 'Pengembalian dana diproses dan booking ditandai sebagai cancelled.');
+        return back()->with('success', 'Pengembalian dana diproses dan booking ditandai sebagai completed.');
     }
 
     public function destroy($id)

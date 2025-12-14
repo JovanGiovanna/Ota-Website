@@ -44,6 +44,9 @@ Packages Management
                             End Publish
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Refund Policy
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Active
                         </th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -82,6 +85,13 @@ Packages Management
                                 </div>
                             </td>
 
+                            {{-- Refund Policy --}}
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">
+                                    {{ $package->refund_policy ?? 'N/A' }}
+                                </div>
+                            </td>
+
                             {{-- Active Status --}}
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if ($package->is_active)
@@ -115,7 +125,7 @@ Packages Management
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            <td colspan="7" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                                 No packages found.
                             </td>
                         </tr>

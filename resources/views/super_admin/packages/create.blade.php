@@ -54,6 +54,18 @@
                 </div>
 
                 <div class="space-y-2">
+                    <label for="refund_policy" class="block text-sm font-medium text-gray-700">Refund Policy</label>
+                    <select name="refund_policy" id="refund_policy" class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 @error('refund_policy') border-red-500 @enderror">
+                        <option value="">Pilih Refund Policy</option>
+                        <option value="mendukung" {{ old('refund_policy', 'mendukung') == 'mendukung' ? 'selected' : '' }}>Mendukung (User dapat refund saat booking)</option>
+                        <option value="tidak mendukung" {{ old('refund_policy') == 'tidak mendukung' ? 'selected' : '' }}>Tidak Mendukung (User tidak dapat refund saat booking)</option>
+                    </select>
+                    @error('refund_policy')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="space-y-2">
                     <label for="images" class="block text-sm font-medium text-gray-700">Package Images (Multiple)</label>
                     
                     <input type="file" name="images[]" id="images" multiple accept="image/*" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 @error('images') border-red-500 @enderror @error('images.*') border-red-500 @enderror">

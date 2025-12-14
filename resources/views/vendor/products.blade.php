@@ -37,7 +37,8 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NTA / Basic Price / Tax</th>
                                 {{-- KOLOM DISKON BARU --}}
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
-                                {{-- END KOLOM HARGA BARU --}}
+                                {{-- END KOLOM DISKON BARU --}}
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refund Policy</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="relative px-6 py-3">
                                     <span class="sr-only">Actions</span>
@@ -107,8 +108,12 @@ Welcome, {{ Auth::guard('vendor')->check() ? Auth::guard('vendor')->user()->name
                                         <span class="text-gray-500">None</span>
                                     @endif
                                 </td>
-                                {{-- END ISI KOLOM HARGA BARU --}}
-                                
+                                {{-- END ISI KOLOM DISKON BARU --}}
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ Str::limit($product->refund_policy ?? 'N/A', 50) }}
+                                </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($product->status == 'available')
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Available</span>

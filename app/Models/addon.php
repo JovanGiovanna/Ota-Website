@@ -22,7 +22,7 @@ class Addon extends Model
         'addons',
         'desc',
         'status',
-        'basic_price', 
+        'basic_price',
         'nta',
         'upsell',
         'discount_type',
@@ -37,6 +37,7 @@ class Addon extends Model
         'phone',
         'images',
         'jumlah',
+        'refund_policy',
     ];
 
     protected $casts = [

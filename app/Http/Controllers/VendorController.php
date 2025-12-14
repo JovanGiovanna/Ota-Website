@@ -578,8 +578,9 @@ class VendorController extends Controller
 
         $vendor = Auth::guard('vendor')->user();
 
-        $data = $request->except('images'); 
+        $data = $request->except('images');
         $data['id_vendor'] = $vendor->id;
+        $data['refund_policy'] = $request->input('refund_policy');
         $imagePaths = [];
 
         // PROSES UPLOAD MULTIPLE IMAGES
@@ -719,6 +720,7 @@ class VendorController extends Controller
             'pax'           => 'sometimes|integer|min:1',
             'location'      => 'nullable|string|max:1000',
             'address'       => 'nullable|string',
+            'refund_policy' => 'nullable|string|in:mendukung,tidak mendukung',
 
             // --- VALIDASI DISKON BARU (ADDON) ---
             'discount_type' => 'nullable|in:percentage,fixed',
@@ -737,10 +739,10 @@ class VendorController extends Controller
 
         $request->validate($rules);
 
-        // Ambil semua data yang relevan, termasuk diskon
+        // Ambil semua data yang relevan, termasuk diskon dan refund_policy
         $data = $request->only([
             'addons', 'basic_price', 'nta', 'tax_rate', 'desc', 'status', 'publish', 'pax',
-            'discount_type', 'discount_expires_at', // KOLOM DISKON BARU
+            'discount_type', 'discount_expires_at', 'refund_policy', // KOLOM DISKON BARU dan refund_policy
             'location', 'address'
         ]);
 
@@ -859,10 +861,10 @@ class VendorController extends Controller
             return redirect()->route('vendor.addons');
         }
 
-        // Ambil semua data yang relevan, termasuk diskon
+        // Ambil semua data yang relevan, termasuk diskon dan refund_policy
         $data = $request->only([
             'addons', 'basic_price', 'nta', 'upsell', 'tax_rate', 'desc', 'status', 'publish', 'pax',
-            'discount_type', 'discount_expires_at', // KOLOM DISKON BARU
+            'discount_type', 'discount_expires_at', 'refund_policy', // KOLOM DISKON BARU dan refund_policy
             'location', 'address'
         ]);
 
@@ -1071,8 +1073,9 @@ class VendorController extends Controller
                 ->where('status', 'cancelled')
                 ->count();
 
-            // Calculate revenue (sum of completed bookings for direct products)
-            $revenue = DB::table('book_products')
+            // Calculate revenue from all sources for monthly chart
+            // 1. Standalone products
+            $standaloneProductRevenue = DB::table('book_products')
                 ->join('products', 'book_products.id_product', '=', 'products.id')
                 ->where('products.id_vendor', $vendor->id)
                 ->whereMonth('book_products.created_at', $date->month)
@@ -1080,7 +1083,39 @@ class VendorController extends Controller
                 ->where('book_products.revenue_applied', true)
                 ->sum('book_products.total_price');
 
-            $monthlyRevenue[] = (int)$revenue;
+            // 2. Standalone addons
+            $standaloneAddonRevenue = DB::table('book_addons')
+                ->join('addons', 'book_addons.id_addon', '=', 'addons.id')
+                ->where('addons.id_vendor', $vendor->id)
+                ->whereMonth('book_addons.created_at', $date->month)
+                ->whereYear('book_addons.created_at', $date->year)
+                ->where('book_addons.revenue_applied', true)
+                ->sum('book_addons.total_price');
+
+            // 3. Products in packages (where package contains vendor's products)
+            $packageProductRevenue = DB::table('book_packages')
+                ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+                ->join('package_products', 'packages.id', '=', 'package_products.id_package')
+                ->join('products', 'package_products.id_product', '=', 'products.id')
+                ->where('products.id_vendor', $vendor->id)
+                ->whereMonth('book_packages.created_at', $date->month)
+                ->whereYear('book_packages.created_at', $date->year)
+                ->where('book_packages.revenue_applied', true)
+                ->sum('book_packages.total_price');
+
+            // 4. Addons in packages (where package contains vendor's addons)
+            $packageAddonRevenue = DB::table('book_packages')
+                ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+                ->join('package_addon', 'packages.id', '=', 'package_addon.id_package')
+                ->join('addons', 'package_addon.id_addons', '=', 'addons.id')
+                ->where('addons.id_vendor', $vendor->id)
+                ->whereMonth('book_packages.created_at', $date->month)
+                ->whereYear('book_packages.created_at', $date->year)
+                ->where('book_packages.revenue_applied', true)
+                ->sum('book_packages.total_price');
+
+            // Total monthly revenue from all sources
+            $monthlyRevenue[] = (int)($standaloneProductRevenue + $standaloneAddonRevenue + $packageProductRevenue + $packageAddonRevenue);
         }
 
         // Calculate total stats
@@ -1109,11 +1144,41 @@ class VendorController extends Controller
             ->where('status', 'cancelled')
             ->count();
 
-        $totalRevenue = DB::table('book_products')
+        // Calculate total revenue from all sources:
+        // 1. Standalone products
+        $standaloneProductRevenue = DB::table('book_products')
             ->join('products', 'book_products.id_product', '=', 'products.id')
             ->where('products.id_vendor', $vendor->id)
             ->where('book_products.revenue_applied', true)
             ->sum('book_products.total_price');
+
+        // 2. Standalone addons
+        $standaloneAddonRevenue = DB::table('book_addons')
+            ->join('addons', 'book_addons.id_addon', '=', 'addons.id')
+            ->where('addons.id_vendor', $vendor->id)
+            ->where('book_addons.revenue_applied', true)
+            ->sum('book_addons.total_price');
+
+        // 3. Products in packages (where package contains vendor's products)
+        $packageProductRevenue = DB::table('book_packages')
+            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+            ->join('package_products', 'packages.id', '=', 'package_products.id_package')
+            ->join('products', 'package_products.id_product', '=', 'products.id')
+            ->where('products.id_vendor', $vendor->id)
+            ->where('book_packages.revenue_applied', true)
+            ->sum('book_packages.total_price');
+
+        // 4. Addons in packages (where package contains vendor's addons)
+        $packageAddonRevenue = DB::table('book_packages')
+            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
+            ->join('package_addon', 'packages.id', '=', 'package_addon.id_package')
+            ->join('addons', 'package_addon.id_addons', '=', 'addons.id')
+            ->where('addons.id_vendor', $vendor->id)
+            ->where('book_packages.revenue_applied', true)
+            ->sum('book_packages.total_price');
+
+        // Total revenue from all sources
+        $totalRevenue = $standaloneProductRevenue + $standaloneAddonRevenue + $packageProductRevenue + $packageAddonRevenue;
 
         $activeServices = Product::where('id_vendor', $vendor->id)
             ->where('status', 'active')
@@ -1138,11 +1203,13 @@ class VendorController extends Controller
     }
 
     /**
-     * Transactions report for vendor (filterable by product name and date range)
+     * Transactions report for vendor (filterable by type, product name and date range)
      */
     public function transactionReport(Request $request)
     {
         $vendor = Auth::guard('vendor')->user();
+
+        $type = $request->input('type', 'all');
 
         // Query for direct product bookings
         $productQuery = DB::table('book_products')
@@ -1150,6 +1217,7 @@ class VendorController extends Controller
             ->join('products', 'book_products.id_product', '=', 'products.id')
             ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
             ->where('products.id_vendor', $vendor->id)
+            ->where('bookings.status', 'paid')
             ->select(
                 'book_products.id as book_product_id',
                 'bookings.id as booking_id',
@@ -1163,28 +1231,35 @@ class VendorController extends Controller
                 'bookings.status as booking_status'
             );
 
-        // Query for package bookings from this vendor
-        $packageQuery = DB::table('book_packages')
-            ->join('bookings', 'book_packages.id_book', '=', 'bookings.id')
-            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
-            ->join('vendor_info', 'packages.id_vendor_info', '=', 'vendor_info.id')
+        // Query for addon bookings from this vendor
+        $addonQuery = DB::table('book_addons')
+            ->join('bookings', 'book_addons.id_book', '=', 'bookings.id')
+            ->join('addons', 'book_addons.id_addon', '=', 'addons.id')
             ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
-            ->where('vendor_info.id_vendor', $vendor->id)
+            ->where('addons.id_vendor', $vendor->id)
+            ->where('bookings.status', 'paid')
             ->select(
-                'book_packages.id as book_product_id',
+                'book_addons.id as book_product_id',
                 'bookings.id as booking_id',
                 'bookings.booking_code as booking_code',
-                DB::raw("'Package' as type"),
-                'packages.name_package as item_name',
+                DB::raw("'Addon' as type"),
+                'addons.addons as item_name',
                 'users.name as customer_name',
                 'bookings.created_at as transaction_date',
-                'book_packages.total_price as price',
-                DB::raw("1 as quantity"),
+                'book_addons.total_price as price',
+                'book_addons.amount as quantity',
                 'bookings.status as booking_status'
             );
 
-        // Combine queries
-        $combinedQuery = $productQuery->union($packageQuery);
+        // Combine queries based on type filter
+        if ($type === 'product') {
+            $combinedQuery = $productQuery;
+        } elseif ($type === 'addon') {
+            $combinedQuery = $addonQuery;
+        } else {
+            // all
+            $combinedQuery = $productQuery->union($addonQuery);
+        }
 
         // Apply filters to the combined query
         $filteredQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
@@ -1208,6 +1283,7 @@ class VendorController extends Controller
 
         return view('vendor.transactions_report', [
             'transactions' => $transactions,
+            'type' => $type,
             'product_name' => $request->input('product_name'),
             'date_from' => $request->input('date_from'),
             'date_to' => $request->input('date_to'),
@@ -1221,12 +1297,15 @@ class VendorController extends Controller
     {
         $vendor = Auth::guard('vendor')->user();
 
+        $type = $request->input('type', 'all');
+
         // Query for direct product bookings
         $productQuery = DB::table('book_products')
             ->join('bookings', 'book_products.id_book', '=', 'bookings.id')
             ->join('products', 'book_products.id_product', '=', 'products.id')
             ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
             ->where('products.id_vendor', $vendor->id)
+            ->where('bookings.status', 'paid')
             ->select(
                 'bookings.id as booking_id',
                 'bookings.booking_code as booking_code',
@@ -1239,28 +1318,34 @@ class VendorController extends Controller
                 'bookings.status as booking_status'
             );
 
-        // Query for package bookings containing vendor's products
-        $packageQuery = DB::table('book_packages')
-            ->join('bookings', 'book_packages.id_book', '=', 'bookings.id')
-            ->join('packages', 'book_packages.id_package', '=', 'packages.id')
-            ->join('package_products', 'packages.id', '=', 'package_products.id_package')
-            ->join('products', 'package_products.id_product', '=', 'products.id')
+        // Query for addon bookings from this vendor
+        $addonQuery = DB::table('book_addons')
+            ->join('bookings', 'book_addons.id_book', '=', 'bookings.id')
+            ->join('addons', 'book_addons.id_addon', '=', 'addons.id')
             ->leftJoin('users', 'bookings.id_user', '=', 'users.id')
-            ->where('products.id_vendor', $vendor->id)
+            ->where('addons.id_vendor', $vendor->id)
+            ->where('bookings.status', 'paid')
             ->select(
                 'bookings.id as booking_id',
                 'bookings.booking_code as booking_code',
-                DB::raw("'Package' as type"),
-                'packages.name_package as item_name',
+                DB::raw("'Addon' as type"),
+                'addons.addons as item_name',
                 'users.name as customer_name',
                 'bookings.created_at as transaction_date',
-                'book_packages.total_price as price',
-                DB::raw("1 as quantity"),
+                'book_addons.total_price as price',
+                'book_addons.amount as quantity',
                 'bookings.status as booking_status'
             );
 
-        // Combine queries
-        $combinedQuery = $productQuery->union($packageQuery);
+        // Combine queries based on type filter
+        if ($type === 'product') {
+            $combinedQuery = $productQuery;
+        } elseif ($type === 'addon') {
+            $combinedQuery = $addonQuery;
+        } else {
+            // all
+            $combinedQuery = $productQuery->union($addonQuery);
+        }
 
         // Apply filters to the combined query
         $filteredQuery = DB::table(DB::raw("({$combinedQuery->toSql()}) as combined"))
@@ -1315,6 +1400,7 @@ class VendorController extends Controller
             foreach ($rows as $r) {
                 fputcsv($file, [
                     $r->booking_id,
+                    $r->booking_code ?? $r->booking_id,
                     $r->type,
                     $r->item_name,
                     $r->customer_name,

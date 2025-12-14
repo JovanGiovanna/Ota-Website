@@ -303,6 +303,11 @@
                             <a href="{{ route('user.payment', $booking->id) }}" class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition inline-block text-center font-semibold">
                                 💳 Continue Payment
                             </a>
+                            <form action="{{ route('booking.cancel', $booking->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="w-full bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition">Cancel Booking</button>
+                            </form>
                         @endif
                         @if(in_array($booking->status, ['pending', 'confirmed']))
                             <form action="{{ route('booking.cancel', $booking->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
@@ -312,13 +317,65 @@
                             </form>
                         @endif
                         @if(in_array($booking->status, ['paid', 'cancelled']))
-                            <form action="{{ route('user.payment.request_refund', $booking->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin meminta pengembalian dana untuk booking ini?');">
-                                @csrf
-                                <button type="submit" class="w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition">Request Refund</button>
-                            </form>
+                            @php
+                                $refundAllowed = true;
+                                // Check packages
+                                if ($booking->packages->count() > 0) {
+                                    foreach ($booking->packages as $bookPackage) {
+                                        if ($bookPackage->package->refund_policy == 'tidak mendukung') {
+                                            $refundAllowed = false;
+                                            break;
+                                        }
+                                        // Check package addons
+                                        if ($bookPackage->bookPackageAddons->count() > 0) {
+                                            foreach ($bookPackage->bookPackageAddons as $packageAddon) {
+                                                if ($packageAddon->addon->refund_policy == 'tidak mendukung') {
+                                                    $refundAllowed = false;
+                                                    break 2;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Check products
+                                if ($refundAllowed && $booking->products->count() > 0) {
+                                    foreach ($booking->products as $bookProduct) {
+                                        if ($bookProduct->product->refund_policy == 'tidak mendukung') {
+                                            $refundAllowed = false;
+                                            break;
+                                        }
+                                        // Check product addons
+                                        if ($bookProduct->bookProductAddons->count() > 0) {
+                                            foreach ($bookProduct->bookProductAddons as $productAddon) {
+                                                if ($productAddon->addon->refund_policy == 'tidak mendukung') {
+                                                    $refundAllowed = false;
+                                                    break 2;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Check standalone addons
+                                if ($refundAllowed && $booking->addons->count() > 0) {
+                                    foreach ($booking->addons as $bookAddon) {
+                                        if ($bookAddon->addon->refund_policy == 'tidak mendukung') {
+                                            $refundAllowed = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @if($refundAllowed)
+                                <form action="{{ route('user.payment.request_refund', $booking->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin meminta pengembalian dana untuk booking ini?');">
+                                    @csrf
+                                    <button type="submit" class="w-full bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition">Request Refund</button>
+                                </form>
+                            @else
+                                <div class="w-full bg-gray-400 text-white px-4 py-2 rounded-md text-center cursor-not-allowed">
+                                    Refund Not Available
+                                </div>
+                            @endif
                         @endif
-                        <a href="{{ route('invoice.download', $booking->id) }}" class="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition inline-block text-center">Download Invoice</a>
-
                         <!-- Contact Support Options -->
                         <div class="space-y-2">
                             <p class="text-sm text-gray-600 font-medium">Contact Support:</p>

@@ -131,91 +131,139 @@ Addon Details
 <!-- Addon Details -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
     <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-8">
-        <!-- Description -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-info-circle text-orange-600"></i>
-                </div>
-                About This Addon
-            </h2>
-            <p class="text-gray-600 leading-relaxed">{{ $addon->desc }}</p>
-        </div>
-
-        <!-- Addon Specifications -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-list text-blue-600"></i>
-                </div>
-                Addon Specifications
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Status</span>
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $addon->status == 'available' ? 'bg-green-100 text-green-800' : ($addon->status == 'unavailable' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
-                        {{ ucfirst($addon->status) }}
-                    </span>
-                </div>
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Publish Status</span>
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $addon->publish ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                        {{ $addon->publish ? 'Published' : 'Unpublished' }}
-                    </span>
-                </div>
-                @if($addon->pax)
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Capacity (Pax)</span>
-                    <span class="font-semibold text-gray-800">{{ $addon->pax }}</span>
-                </div>
-                @endif
+    <div class="lg:col-span-2">
+        <!-- Tab Panel -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <!-- Tab Buttons -->
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button class="tab-button active px-6 py-4 text-sm font-medium text-orange-600 border-b-2 border-orange-600 flex items-center" data-tab="description">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Description
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="specifications">
+                        <i class="fas fa-list mr-2"></i>
+                        Specifications
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="refund-policy">
+                        <i class="fas fa-undo-alt mr-2"></i>
+                        Refund Policy
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="reviews">
+                        <i class="fas fa-star mr-2"></i>
+                        Reviews
+                    </button>
+                </nav>
             </div>
-        </div>
 
-        <!-- Reviews -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-star text-yellow-600"></i>
+            <!-- Tab Content -->
+            <div class="p-8">
+                <!-- Description Tab -->
+                <div id="description-tab" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-info-circle text-orange-600"></i>
+                        </div>
+                        About This Addon
+                    </h2>
+                    <p class="text-gray-600 leading-relaxed">{{ $addon->desc }}</p>
                 </div>
-                Reviews & Ratings
-            </h2>
 
-            @if($addon->reviews->count() > 0)
-                <div class="space-y-6">
-                    @foreach($addon->reviews as $review)
-                        <div class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
-                            <div class="flex items-start space-x-4">
-                                <div class="flex-shrink-0">
-                                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                                        <i class="fas fa-user text-orange-600"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-semibold text-gray-800">{{ $review->user->name ?? 'Anonymous' }}</span>
-                                            <div class="flex items-center">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
-                                                @endfor
+                <!-- Specifications Tab -->
+                <div id="specifications-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-list text-blue-600"></i>
+                        </div>
+                        Addon Specifications
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Status</span>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $addon->status == 'available' ? 'bg-green-100 text-green-800' : ($addon->status == 'unavailable' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                {{ ucfirst($addon->status) }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Publish Status</span>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $addon->publish ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                {{ $addon->publish ? 'Published' : 'Unpublished' }}
+                            </span>
+                        </div>
+                        @if($addon->pax)
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Capacity (Pax)</span>
+                            <span class="font-semibold text-gray-800">{{ $addon->pax }}</span>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Refund Policy Tab -->
+                <div id="refund-policy-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-undo-alt text-red-600"></i>
+                        </div>
+                        Refund Policy
+                    </h2>
+                    @if($addon->refund_policy)
+                        <div class="prose prose-gray max-w-none">
+                            {!! nl2br(e($addon->refund_policy)) !!}
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-info-circle text-gray-300 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No refund policy information available for this addon.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Reviews Tab -->
+                <div id="reviews-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-star text-yellow-600"></i>
+                        </div>
+                        Reviews & Ratings
+                    </h2>
+
+                    @if($addon->reviews->count() > 0)
+                        <div class="space-y-6">
+                            @foreach($addon->reviews as $review)
+                                <div class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-orange-600"></i>
                                             </div>
                                         </div>
-                                        <span class="text-sm text-gray-500">{{ $review->created_at->format('M d, Y') }}</span>
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="font-semibold text-gray-800">{{ $review->user->name ?? 'Anonymous' }}</span>
+                                                    <div class="flex items-center">
+                                                        @for($i = 1; $i <= 5; $i++)
+                                                            <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }} text-sm"></i>
+                                                        @endfor
+                                                    </div>
+                                                </div>
+                                                <span class="text-sm text-gray-500">{{ $review->created_at->format('M d, Y') }}</span>
+                                            </div>
+                                            <p class="text-gray-600">{{ $review->comment }}</p>
+                                        </div>
                                     </div>
-                                    <p class="text-gray-600">{{ $review->comment }}</p>
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
-                    @endforeach
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-star-half-alt text-gray-300 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No reviews yet for this addon</p>
+                        </div>
+                    @endif
                 </div>
-            @else
-                <div class="text-center py-8">
-                    <i class="fas fa-star-half-alt text-gray-300 text-4xl mb-4"></i>
-                    <p class="text-gray-500">No reviews yet for this addon</p>
-                </div>
-            @endif
+            </div>
         </div>
     </div>
 
@@ -520,5 +568,38 @@ function closeGallery() {
         document.body.style.overflow = '';
     }
 }
+
+// Tab functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'text-orange-600', 'border-orange-600');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // Add active class to clicked button
+            button.classList.add('active', 'text-orange-600', 'border-orange-600');
+            button.classList.remove('text-gray-500', 'border-transparent');
+
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show selected tab content
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+            }
+        });
+    });
+});
 </script>
 @endsection

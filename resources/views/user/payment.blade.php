@@ -145,22 +145,90 @@
         <!-- Payment Action -->
         <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
             <div class="text-center">
-                <p class="text-gray-600 mb-6">Click the button below to complete your payment</p>
+                @if($booking->payment_expires_at && now()->isAfter($booking->payment_expires_at))
+                    <!-- Payment Expired -->
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+                        <div class="text-red-600 mb-4">
+                            <i class="fas fa-clock text-3xl mb-2"></i>
+                            <h3 class="text-xl font-bold">Payment Time Expired</h3>
+                        </div>
+                        <p class="text-red-700">The payment deadline has passed. This booking has been cancelled.</p>
+                        <p class="text-sm text-red-600 mt-2">Expired at: {{ $booking->payment_expires_at->format('d M Y H:i') }}</p>
+                    </div>
+                @else
+                    <!-- Payment Timer -->
+                    @if($booking->payment_expires_at)
+                        <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6">
+                            <div class="text-orange-600 mb-2">
+                                <i class="fas fa-clock text-xl"></i>
+                                <span class="font-semibold ml-2">Payment Deadline</span>
+                            </div>
+                            <div id="payment-timer" class="text-2xl font-bold text-orange-700" data-expires="{{ $booking->payment_expires_at->toISOString() }}">
+                                Calculating...
+                            </div>
+                            <p class="text-sm text-orange-600 mt-1">Complete your payment before the time runs out</p>
+                        </div>
+                    @endif
 
-                <form method="POST" action="{{ route('user.payment.confirm', $booking->id) }}">
-                    @csrf
-                    <button type="submit" class="bg-gradient-to-r from-green-600 to-blue-600 text-white px-12 py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-lg transform hover:scale-105">
-                        <i class="fas fa-credit-card mr-2"></i>
-                        Pay Now (Dummy)
-                    </button>
-                </form>
+                    <p class="text-gray-600 mb-6">Click the button below to complete your payment</p>
 
-                <p class="text-gray-500 text-sm mt-4">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    This is a dummy payment for testing purposes. In production, this would integrate with real payment gateways.
-                </p>
+                    <form method="POST" action="{{ route('user.payment.confirm', $booking->id) }}" id="payment-form">
+                        @csrf
+                        <button type="submit" id="pay-button" class="bg-gradient-to-r from-green-600 to-blue-600 text-white px-12 py-4 rounded-xl font-bold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-credit-card mr-2"></i>
+                            Pay Now (Dummy)
+                        </button>
+                    </form>
+
+                    <p class="text-gray-500 text-sm mt-4">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        This is a dummy payment for testing purposes. In production, this would integrate with real payment gateways.
+                    </p>
+                @endif
             </div>
         </div>
+
+        @if($booking->payment_expires_at && !now()->isAfter($booking->payment_expires_at))
+        <script>
+            function updateTimer() {
+                const timerElement = document.getElementById('payment-timer');
+                const payButton = document.getElementById('pay-button');
+                const paymentForm = document.getElementById('payment-form');
+                const expiresAt = new Date(timerElement.dataset.expires);
+                const now = new Date();
+                const timeLeft = expiresAt - now;
+
+                if (timeLeft <= 0) {
+                    timerElement.innerHTML = '<span class="text-red-600">EXPIRED</span>';
+                    payButton.disabled = true;
+                    payButton.innerHTML = '<i class="fas fa-times-circle mr-2"></i>Payment Expired';
+                    paymentForm.style.display = 'none';
+
+                    // Auto refresh to show expired state
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                    return;
+                }
+
+                const minutes = Math.floor(timeLeft / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+                timerElement.innerHTML = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                // Change color when less than 5 minutes
+                if (minutes < 5) {
+                    timerElement.style.color = '#dc2626'; // red-600
+                } else if (minutes < 10) {
+                    timerElement.style.color = '#ea580c'; // orange-600
+                }
+            }
+
+            // Update timer every second
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        </script>
+        @endif
     </div>
 </div>
 @endsection

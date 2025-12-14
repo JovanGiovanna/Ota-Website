@@ -155,8 +155,18 @@
                 @enderror
             </div>
 
+            {{-- Refund Policy --}}
+            <div class="mb-4">
+                <label for="refund_policy" class="block text-sm font-medium text-gray-700 mb-2">Refund Policy</label>
+                <select name="refund_policy" id="refund_policy" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="mendukung" {{ old('refund_policy', 'mendukung') == 'mendukung' ? 'selected' : '' }}>Mendukung (User dapat refund saat booking)</option>
+                    <option value="tidak mendukung" {{ old('refund_policy') == 'tidak mendukung' ? 'selected' : '' }}>Tidak Mendukung (User tidak dapat refund saat booking)</option>
+                </select>
+                @error('refund_policy')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
-            
             <div class="mb-4">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select name="status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">

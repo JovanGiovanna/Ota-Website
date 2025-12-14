@@ -124,121 +124,169 @@ Product Details
 <!-- Product Details -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
     <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-8">
-        <!-- Description -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-info-circle text-green-600"></i>
-                </div>
-                About This Product
-            </h2>
-            <p class="text-gray-600 leading-relaxed">{{ $product->description }}</p>
-        </div>
-
-        <!-- Product Specifications -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-list text-blue-600"></i>
-                </div>
-                Product Specifications
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Category</span>
-                    <span class="font-semibold text-gray-800">{{ $product->category->categories ?? 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Stock Available</span>
-                    <span class="font-semibold text-gray-800">{{ $product->jumlah }}</span>
-                </div>
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Location</span>
-                    <span class="font-semibold text-gray-800">{{ $product->location ?? 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Address</span>
-                    <span class="font-semibold text-gray-800">{{ $product->address ?? 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Phone</span>
-                    <span class="font-semibold text-gray-800">{{ $product->phone ?? 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Status</span>
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $product->status == 'available' ? 'bg-green-100 text-green-800' : ($product->status == 'unavailable' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
-                        {{ ucfirst($product->status) }}
-                    </span>
-                </div>
-                @if($product->pax)
-                <div class="flex justify-between items-center py-3 border-b border-gray-100">
-                    <span class="text-gray-600">Capacity (Pax)</span>
-                    <span class="font-semibold text-gray-800">{{ $product->pax }}</span>
-                </div>
-                @endif
+    <div class="lg:col-span-2">
+        <!-- Tab Panel -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <!-- Tab Buttons -->
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button class="tab-button active px-6 py-4 text-sm font-medium text-green-600 border-b-2 border-green-600 flex items-center" data-tab="description">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Description
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="specifications">
+                        <i class="fas fa-list mr-2"></i>
+                        Specifications
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="refund-policy">
+                        <i class="fas fa-undo-alt mr-2"></i>
+                        Refund Policy
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="reviews">
+                        <i class="fas fa-star mr-2"></i>
+                        Reviews
+                    </button>
+                </nav>
             </div>
-        </div>
 
-        <!-- Reviews -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-star text-yellow-600"></i>
-                </div>
-                Reviews & Ratings
-            </h2>
-
-            @if($product->reviews->count() > 0)
-                <!-- Overall Rating -->
-                <div class="bg-gray-50 rounded-xl p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="text-center">
-                            <div class="text-3xl font-bold text-gray-800">{{ number_format($product->averageRating(), 1) }}</div>
-                            <div class="flex items-center justify-center mb-1">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <i class="fas fa-star {{ $i <= round($product->averageRating()) ? 'text-yellow-400' : 'text-gray-300' }}"></i>
-                                @endfor
-                            </div>
-                            <div class="text-sm text-gray-600">{{ $product->reviews->count() }} reviews</div>
+            <!-- Tab Content -->
+            <div class="p-8">
+                <!-- Description Tab -->
+                <div id="description-tab" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-info-circle text-green-600"></i>
                         </div>
+                        About This Product
+                    </h2>
+                    <p class="text-gray-600 leading-relaxed">{{ $product->description }}</p>
+                </div>
+
+                <!-- Specifications Tab -->
+                <div id="specifications-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-list text-blue-600"></i>
+                        </div>
+                        Product Specifications
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Category</span>
+                            <span class="font-semibold text-gray-800">{{ $product->category->categories ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Stock Available</span>
+                            <span class="font-semibold text-gray-800">{{ $product->jumlah }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Location</span>
+                            <span class="font-semibold text-gray-800">{{ $product->location ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Address</span>
+                            <span class="font-semibold text-gray-800">{{ $product->address ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Phone</span>
+                            <span class="font-semibold text-gray-800">{{ $product->phone ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Status</span>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $product->status == 'available' ? 'bg-green-100 text-green-800' : ($product->status == 'unavailable' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800') }}">
+                                {{ ucfirst($product->status) }}
+                            </span>
+                        </div>
+                        @if($product->pax)
+                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                            <span class="text-gray-600">Capacity (Pax)</span>
+                            <span class="font-semibold text-gray-800">{{ $product->pax }}</span>
+                        </div>
+                        @endif
                     </div>
                 </div>
 
-                <!-- Individual Reviews -->
-                <div class="space-y-6">
-                    @foreach($product->reviews as $review)
-                        <div class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-user text-gray-500"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-semibold text-gray-800">{{ $review->user->name ?? 'Anonymous' }}</span>
-                                            <div class="flex items-center">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
-                                                @endfor
-                                            </div>
-                                        </div>
-                                        <span class="text-sm text-gray-500">{{ $review->created_at->format('M d, Y') }}</span>
+                <!-- Refund Policy Tab -->
+                <div id="refund-policy-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-undo-alt text-red-600"></i>
+                        </div>
+                        Refund Policy
+                    </h2>
+                    @if($product->refund_policy)
+                        <div class="prose prose-gray max-w-none">
+                            {!! nl2br(e($product->refund_policy)) !!}
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-info-circle text-gray-300 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No refund policy information available for this product.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Reviews Tab -->
+                <div id="reviews-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-star text-yellow-600"></i>
+                        </div>
+                        Reviews & Ratings
+                    </h2>
+
+                    @if($product->reviews->count() > 0)
+                        <!-- Overall Rating -->
+                        <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="text-center">
+                                    <div class="text-3xl font-bold text-gray-800">{{ number_format($product->averageRating(), 1) }}</div>
+                                    <div class="flex items-center justify-center mb-1">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star {{ $i <= round($product->averageRating()) ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                                        @endfor
                                     </div>
-                                    @if($review->comment)
-                                        <p class="text-gray-600 leading-relaxed">{{ $review->comment }}</p>
-                                    @endif
+                                    <div class="text-sm text-gray-600">{{ $product->reviews->count() }} reviews</div>
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+
+                        <!-- Individual Reviews -->
+                        <div class="space-y-6">
+                            @foreach($product->reviews as $review)
+                                <div class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-gray-500"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="font-semibold text-gray-800">{{ $review->user->name ?? 'Anonymous' }}</span>
+                                                    <div class="flex items-center">
+                                                        @for($i = 1; $i <= 5; $i++)
+                                                            <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                                                        @endfor
+                                                    </div>
+                                                </div>
+                                                <span class="text-sm text-gray-500">{{ $review->created_at->format('M d, Y') }}</span>
+                                            </div>
+                                            @if($review->comment)
+                                                <p class="text-gray-600 leading-relaxed">{{ $review->comment }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-star-half-alt text-gray-300 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No reviews yet for this product</p>
+                        </div>
+                    @endif
                 </div>
-            @else
-                <div class="text-center py-8">
-                    <i class="fas fa-star-half-alt text-gray-300 text-4xl mb-4"></i>
-                    <p class="text-gray-500">No reviews yet for this product</p>
-                </div>
-            @endif
+            </div>
         </div>
     </div>
 
@@ -543,5 +591,38 @@ function closeGallery() {
         document.body.style.overflow = '';
     }
 }
+
+// Tab functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'text-green-600', 'border-green-600');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // Add active class to clicked button
+            button.classList.add('active', 'text-green-600', 'border-green-600');
+            button.classList.remove('text-gray-500', 'border-transparent');
+
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show selected tab content
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+            }
+        });
+    });
+});
 </script>
 @endsection

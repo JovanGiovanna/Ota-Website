@@ -36,6 +36,19 @@
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    {{-- Refund Policy --}}
+                    <div class="mb-4">
+                        <label for="refund_policy" class="block text-sm font-semibold text-gray-700 mb-2">Refund Policy</label>
+                        <select name="refund_policy" id="refund_policy" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-150">
+                            <option value="">Pilih Refund Policy</option>
+                            <option value="mendukung" {{ old('refund_policy', $package->refund_policy) == 'mendukung' ? 'selected' : '' }}>Mendukung</option>
+                            <option value="tidak mendukung" {{ old('refund_policy', $package->refund_policy) == 'tidak mendukung' ? 'selected' : '' }}>Tidak Mendukung</option>
+                        </select>
+                        @error('refund_policy')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 {{-- Kolom Gambar --}}

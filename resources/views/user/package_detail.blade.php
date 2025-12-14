@@ -113,154 +113,202 @@ Package Details
 <!-- Package Details -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
     <!-- Main Content -->
-    <div class="lg:col-span-2 space-y-8">
-        <!-- Description -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-info-circle text-blue-600"></i>
-                </div>
-                About This Package
-            </h2>
-            <p class="text-gray-600 leading-relaxed">{{ $package->description }}</p>
-        </div>
-
-        <!-- Package Specifications -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-info-circle text-green-600"></i>
-                </div>
-                Package Specifications
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <span class="text-sm font-medium text-gray-500">Slug</span>
-                    <p class="text-gray-800">{{ $package->slug }}</p>
-                </div>
-                <div>
-                    <span class="text-sm font-medium text-gray-500">Status</span>
-                    <p class="text-gray-800">{{ $package->is_active ? 'Active' : 'Inactive' }}</p>
-                </div>
-                <div>
-                    <span class="text-sm font-medium text-gray-500">Publish Start</span>
-                    <p class="text-gray-800">{{ $package->start_publish ? $package->start_publish->format('d M Y H:i') : 'N/A' }}</p>
-                </div>
-                <div>
-                    <span class="text-sm font-medium text-gray-500">Publish End</span>
-                    <p class="text-gray-800">{{ $package->end_publish ? $package->end_publish->format('d M Y H:i') : 'N/A' }}</p>
-                </div>
-                @if($package->products_data && count($package->products_data) > 0)
-                <div class="md:col-span-2">
-                    <span class="text-sm font-medium text-gray-500">Products Included</span>
-                    <div class="mt-2 space-y-2">
-                        @foreach($package->products_data as $product)
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div class="flex items-center space-x-3">
-                                    @php
-                                        $validImages = array_filter((array) ($product['images'] ?? []), function($img) {
-                                            return is_string($img) && !empty($img);
-                                        });
-                                    @endphp
-                                    @if($validImages && count($validImages) > 0)
-                                        <img src="{{ asset('storage/' . $validImages[0]) }}" alt="{{ $product['name'] ?? 'Product' }}" class="w-10 h-10 object-cover rounded-lg">
-                                    @else
-                                        <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-box text-gray-500 text-sm"></i>
-                                        </div>
-                                    @endif
-                                    <div>
-                                        <p class="font-medium text-gray-800">{{ $product['name'] ?? 'Unnamed Product' }}</p>
-                                        <p class="text-sm text-gray-500">{{ isset($product['description']) && $product['description'] ? Str::limit($product['description'], 100) : 'No description' }}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-semibold text-gray-800">Rp {{ number_format($product['nta'] ?? 0, 0, ',', '.') }}</p>
-                                    <p class="text-sm text-gray-500">{{ $product['pax'] ?? 1 }} pax</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                @if($package->addons_data && count($package->addons_data) > 0)
-                <div class="md:col-span-2">
-                    <span class="text-sm font-medium text-gray-500">Add-ons Included</span>
-                    <div class="mt-2 space-y-2">
-                        @foreach($package->addons_data as $addon)
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div class="flex items-center space-x-3">
-                                    @php
-                                        $validImages = array_filter((array) ($addon['images'] ?? []), function($img) {
-                                            return is_string($img) && !empty($img);
-                                        });
-                                    @endphp
-                                    @if($validImages && count($validImages) > 0)
-                                        <img src="{{ asset('storage/' . $validImages[0]) }}" alt="{{ $addon['addons'] ?? 'Addon' }}" class="w-10 h-10 object-cover rounded-lg">
-                                    @else
-                                        <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-plus-circle text-gray-500 text-sm"></i>
-                                        </div>
-                                    @endif
-                                    <div>
-                                        <p class="font-medium text-gray-800">{{ $addon['name'] ?? 'Unnamed Addon' }}</p>
-                                        <p class="text-sm text-gray-500">{{ isset($addon['desc']) && $addon['desc'] ? Str::limit($addon['desc'], 50) : 'No description' }}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-semibold text-gray-800">Rp {{ number_format($addon['nta'] ?? 0, 0, ',', '.') }}</p>
-                                    <p class="text-sm text-gray-500">{{ $addon['pax'] ?? 1 }} pax</p>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+    <div class="lg:col-span-2">
+        <!-- Tab Panel -->
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <!-- Tab Buttons -->
+            <div class="border-b border-gray-200">
+                <nav class="flex">
+                    <button class="tab-button active px-6 py-4 text-sm font-medium text-blue-600 border-b-2 border-blue-600 flex items-center" data-tab="description">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Description
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="specifications">
+                        <i class="fas fa-list mr-2"></i>
+                        Specifications
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="refund-policy">
+                        <i class="fas fa-undo-alt mr-2"></i>
+                        Refund Policy
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300 flex items-center" data-tab="reviews">
+                        <i class="fas fa-star mr-2"></i>
+                        Reviews
+                    </button>
+                </nav>
             </div>
-        </div>
 
-        <!-- Reviews -->
-        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                    <i class="fas fa-star text-yellow-600"></i>
+            <!-- Tab Content -->
+            <div class="p-8">
+                <!-- Description Tab -->
+                <div id="description-tab" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-info-circle text-blue-600"></i>
+                        </div>
+                        About This Package
+                    </h2>
+                    <p class="text-gray-600 leading-relaxed">{{ $package->description }}</p>
                 </div>
-                Reviews & Ratings
-            </h2>
 
-            @if($package->reviews->count() > 0)
-                <div class="space-y-6">
-                    @foreach($package->reviews->take(5) as $review)
-                        <div class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                                    <span class="text-gray-600 font-semibold">{{ substr($review->user->name, 0, 1) }}</span>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-2 mb-2">
-                                        <span class="font-semibold text-gray-800">{{ $review->user->name }}</span>
-                                        <div class="flex items-center space-x-1 star-rating">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                <input type="radio" id="rating-review-{{ $review->id }}-{{ $i }}" name="rating-review-{{ $review->id }}" value="{{ $i }}" class="sr-only" {{ $i <= $review->rating ? 'checked' : '' }}>
-                                                <label for="rating-review-{{ $review->id }}-{{ $i }}" class="cursor-pointer star text-sm" data-rating="{{ $i }}">
-                                                    <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
-                                                </label>
-                                            @endfor
+                <!-- Specifications Tab -->
+                <div id="specifications-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-info-circle text-green-600"></i>
+                        </div>
+                        Package Specifications
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Slug</span>
+                            <p class="text-gray-800">{{ $package->slug }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Status</span>
+                            <p class="text-gray-800">{{ $package->is_active ? 'Active' : 'Inactive' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Publish Start</span>
+                            <p class="text-gray-800">{{ $package->start_publish ? $package->start_publish->format('d M Y H:i') : 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-500">Publish End</span>
+                            <p class="text-gray-800">{{ $package->end_publish ? $package->end_publish->format('d M Y H:i') : 'N/A' }}</p>
+                        </div>
+                        @if($package->products_data && count($package->products_data) > 0)
+                        <div class="md:col-span-2">
+                            <span class="text-sm font-medium text-gray-500">Products Included</span>
+                            <div class="mt-2 space-y-2">
+                                @foreach($package->products_data as $product)
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            @php
+                                                $validImages = array_filter((array) ($product['images'] ?? []), function($img) {
+                                                    return is_string($img) && !empty($img);
+                                                });
+                                            @endphp
+                                            @if($validImages && count($validImages) > 0)
+                                                <img src="{{ asset('storage/' . $validImages[0]) }}" alt="{{ $product['name'] ?? 'Product' }}" class="w-10 h-10 object-cover rounded-lg">
+                                            @else
+                                                <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-box text-gray-500 text-sm"></i>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <p class="font-medium text-gray-800">{{ $product['name'] ?? 'Unnamed Product' }}</p>
+                                                <p class="text-sm text-gray-500">{{ isset($product['description']) && $product['description'] ? Str::limit($product['description'], 100) : 'No description' }}</p>
+                                            </div>
                                         </div>
-                                        <span class="text-sm text-gray-500">{{ $review->created_at->diffForHumans() }}</span>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-gray-800">Rp {{ number_format($product['nta'] ?? 0, 0, ',', '.') }}</p>
+                                            <p class="text-sm text-gray-500">{{ $product['pax'] ?? 1 }} pax</p>
+                                        </div>
                                     </div>
-                                    <p class="text-gray-600">{{ $review->comment }}</p>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
-                    @endforeach
+                        @endif
+                        @if($package->addons_data && count($package->addons_data) > 0)
+                        <div class="md:col-span-2">
+                            <span class="text-sm font-medium text-gray-500">Add-ons Included</span>
+                            <div class="mt-2 space-y-2">
+                                @foreach($package->addons_data as $addon)
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            @php
+                                                $validImages = array_filter((array) ($addon['images'] ?? []), function($img) {
+                                                    return is_string($img) && !empty($img);
+                                                });
+                                            @endphp
+                                            @if($validImages && count($validImages) > 0)
+                                                <img src="{{ asset('storage/' . $validImages[0]) }}" alt="{{ $addon['addons'] ?? 'Addon' }}" class="w-10 h-10 object-cover rounded-lg">
+                                            @else
+                                                <div class="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-plus-circle text-gray-500 text-sm"></i>
+                                                </div>
+                                            @endif
+                                            <div>
+                                                <p class="font-medium text-gray-800">{{ $addon['name'] ?? 'Unnamed Addon' }}</p>
+                                                <p class="text-sm text-gray-500">{{ isset($addon['desc']) && $addon['desc'] ? Str::limit($addon['desc'], 50) : 'No description' }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-semibold text-gray-800">Rp {{ number_format($addon['nta'] ?? 0, 0, ',', '.') }}</p>
+                                            <p class="text-sm text-gray-500">{{ $addon['pax'] ?? 1 }} pax</p>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                    </div>
                 </div>
-            @else
-                <div class="text-center py-8">
-                    <i class="fas fa-star-half-alt text-gray-300 text-4xl mb-4"></i>
-                    <p class="text-gray-500">No reviews yet</p>
+
+                <!-- Refund Policy Tab -->
+                <div id="refund-policy-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-undo-alt text-red-600"></i>
+                        </div>
+                        Refund Policy
+                    </h2>
+                    @if($package->refund_policy)
+                        <div class="prose prose-gray max-w-none">
+                            {!! nl2br(e($package->refund_policy)) !!}
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-info-circle text-gray-300 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No refund policy information available for this package.</p>
+                        </div>
+                    @endif
                 </div>
-            @endif
+
+                <!-- Reviews Tab -->
+                <div id="reviews-tab" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-star text-yellow-600"></i>
+                        </div>
+                        Reviews & Ratings
+                    </h2>
+
+                    @if($package->reviews->count() > 0)
+                        <div class="space-y-6">
+                            @foreach($package->reviews->take(5) as $review)
+                                <div class="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0">
+                                    <div class="flex items-start space-x-4">
+                                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                                            <span class="text-gray-600 font-semibold">{{ substr($review->user->name, 0, 1) }}</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <span class="font-semibold text-gray-800">{{ $review->user->name }}</span>
+                                                <div class="flex items-center space-x-1 star-rating">
+                                                    @for($i = 1; $i <= 5; $i++)
+                                                        <input type="radio" id="rating-review-{{ $review->id }}-{{ $i }}" name="rating-review-{{ $review->id }}" value="{{ $i }}" class="sr-only" {{ $i <= $review->rating ? 'checked' : '' }}>
+                                                        <label for="rating-review-{{ $review->id }}-{{ $i }}" class="cursor-pointer star text-sm" data-rating="{{ $i }}">
+                                                            <i class="fas fa-star {{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}"></i>
+                                                        </label>
+                                                    @endfor
+                                                </div>
+                                                <span class="text-sm text-gray-500">{{ $review->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            <p class="text-gray-600">{{ $review->comment }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fas fa-star-half-alt text-gray-300 text-4xl mb-4"></i>
+                            <p class="text-gray-500">No reviews yet</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 
@@ -707,5 +755,38 @@ function closeGallery() {
         document.body.style.overflow = '';
     }
 }
+
+// Tab functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'text-blue-600', 'border-blue-600');
+                btn.classList.add('text-gray-500', 'border-transparent');
+            });
+
+            // Add active class to clicked button
+            button.classList.add('active', 'text-blue-600', 'border-blue-600');
+            button.classList.remove('text-gray-500', 'border-transparent');
+
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            // Show selected tab content
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (activeTab) {
+                activeTab.classList.remove('hidden');
+            }
+        });
+    });
+});
 </script>
 @endsection

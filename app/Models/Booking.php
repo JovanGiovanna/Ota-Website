@@ -29,6 +29,7 @@ class Booking extends Model
         'id' => 'string',
         'checkin_appointment_start' => 'datetime',
         'checkout_appointment_end' => 'datetime',
+        'payment_expires_at' => 'datetime',
         'total_price' => 'decimal:2',
     ];
 
@@ -44,7 +45,8 @@ class Booking extends Model
         'amount',
         'total_price',
         'status',
-        'note'
+        'note',
+        'payment_expires_at'
     ];
 
     protected static function boot()

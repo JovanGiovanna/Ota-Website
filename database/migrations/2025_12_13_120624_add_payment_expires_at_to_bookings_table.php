@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('book_products', function (Blueprint $table) {
-            $table->enum('status', ['pending', 'book', 'paid', 'cancelled', 'payment_return', 'completed'])
-                  ->default('pending')
-                  ->after('booking_code');
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->timestamp('payment_expires_at')->nullable()->after('note');
         });
     }
 
@@ -23,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('book_products', function (Blueprint $table) {
-            $table->dropColumn('status');
+        Schema::table('bookings', function (Blueprint $table) {
+            $table->dropColumn('payment_expires_at');
         });
     }
 };

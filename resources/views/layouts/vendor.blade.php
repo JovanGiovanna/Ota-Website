@@ -53,13 +53,13 @@
                             <svg class="text-emerald-400 group-hover:text-emerald-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
-                            Transaction Product
+                            View Book Product
                         </a>
                         <a href="{{ route('vendor.transaction_addons') }}" class="text-emerald-200 hover:bg-emerald-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                             <svg class="text-emerald-400 group-hover:text-emerald-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            Transaction Addons
+                            View Book Addons
                         </a>
                         <a href="{{ route('vendor.transactions.report') }}" class="text-emerald-200 hover:bg-emerald-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                             <svg class="text-emerald-400 group-hover:text-emerald-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

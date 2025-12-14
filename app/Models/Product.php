@@ -40,6 +40,7 @@ class Product extends Model
         'pax',
         'jumlah',
         'status',
+        'refund_policy',
     ];
 
     /**
