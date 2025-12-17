@@ -95,14 +95,25 @@
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
                         Password
                     </label>
-                    <input 
-                        id="password" 
-                        type="password" 
-                        name="password"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-500"
-                        placeholder="Minimal 8 karakter"
-                        required
-                    >
+                    <div class="relative">
+                        <input 
+                            id="password" 
+                            type="password" 
+                            name="password"
+                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-500"
+                            placeholder="Minimal 8 karakter"
+                            required
+                        >
+                        <button type="button" class="absolute right-4 top-3 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="togglePassword(this)">
+                            <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <svg class="w-5 h-5 eye-close hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-4.753 4.753m4.753-4.753L3.596 3.596m9.625 9.625l4.029 4.029M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <div class="mt-2 text-xs text-gray-500">
                         Password harus minimal 8 karakter
                     </div>
@@ -113,14 +124,25 @@
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
                         Konfirmasi Password
                     </label>
-                    <input 
-                        id="password_confirmation" 
-                        type="password" 
-                        name="password_confirmation"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-500"
-                        placeholder="Ulangi password Anda"
-                        required
-                    >
+                    <div class="relative">
+                        <input 
+                            id="password_confirmation" 
+                            type="password" 
+                            name="password_confirmation"
+                            class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition duration-200 text-gray-900 placeholder-gray-500"
+                            placeholder="Ulangi password Anda"
+                            required
+                        >
+                        <button type="button" class="absolute right-4 top-3 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="togglePassword(this)">
+                            <svg class="w-5 h-5 eye-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <svg class="w-5 h-5 eye-close hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-4.803m5.596-3.856a3.375 3.375 0 11-4.753 4.753m4.753-4.753L3.596 3.596m9.625 9.625l4.029 4.029M3 12a9 9 0 1118 0 9 9 0 01-18 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Register Button -->
@@ -188,6 +210,9 @@
         const confirmPasswordInput = document.getElementById('password_confirmation');
 
         let isExistingUser = false;
+
+        // Load remembered email on page load
+        loadRememberedEmail();
 
         // Show error message if there are Laravel errors
         @if ($errors->any())
@@ -279,6 +304,9 @@
                     return;
                 }
             }
+            
+            // Save email to localStorage after successful validation
+            localStorage.setItem('remembered_email', email);
         });
 
         function checkEmailExistence(email) {
@@ -359,7 +387,31 @@
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(email);
         }
+        
+        function loadRememberedEmail() {
+            const rememberedEmail = localStorage.getItem('remembered_email');
+            if (rememberedEmail) {
+                emailInput.value = rememberedEmail;
+            }
+        }
     });
+
+    // Toggle password visibility for register form
+    function togglePassword(button) {
+        const passwordInput = button.parentElement.querySelector('input');
+        const eyeOpen = button.querySelector('.eye-open');
+        const eyeClose = button.querySelector('.eye-close');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeOpen.classList.add('hidden');
+            eyeClose.classList.remove('hidden');
+        } else {
+            passwordInput.type = 'password';
+            eyeOpen.classList.remove('hidden');
+            eyeClose.classList.add('hidden');
+        }
+    }
 </script>
 
 </body>

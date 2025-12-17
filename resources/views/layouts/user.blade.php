@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     @stack('styles')
 </head>
-<body class="h-full bg-gradient-to-br from-blue-50 to-indigo-50">
+<body class="h-full bg-gradient-to-br from-blue-50 to-indigo-50" x-data="{ mobileOpen: false }">
     <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <!-- Navbar -->
     <nav class="bg-white shadow-lg fixed top-0 w-full z-50">
@@ -43,6 +43,15 @@
                             <i class="fas fa-heart mr-2"></i>Wishlist
                         </a>
                     @endauth
+                </div>
+
+                <!-- Mobile hamburger -->
+                <div class="flex lg:hidden items-center">
+                    <button @click="mobileOpen = true" class="inline-flex items-center justify-center p-2 rounded-md text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-label="Open menu">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                 </div>
 
                 <!-- Right side -->
@@ -107,6 +116,68 @@
             </div>
         </div>
     </nav>
+
+    <!-- Mobile menu -->
+    <div class="lg:hidden" x-show="mobileOpen" style="display: none;" x-transition.opacity>
+        <div class="fixed inset-0 flex z-40">
+            <div class="fixed inset-0 bg-blue-900/50" aria-hidden="true" @click="mobileOpen = false"></div>
+            <div class="relative flex-1 flex flex-col max-w-xs w-full bg-white shadow-xl" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
+                <div class="absolute top-0 right-0 -mr-12 pt-4">
+                    <button class="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" @click="mobileOpen = false" aria-label="Close menu">
+                        <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="pt-5 pb-6 px-5 overflow-y-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <i class="fas fa-compass text-white text-lg"></i>
+                            </div>
+                            <span class="text-2xl font-bold text-gray-800">Pointer</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <a href="{{ route('user.search') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('user.home') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                            <i class="fas fa-home mr-2"></i>Home
+                        </a>
+                        @auth
+                        <a href="{{ route('user.form_booker') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('user.form_booker') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                            <i class="fas fa-calendar-plus mr-2"></i>Book
+                        </a>
+                        <a href="{{ route('user.history') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('user.history') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                            <i class="fas fa-history mr-2"></i>History
+                        </a>
+                        <a href="{{ route('user.wishlist') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('user.wishlist') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">
+                            <i class="fas fa-heart mr-2"></i>Wishlist
+                        </a>
+                        @endauth
+                    </div>
+                    <div class="mt-6 border-t border-blue-100 pt-4 space-y-3">
+                        @auth
+                        <a href="{{ route('user.profil') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                            <i class="fas fa-user mr-2"></i>View Profile
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50 hover:text-red-700">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </button>
+                        </form>
+                        @else
+                        <a href="{{ route('login') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login
+                        </a>
+                        <a href="{{ route('register') }}" class="block px-3 py-2 rounded-lg text-base font-medium bg-blue-600 text-white hover:bg-blue-700">
+                            <i class="fas fa-user-plus mr-2"></i>Register
+                        </a>
+                        @endauth
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Main content -->
     <main class="flex-1 relative overflow-y-auto focus:outline-none pt-16">

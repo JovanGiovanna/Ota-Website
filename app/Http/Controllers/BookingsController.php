@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use App\Models\{Booking, Package, Product, Addon};
 use App\Models\{BookPackage, BookPackageAddon, BookProduct, BookProductAddon, BookAddon};
 use App\Notifications\EmailNotification;
+use App\Helpers\ErrorHandler;
 
 class BookingsController extends Controller
 {
@@ -49,8 +50,11 @@ class BookingsController extends Controller
                 if (is_null($existingUser->password)) {
                     $user = $existingUser;
                 } else {
-                    // User exists and has password, redirect to login
-                    return redirect()->route('login')->with('error', 'Email sudah terdaftar. Silakan login untuk melanjutkan booking.');
+                    // User exists and has password, redirect to login with SweetAlert
+                    if (function_exists('alert')) {
+                        alert()->error('Email Sudah Terdaftar', 'Email ini sudah terdaftar. Silakan login untuk melanjutkan booking.');
+                    }
+                    return redirect()->route('login')->withInput(['email' => $validated['booker_email']]);
                 }
             } else {
                 // Create new guest user
@@ -422,31 +426,46 @@ if (!empty($validated['addon_id'])) {
         $booking = Booking::findOrFail($id);
         $booking->update(['status' => $validated['status']]);
 
-        return back()->with('success', 'Status booking berhasil diperbarui.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Status booking berhasil diperbarui.');
+        }
+        return back();
     }
 
     public function approve(Booking $booking)
     {
         if ($booking->status !== 'pending') {
-            return back()->with('error', 'Booking tidak dalam status pending.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Booking tidak dalam status pending.');
+            }
+            return back();
         }
 
         $booking->status = 'confirmed';
         $booking->save();
 
-        return back()->with('success', 'Booking #' . $booking->id . ' berhasil dikonfirmasi.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Booking #' . $booking->id . ' berhasil dikonfirmasi.');
+        }
+        return back();
     }
 
     public function reject(Booking $booking)
     {
         if (!in_array($booking->status, ['pending', 'book'])) {
-            return back()->with('error', 'Booking tidak dalam status yang dapat ditolak.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Booking tidak dalam status yang dapat ditolak.');
+            }
+            return back();
         }
 
         $booking->status = 'cancelled';
         $booking->save();
 
-        return back()->with('success', 'Booking #' . $booking->id . ' berhasil ditolak (Cancelled).');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Booking #' . $booking->id . ' berhasil ditolak (Cancelled).');
+        }
+        return back();
     }
 
     public function showDetailAdmin(Booking $booking)
@@ -468,6 +487,9 @@ if (!empty($validated['addon_id'])) {
     public function submitSupport(Request $request, Booking $booking)
     {
         if ($booking->id_user !== Auth::id()) {
+            if (function_exists('alert')) {
+                alert()->error('Akses Ditolak', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+            }
             abort(403);
         }
 
@@ -479,23 +501,34 @@ if (!empty($validated['addon_id'])) {
             'contact_email' => 'required|email',
         ]);
 
-        return redirect()->route('user.detail_history', $booking->id)
-            ->with('success', 'Your support request has been submitted successfully.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Permintaan support berhasil dikirim.');
+        }
+        return redirect()->route('user.detail_history', $booking->id);
     }
 
     public function cancel(Booking $booking)
     {
         if ($booking->id_user !== Auth::id()) {
+            if (function_exists('alert')) {
+                alert()->error('Akses Ditolak', 'Anda tidak memiliki akses untuk membatalkan booking ini.');
+            }
             abort(403);
         }
 
         // Allow cancel from book, confirmed, or paid (user paid then decides to cancel)
         if (!in_array($booking->status, ['book', 'confirmed', 'paid'])) {
-            return back()->with('error', 'Booking tidak dapat dibatalkan pada status ini.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Booking tidak dapat dibatalkan pada status ini.');
+            }
+            return back();
         }
 
         $booking->update(['status' => 'cancelled']);
-        return back()->with('success', 'Booking berhasil dibatalkan.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Booking berhasil dibatalkan.');
+        }
+        return back();
     }
 
     /**
@@ -505,12 +538,18 @@ if (!empty($validated['addon_id'])) {
     {
         // Allow only owner / matching email
         if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
+            if (function_exists('alert')) {
+                alert()->error('Akses Ditolak', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+            }
             abort(403);
         }
 
         // Allow refund request when booking was paid or already cancelled
         if (!in_array($booking->status, ['paid', 'cancelled'])) {
-            return back()->with('error', 'Refund hanya dapat diminta untuk booking yang telah dibayar atau telah dibatalkan.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Refund hanya dapat diminta untuk booking yang telah dibayar atau telah dibatalkan.');
+            }
+            return back();
         }
 
         // Check refund policy for all items in the booking
@@ -565,12 +604,18 @@ if (!empty($validated['addon_id'])) {
         }
 
         if (!$refundAllowed) {
-            return back()->with('error', 'Refund tidak tersedia untuk booking ini karena salah satu item tidak mendukung kebijakan refund.');
+            if (function_exists('alert')) {
+                alert()->error('Refund Tidak Didukung', 'Refund tidak tersedia untuk booking ini karena salah satu item tidak mendukung kebijakan refund.');
+            }
+            return back();
         }
 
         $booking->update(['status' => 'payment_return']);
 
-        return back()->with('success', 'Permintaan pengembalian dana berhasil dikirim. Tim admin akan memprosesnya.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Permintaan pengembalian dana berhasil dikirim. Tim admin akan memprosesnya.');
+        }
+        return back();
     }
 
     /**
@@ -579,12 +624,18 @@ if (!empty($validated['addon_id'])) {
     public function verifyPayment(Booking $booking)
     {
         if ($booking->status !== 'paid') {
-            return back()->with('error', 'Booking tidak dalam status paid.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Booking tidak dalam status paid.');
+            }
+            return back();
         }
 
         $booking->update(['status' => 'completed']);
 
-        return back()->with('success', 'Pembayaran diverifikasi. Booking ditandai sebagai completed.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Pembayaran diverifikasi. Booking ditandai sebagai completed.');
+        }
+        return back();
     }
 
     /**
@@ -593,14 +644,20 @@ if (!empty($validated['addon_id'])) {
     public function processRefund(Booking $booking)
     {
         if ($booking->status !== 'payment_return') {
-            return back()->with('error', 'Booking tidak dalam status permintaan pengembalian dana.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Booking tidak dalam status permintaan pengembalian dana.');
+            }
+            return back();
         }
 
         // Here you would integrate with payment gateway / refund logic.
         // For now, we mark booking as completed after refund processed.
         $booking->update(['status' => 'completed']);
 
-        return back()->with('success', 'Pengembalian dana diproses dan booking ditandai sebagai completed.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Pengembalian dana diproses dan booking ditandai sebagai completed.');
+        }
+        return back();
     }
 
     public function destroy($id)
@@ -608,7 +665,10 @@ if (!empty($validated['addon_id'])) {
         $booking = Booking::findOrFail($id);
         $booking->delete();
 
-        return back()->with('success', 'Booking berhasil dihapus.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Booking berhasil dihapus.');
+        }
+        return back();
     }
 
     public function payment(Booking $booking)
@@ -616,6 +676,9 @@ if (!empty($validated['addon_id'])) {
         // Allow access if user is authenticated and owns the booking, or if it's a guest booking (no auth required)
         // Also allow if logged in user has the same email as the booker (handles guest-to-logged-in transition)
         if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
+            if (function_exists('alert')) {
+                alert()->error('Akses Ditolak', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+            }
             abort(403);
         }
 
@@ -635,17 +698,25 @@ if (!empty($validated['addon_id'])) {
         // Allow access if user is authenticated and owns the booking, or if it's a guest booking (no auth required)
         // Also allow if logged in user has the same email as the booker (handles guest-to-logged-in transition)
         if (Auth::check() && $booking->id_user !== Auth::id() && $booking->booker_email !== Auth::user()->email) {
+            if (function_exists('alert')) {
+                alert()->error('Akses Ditolak', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+            }
             abort(403);
         }
 
         if (!in_array($booking->status, ['book', 'pending'])) {
-            return back()->with('error', 'Booking sudah diproses.');
+            if (function_exists('alert')) {
+                alert()->error('Status Tidak Valid', 'Booking sudah diproses.');
+            }
+            return back();
         }
 
         $booking->update(['status' => 'paid']);
 
-        return redirect()->route('user.detail_history', $booking->id)
-            ->with('success', 'Payment berhasil! Booking Anda telah dibayar.');
+        if (function_exists('alert')) {
+            alert()->success('Pembayaran Berhasil', 'Payment berhasil! Booking Anda telah dibayar.');
+        }
+        return redirect()->route('user.detail_history', $booking->id);
     }
 
     public function activateAccount($token)
@@ -653,11 +724,17 @@ if (!empty($validated['addon_id'])) {
         $user = \App\Models\User::where('activation_token', $token)->first();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Token aktivasi tidak valid.');
+            if (function_exists('alert')) {
+                alert()->error('Token Tidak Valid', 'Token aktivasi tidak valid atau sudah expired.');
+            }
+            return redirect()->route('login');
         }
 
         if (!is_null($user->password)) {
-            return redirect()->route('login')->with('error', 'Akun sudah diaktifkan.');
+            if (function_exists('alert')) {
+                alert()->warning('Akun Sudah Aktif', 'Akun Anda sudah diaktifkan.');
+            }
+            return redirect()->route('login');
         }
 
         return view('user.activate', compact('user', 'token'));
@@ -672,11 +749,17 @@ if (!empty($validated['addon_id'])) {
         $user = \App\Models\User::where('activation_token', $token)->first();
 
         if (!$user) {
-            return redirect()->route('login')->with('error', 'Token aktivasi tidak valid.');
+            if (function_exists('alert')) {
+                alert()->error('Token Tidak Valid', 'Token aktivasi tidak valid atau sudah expired.');
+            }
+            return redirect()->route('login');
         }
 
         if (!is_null($user->password)) {
-            return redirect()->route('login')->with('error', 'Akun sudah diaktifkan.');
+            if (function_exists('alert')) {
+                alert()->warning('Akun Sudah Aktif', 'Akun Anda sudah diaktifkan.');
+            }
+            return redirect()->route('login');
         }
 
         $user->update([
@@ -686,6 +769,9 @@ if (!empty($validated['addon_id'])) {
 
         Auth::login($user);
 
-        return redirect()->route('user.history')->with('success', 'Akun berhasil diaktifkan! Selamat datang.');
+        if (function_exists('alert')) {
+            alert()->success('Akun Aktif', 'Akun berhasil diaktifkan! Selamat datang.');
+        }
+        return redirect()->route('user.history');
     }
 }

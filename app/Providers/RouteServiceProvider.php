@@ -44,5 +44,53 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        // Limit login attempts by email + IP to mitigate brute force
+        RateLimiter::for('login', function (Request $request) {
+            $email = (string) $request->input('email');
+            return Limit::perMinute(5)
+                ->by(strtolower($email).'|'.$request->ip())
+                ->response(function (Request $request, array $headers) {
+                    $retryAfter = (int)($headers['Retry-After'] ?? 60);
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'status' => false,
+                            'title' => 'Terlalu Banyak Percobaan',
+                            'message' => "Coba lagi dalam {$retryAfter} detik.",
+                            'icon' => 'error',
+                        ], 429, $headers);
+                    }
+                    return redirect()->back()->withInput()->with(
+                        'error',
+                        "Terlalu banyak percobaan. Coba lagi dalam {$retryAfter} detik."
+                    );
+                });
+        });
+
+        // Limit registration attempts by IP
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(10)
+                ->by($request->ip())
+                ->response(function (Request $request, array $headers) {
+                    $retryAfter = (int)($headers['Retry-After'] ?? 60);
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'status' => false,
+                            'title' => 'Terlalu Banyak Permintaan',
+                            'message' => "Coba lagi dalam {$retryAfter} detik.",
+                            'icon' => 'error',
+                        ], 429, $headers);
+                    }
+                    return redirect()->back()->withInput()->with(
+                        'error',
+                        "Terlalu banyak permintaan. Coba lagi dalam {$retryAfter} detik."
+                    );
+                });
+        });
+
+        // Limit auxiliary email checks by IP
+        RateLimiter::for('check-email', function (Request $request) {
+            return Limit::perMinute(20)->by($request->ip());
+        });
     }
 }

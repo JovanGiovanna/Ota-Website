@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin;
 use App\Models\Permission;
+use App\Helpers\ErrorHandler;
 
 class SuperAdminController extends Controller
 {
@@ -61,10 +62,11 @@ class SuperAdminController extends Controller
             return redirect()->intended(route('super_admin.dashboard')); 
         }
 
-        // 2. Tangani Kegagalan Otentikasi
-        return back()->withErrors([
-            'email' => 'Kredensial yang Anda masukkan tidak cocok dengan catatan kami. Mohon periksa email dan password.',
-        ])->withInput();
+        // 2. Tangani Kegagalan Otentikasi dengan SweetAlert
+        if (function_exists('alert')) {
+            alert()->error('Login Gagal', 'Email atau password yang Anda masukkan tidak sesuai. Silakan periksa dan coba lagi.');
+        }
+        return back()->withInput();
     }
     
     /**
@@ -77,6 +79,9 @@ class SuperAdminController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        if (function_exists('alert')) {
+            alert()->success('Logout Berhasil', 'Anda telah keluar dari sistem.');
+        }
         return redirect()->route('login');
     }
 
@@ -91,17 +96,14 @@ class SuperAdminController extends Controller
     public function registerApi(Request $request)
     {
         // 1. Validasi Input API
-        $validator = Validator::make($request->all() ,[
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:super_admin,email',
             'password' => 'required|string|min:8',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors(),
-            ], 422);
+            return ErrorHandler::validationErrorJson($validator);
         }
 
         try {
@@ -116,7 +118,10 @@ class SuperAdminController extends Controller
 
             // 3. Respons Sukses Registrasi (HTTP 201 Created)
             return response()->json([
+                'status' => 'success',
+                'title' => 'Registrasi Berhasil',
                 'message' => 'Super Admin berhasil didaftarkan',
+                'icon' => 'success',
                 'super_admin' => [
                     'id' => $superAdmin->id,
                     'name' => $superAdmin->name,
@@ -128,7 +133,10 @@ class SuperAdminController extends Controller
         } catch (\Exception $e) {
             Log::error('Super Admin API Registration Error: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Terjadi kesalahan saat memproses registrasi.',
+                'status' => 'error',
+                'title' => 'Server Error',
+                'message' => 'Terjadi kesalahan saat memproses registrasi. Silakan coba lagi nanti.',
+                'icon' => 'error'
             ], 500);
         }
     }
@@ -145,24 +153,32 @@ class SuperAdminController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal.',
-                'errors' => $validator->errors(),
-            ], 422);
+            return ErrorHandler::validationErrorJson($validator);
         }
 
         // Coba otentikasi langsung dari model SuperAdmin
         $superAdmin = SuperAdmin::where('email', $request->email)->first();
 
-        if ($superAdmin && Hash::check($request->password, $superAdmin->password)) {
+        if (!$superAdmin) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Akun Tidak Ditemukan',
+                'message' => 'Tidak ada akun terdaftar dengan email ini.',
+                'icon' => 'error'
+            ], 404);
+        }
 
+        if ($superAdmin && Hash::check($request->password, $superAdmin->password)) {
             // Hapus token lama yang mungkin masih ada, lalu buat token baru
             $superAdmin->tokens()->delete();
             $token = $superAdmin->createToken('super_admin_token', ['admin:access'])->plainTextToken;
 
             // 3. Respons Sukses Login
             return response()->json([
-                'message' => 'Login Super Admin berhasil.',
+                'status' => 'success',
+                'title' => 'Login Berhasil',
+                'message' => 'Selamat datang kembali!',
+                'icon' => 'success',
                 'access_token' => $token,
                 'token_type' => 'Bearer',
                 'super_admin' => [
@@ -175,7 +191,10 @@ class SuperAdminController extends Controller
 
         // 4. Tangani Kegagalan Kredensial (HTTP 401 Unauthorized)
         return response()->json([
-            'message' => 'Gagal login. Kredensial email atau password Super Admin salah.',
+            'status' => 'error',
+            'title' => 'Login Gagal',
+            'message' => 'Email atau password salah. Silakan periksa dan coba lagi.',
+            'icon' => 'error'
         ], 401);
     }
     
@@ -227,21 +246,87 @@ class SuperAdminController extends Controller
      */
     public function dashboard(Request $request)
     {
-        // Get monthly booking data for the last 6 months
+        // Get monthly booking data for the current year (Jan-Dec)
         $monthlyBookings = \App\Models\Booking::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-            ->where('created_at', '>=', now()->subMonths(6))
+            ->whereYear('created_at', now()->year)
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('count', 'month')
             ->toArray();
 
-        // Get monthly revenue data for the last 6 months
+        // Get monthly revenue data for the current year (Jan-Dec)
         $monthlyRevenue = \App\Models\Booking::selectRaw('MONTH(created_at) as month, SUM(total_price) as revenue')
-            ->where('created_at', '>=', now()->subMonths(6))
+            ->whereYear('created_at', now()->year)
             ->groupBy('month')
             ->orderBy('month')
             ->pluck('revenue', 'month')
             ->toArray();
+
+        // Get monthly profit data - use the rekon calculation
+        $monthlyProfit = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $profit = \App\Models\Booking::where('status', 'paid')
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', now()->year)
+                ->with(['products', 'addons', 'packages'])
+                ->get()
+                ->sum(function ($booking) {
+                    // Calculate profit for this booking
+                    // Profit = total_price - NTA (cost)
+                    $totalPrice = $booking->total_price ?? 0;
+                    
+                    // Calculate NTA from products
+                    $nta = $booking->products->sum(function ($bp) {
+                        $product = $bp->product;
+                        $basicPrice = $product->basic_price ?? 0;
+                        $discountValue = $product->discount_value ?? 0;
+                        $discountType = $product->discount_type;
+                        
+                        $discountAmount = 0;
+                        if ($discountType === 'percentage' && $discountValue > 0) {
+                            $discountAmount = $basicPrice * ($discountValue / 100);
+                        } elseif ($discountType === 'fixed' && $discountValue > 0) {
+                            $discountAmount = $discountValue;
+                        }
+                        
+                        $ntaPerUnit = $basicPrice - $discountAmount;
+                        $paxCount = $bp->amount ?? 1;
+                        return $paxCount * $ntaPerUnit;
+                    });
+                    
+                    // Add NTA from addons
+                    $nta += $booking->addons->sum(function ($ba) {
+                        $addon = $ba->addon;
+                        $basicPrice = $addon->basic_price ?? 0;
+                        $discountValue = $addon->discount_value ?? 0;
+                        $discountType = $addon->discount_type;
+                        
+                        $discountAmount = 0;
+                        if ($discountType === 'percentage' && $discountValue > 0) {
+                            $discountAmount = $basicPrice * ($discountValue / 100);
+                        } elseif ($discountType === 'fixed' && $discountValue > 0) {
+                            $discountAmount = $discountValue;
+                        }
+                        
+                        $ntaPerUnit = $basicPrice - $discountAmount;
+                        $paxCount = $ba->amount ?? 1;
+                        return $paxCount * $ntaPerUnit;
+                    });
+                    
+                    // Add NTA from packages
+                    $nta += $booking->packages->sum(function ($bp) {
+                        $package = $bp->package;
+                        $basicPrice = $package->pax_paid ?? 0;
+                        $ntaPerUnit = $basicPrice;
+                        $paxCount = ($booking->adults ?? 0) + ($booking->children ?? 0) ?: 1;
+                        return $paxCount * $ntaPerUnit;
+                    });
+                    
+                    return $totalPrice - $nta;
+                });
+            
+            $monthlyProfit[] = (int)$profit;
+        }
 
         // Get booking status counts
         $statusCounts = \App\Models\Booking::selectRaw('status, COUNT(*) as count')
@@ -249,25 +334,25 @@ class SuperAdminController extends Controller
             ->pluck('count', 'status')
             ->toArray();
 
-        // Get monthly facility bookings (assuming products are facilities)
-        $monthlyFacilities = \App\Models\BookProduct::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-            ->where('created_at', '>=', now()->subMonths(6))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('count', 'month')
-            ->toArray();
+        // Get top 5 products by order count
+        $topProducts = \App\Models\BookProduct::selectRaw('products.id, products.name, COUNT(book_products.id) as total_orders')
+            ->join('products', 'book_products.id_product', '=', 'products.id')
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_orders')
+            ->limit(5)
+            ->get();
+
+        $topProductNames = $topProducts->pluck('name')->toArray();
+        $topProductData = $topProducts->pluck('total_orders')->toArray();
 
         // Prepare data for charts
-        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         $bookingData = [];
         $revenueData = [];
-        $facilityData = [];
 
-        for ($i = 5; $i >= 0; $i--) {
-            $monthNum = now()->subMonths($i)->month;
-            $bookingData[] = $monthlyBookings[$monthNum] ?? 0;
-            $revenueData[] = $monthlyRevenue[$monthNum] ?? 0;
-            $facilityData[] = $monthlyFacilities[$monthNum] ?? 0;
+        for ($month = 1; $month <= 12; $month++) {
+            $bookingData[] = $monthlyBookings[$month] ?? 0;
+            $revenueData[] = $monthlyRevenue[$month] ?? 0;
         }
 
         $statusData = [
@@ -277,13 +362,15 @@ class SuperAdminController extends Controller
             $statusCounts['confirmed'] ?? 0
         ];
 
-        return view('super_admin.dashboard', compact(
-            'months',
-            'bookingData',
-            'revenueData',
-            'statusData',
-            'facilityData'
-        ));
+        return view('super_admin.dashboard', [
+            'months' => $months,
+            'bookingData' => $bookingData,
+            'revenueData' => $revenueData,
+            'profitData' => $monthlyProfit,
+            'statusData' => $statusData,
+            'topProductNames' => $topProductNames,
+            'topProductData' => $topProductData
+        ]);
     }
 
     /**
@@ -385,6 +472,7 @@ public function transactionProducts()
         // Get filter parameters
         $search = request('search');
         $vendorId = request('vendor_id');
+        $type = request('type');
         $dateFrom = request('date_from');
         $dateTo = request('date_to');
 
@@ -433,14 +521,14 @@ public function transactionProducts()
             // Pax paid
             $paxCount = $bookProduct->amount ?? 1;
 
-            // TotalPaid = BasicPrice + Tax - Discount
-            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
-
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = TotalPaid - NTA, ensure not negative
-            $profit = max(0, $totalPaid - $totalNta);
+            // Total Price from booking
+            $totalPrice = $booking->total_price ?? 0;
+
+            // Profit = Total Price - NTA
+            $profit = $totalPrice - $totalNta;
 
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
@@ -452,7 +540,7 @@ public function transactionProducts()
                 'tax' => $taxAmount,
                 'discount' => $discountAmount,
                 'nta' => $totalNta,
-                'pax_paid' => $totalPaid,
+                'pax_paid' => $totalPrice,
                 'profit' => $profit,
                 'status' => $booking->status,
                 'type' => 'product'
@@ -491,14 +579,14 @@ public function transactionProducts()
             // NTA = BasicPrice - Discount
             $ntaPerUnit = $basicPrice - $discountAmount;
 
-            // TotalPaid = BasicPrice + Tax - Discount
-            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
-
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = TotalPaid - NTA, ensure not negative
-            $profit = max(0, $totalPaid - $totalNta);
+            // Total Price from booking
+            $totalPrice = $booking->total_price ?? 0;
+
+            // Profit = Total Price - NTA
+            $profit = $totalPrice - $totalNta;
 
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
@@ -510,7 +598,7 @@ public function transactionProducts()
                 'tax' => $taxAmount,
                 'discount' => $discountAmount,
                 'nta' => $totalNta,
-                'pax_paid' => $totalPaid,
+                'pax_paid' => $totalPrice,
                 'profit' => $profit,
                 'status' => $booking->status,
                 'type' => 'package' // Tipe 'package'
@@ -556,14 +644,14 @@ public function transactionProducts()
             // Use amount from bookAddon as pax count
             $paxCount = $bookAddon->amount ?? 1;
 
-            // TotalPaid = BasicPrice + Tax - Discount
-            $totalPaid = $paxCount * ($basicPrice + $taxAmount - $discountAmount);
-
             // Total NTA
             $totalNta = $paxCount * $ntaPerUnit;
 
-            // Profit = TotalPaid - NTA
-            $profit = $totalPaid - $totalNta;
+            // Total Price from booking
+            $totalPrice = $booking->total_price ?? 0;
+
+            // Profit = Total Price - NTA
+            $profit = $totalPrice - $totalNta;
 
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
@@ -575,7 +663,7 @@ public function transactionProducts()
                 'tax' => $taxAmount,
                 'discount' => $discountAmount,
                 'nta' => $totalNta,
-                'pax_paid' => $totalPaid,
+                'pax_paid' => $totalPrice,
                 'profit' => $profit,
                 'status' => $booking->status,
                 'type' => 'addon'
@@ -597,6 +685,13 @@ public function transactionProducts()
         if ($vendorId) {
             $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($vendorId) {
                 return $detail->vendor_id === $vendorId;
+            });
+        }
+
+        // Type filter (product or addon)
+        if ($type) {
+            $rekonDetailsCollection = $rekonDetailsCollection->filter(function ($detail) use ($type) {
+                return $detail->type === $type;
             });
         }
 
@@ -692,9 +787,8 @@ public function transactionProducts()
 
     public function createAdminForm()
     {
-        $permissions = Permission::orderBy('name')->get();
         $roles = \App\Models\Role::orderBy('name')->get();
-        return view('super_admin.admins.form', ['admin' => null, 'permissions' => $permissions, 'roles' => $roles]);
+        return view('super_admin.admins.form', ['admin' => null, 'roles' => $roles]);
     }
 
     public function storeAdmin(Request $request)
@@ -705,8 +799,6 @@ public function transactionProducts()
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
             'password' => 'nullable|string|min:6|confirmed',
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'exists:permissions,id',
         ]);
 
         // determine legacy role column value: prefer first selected role key, otherwise default to 'admin'
@@ -723,10 +815,6 @@ public function transactionProducts()
             'password' => isset($validated['password']) ? bcrypt($validated['password']) : null,
         ]);
 
-        if (!empty($validated['permissions'])) {
-            $admin->permissions()->sync($validated['permissions']);
-        }
-
         // Assign roles if provided
         if (!empty($validated['roles'])) {
             // Enforce super_admin limit: max 2
@@ -735,7 +823,6 @@ public function transactionProducts()
                 $countSuper = \DB::table('admin_role')->where('role_id', $superRole->id)->count();
                 if ($countSuper >= 2) {
                     // rollback created admin
-                    $admin->permissions()->detach();
                     $admin->delete();
                     alert()->error('Error', 'Batas maksimal Super Admin (2 orang) telah tercapai.');
                     return back()->withInput();
@@ -751,10 +838,9 @@ public function transactionProducts()
 
     public function editAdminForm(Admin $admin)
     {
-        $permissions = Permission::orderBy('name')->get();
         $roles = \App\Models\Role::orderBy('name')->get();
-        $admin->load('permissions', 'roles');
-        return view('super_admin.admins.form', compact('admin', 'permissions', 'roles'));
+        $admin->load('roles');
+        return view('super_admin.admins.form', compact('admin', 'roles'));
     }
 
     public function updateAdmin(Request $request, Admin $admin)
@@ -765,8 +851,6 @@ public function transactionProducts()
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
             'password' => 'nullable|string|min:6|confirmed',
-            'permissions' => 'nullable|array',
-            'permissions.*' => 'exists:permissions,id',
         ]);
 
         // Update legacy role column to first selected role key if roles provided
@@ -785,8 +869,6 @@ public function transactionProducts()
         if (!empty($validated['password'])) {
             $admin->update(['password' => bcrypt($validated['password'])]);
         }
-
-        $admin->permissions()->sync($validated['permissions'] ?? []);
 
         // Sync roles if provided
         if (array_key_exists('roles', $validated)) {
@@ -821,6 +903,84 @@ public function transactionProducts()
         $admin->delete();
 
         alert()->success('Success', 'Admin berhasil dihapus.');
+        return back();
+    }
+
+    // ---------------------------
+    // Role management for Super Admin
+    // ---------------------------
+    public function rolesIndex(Request $request)
+    {
+        $roles = \App\Models\Role::orderBy('name')->paginate(10);
+        return view('super_admin.roles.index', compact('roles'));
+    }
+
+    public function createRoleForm()
+    {
+        $permissions = Permission::orderBy('name')->get();
+        return view('super_admin.roles.form', ['role' => null, 'permissions' => $permissions]);
+    }
+
+    public function storeRole(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name',
+            'key' => 'required|string|max:255|unique:roles,key',
+            'permissions' => 'array',
+            'permissions.*' => 'exists:permissions,id'
+        ]);
+
+        $role = \App\Models\Role::create([
+            'name' => $validated['name'],
+            'key' => $validated['key'],
+        ]);
+
+        if (!empty($validated['permissions'])) {
+            $role->permissions()->sync($validated['permissions']);
+        }
+
+        alert()->success('Success', 'Role berhasil dibuat.');
+        return redirect()->route('super_admin.roles');
+    }
+
+    public function editRoleForm(\App\Models\Role $role)
+    {
+        $permissions = Permission::orderBy('name')->get();
+        return view('super_admin.roles.form', compact('role', 'permissions'));
+    }
+
+    public function updateRole(Request $request, \App\Models\Role $role)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'key' => 'required|string|max:255|unique:roles,key,' . $role->id,
+            'permissions' => 'array',
+            'permissions.*' => 'exists:permissions,id'
+        ]);
+
+        $role->update([
+            'name' => $validated['name'],
+            'key' => $validated['key'],
+        ]);
+
+        $role->permissions()->sync($validated['permissions'] ?? []);
+
+        alert()->success('Success', 'Role berhasil diperbarui.');
+        return redirect()->route('super_admin.roles');
+    }
+
+    public function destroyRole(\App\Models\Role $role)
+    {
+        // Prevent deleting roles that are in use
+        if ($role->admins()->exists()) {
+            alert()->error('Error', 'Role tidak bisa dihapus karena masih digunakan oleh admin.');
+            return back();
+        }
+
+        $role->permissions()->detach();
+        $role->delete();
+
+        alert()->success('Success', 'Role berhasil dihapus.');
         return back();
     }
 }

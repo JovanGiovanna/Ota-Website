@@ -20,10 +20,10 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
                 <canvas id="bookingChart"></canvas>
             </div>
 
-            <!-- Revenue Chart -->
+            <!-- Profit Chart -->
             <div class="bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Monthly Revenue</h3>
-                <canvas id="revenueChart"></canvas>
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Monthly Profit</h3>
+                <canvas id="profitChart"></canvas>
             </div>
 
             <!-- Status Chart -->
@@ -32,10 +32,10 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
                 <canvas id="statusChart"></canvas>
             </div>
 
-            <!-- Facilities Chart -->
+            <!-- Top Products Chart -->
             <div class="bg-white p-6 rounded-lg shadow">
-                <h3 class="text-lg font-semibold text-gray-700 mb-4">Monthly Facility Bookings</h3>
-                <canvas id="facilitiesChart"></canvas>
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Top 5 Order Products</h3>
+                <canvas id="productsChart"></canvas>
             </div>
         </div>
     </div>
@@ -94,17 +94,17 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
         }
     });
 
-    // Revenue Chart
-    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-    new Chart(revenueCtx, {
+    // Profit Chart
+    const profitCtx = document.getElementById('profitChart').getContext('2d');
+    new Chart(profitCtx, {
         type: 'bar',
         data: {
             labels: {!! json_encode($months) !!},
             datasets: [{
-                label: 'Revenue',
-                data: {!! json_encode($revenueData) !!},
-                backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                borderColor: 'rgb(34, 197, 94)',
+                label: 'Profit',
+                data: {!! json_encode($profitData ?? []) !!},
+                backgroundColor: 'rgba(168, 85, 247, 0.8)',
+                borderColor: 'rgb(168, 85, 247)',
                 borderWidth: 1,
                 borderRadius: 8,
                 borderSkipped: false,
@@ -161,7 +161,7 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            aspectRatio: 1,
+            aspectRatio: 1.8,
             plugins: {
                 legend: {
                     position: 'bottom',
@@ -174,28 +174,24 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
         }
     });
 
-    // Facilities Chart
-    const facilitiesCtx = document.getElementById('facilitiesChart').getContext('2d');
-    new Chart(facilitiesCtx, {
-        type: 'line',
+    // Top Products Chart
+    const productsCtx = document.getElementById('productsChart').getContext('2d');
+    new Chart(productsCtx, {
+        type: 'bar',
         data: {
-            labels: {!! json_encode($months) !!},
+            labels: {!! json_encode($topProductNames ?? []) !!},
             datasets: [{
-                label: 'Facility Bookings',
-                data: {!! json_encode($facilityData) !!},
-                borderColor: 'rgb(147, 51, 234)',
-                backgroundColor: 'rgba(147, 51, 234, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: 'rgb(147, 51, 234)',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8
+                label: 'Total Orders',
+                data: {!! json_encode($topProductData ?? []) !!},
+                backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                borderColor: 'rgb(59, 130, 246)',
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false,
             }]
         },
         options: {
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: true,
             aspectRatio: 2,
@@ -205,7 +201,7 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
                 }
             },
             scales: {
-                y: {
+                x: {
                     beginAtZero: true,
                     grid: {
                         color: 'rgba(0,0,0,0.05)'
@@ -216,7 +212,7 @@ Welcome, {{ Auth::guard('super_admin')->check() ? Auth::guard('super_admin')->us
                         }
                     }
                 },
-                x: {
+                y: {
                     grid: {
                         color: 'rgba(0,0,0,0.05)'
                     }

@@ -24,28 +24,6 @@ Activate Your Account
 
 <!-- Activation Form -->
 <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-    @if ($errors->any())
-    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        <ul class="list-disc pl-5">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-    @if (session('error'))
-    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        {{ session('error') }}
-    </div>
-    @endif
-
-    @if (session('success'))
-    <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-        {{ session('success') }}
-    </div>
-    @endif
-
     <div class="text-center mb-6">
         <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <i class="fas fa-user-plus text-purple-600 text-2xl"></i>

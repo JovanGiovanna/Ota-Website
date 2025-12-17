@@ -11,7 +11,7 @@
     @stack('styles')
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 to-blue-50">
-    <div class="flex h-full">
+    <div class="flex h-full" x-data="{ mobileOpen: false }">
         @php
             $adminUser = null;
             $roleDisplay = 'Super Admin';
@@ -28,6 +28,205 @@
                 }
             }
         @endphp
+        <!-- Mobile sidebar -->
+        <div class="md:hidden" x-show="mobileOpen" style="display: none;" x-transition.opacity>
+            <div class="fixed inset-0 flex z-40">
+                <div class="fixed inset-0 bg-slate-900/70" aria-hidden="true" @click="mobileOpen = false"></div>
+                <div class="relative flex-1 flex flex-col max-w-xs w-full bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 shadow-2xl" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
+                    <div class="absolute top-0 right-0 -mr-12 pt-4">
+                        <button class="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" @click="mobileOpen = false" aria-label="Close sidebar">
+                            <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+                        <div class="flex items-center px-4 mb-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-crown text-white text-lg"></i>
+                                </div>
+                                <div>
+                                    <h1 class="text-white text-xl font-bold">{{ $roleDisplay }}</h1>
+                                    <p class="text-slate-300 text-xs">{{ $roleDisplay == 'Super Admin' ? 'System Control' : 'Management Panel' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <nav class="px-2 space-y-2">
+                            <div class="space-y-1">
+                                <a href="{{ route('super_admin.dashboard') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-gray-400 group-hover:text-gray-300 mr-3 h-5 w-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2h-4a2 2 0 01-2-2V12H9v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                    </svg>
+                                    Dashboard
+                                </a>
+                            </div>
+
+                            @if($adminUser && $adminUser->hasPermission('system.manage'))
+                            <div class="space-y-1">
+                                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Location Management</h3>
+                                <a href="{{ route('super_admin.cities') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    City
+                                </a>
+                                <a href="{{ route('super_admin.provinces') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                    </svg>
+                                    Province
+                                </a>
+                            </div>
+                            @endif
+
+                            @if($adminUser && ($adminUser->hasPermission('system.manage') || $adminUser->hasPermission('packages.manage') || $adminUser->hasPermission('products.manage') || $adminUser->hasPermission('addons.manage')))
+                            <div class="space-y-1">
+                                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Items Management</h3>
+                                @if($adminUser && $adminUser->hasPermission('system.manage'))
+                                <a href="{{ route('super_admin.types_categories') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                    Type & Category
+                                </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('packages.manage'))
+                                <a href="{{ route('super_admin.packages') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                    Package
+                                </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('products.manage'))
+                                <a href="{{ route('super_admin.products') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                    Product
+                                </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('addons.manage'))
+                                <a href="{{ route('super_admin.addons') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Addon
+                                </a>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($adminUser && ($adminUser->hasPermission('vendors.manage') || $adminUser->hasPermission('customers.manage')))
+                            <div class="space-y-1">
+                                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">User Management</h3>
+                                @if($adminUser && $adminUser->hasPermission('vendors.manage'))
+                                <a href="{{ route('super_admin.vendors') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Vendor
+                                </a>
+                                <a href="{{ route('super_admin.vendor_details') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Vendor Detail
+                                </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('customers.manage'))
+                                <a href="{{ route('super_admin.customers') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                                    </svg>
+                                    Customer
+                                </a>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage')))
+                            <div class="space-y-1">
+                                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Transactions</h3>
+                                <a href="{{ route('super_admin.bookings') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
+                                    </svg>
+                                    Bookings
+                                </a>
+                                <a href="{{ route('super_admin.transaction_packages') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                    Transaction Package
+                                </a>
+                                <a href="{{ route('super_admin.transaction_products') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                    Transaction Product
+                                </a>
+                                <a href="{{ route('super_admin.transaction_addons') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Transaction Addons
+                                </a>
+                            </div>
+                            @endif
+
+                            @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage') || $adminUser->hasPermission('system.manage')))
+                            <div class="space-y-1">
+                                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">System</h3>
+                                @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage')))
+                                <a href="{{ route('super_admin.rekon') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    Rekon
+                                </a>
+                                @endif
+                                @if($adminUser && $adminUser->hasPermission('system.manage'))
+                                <a href="{{ route('super_admin.email_settings') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    Email Notifications
+                                </a>
+                                @endif
+                            </div>
+                            @endif
+
+                            @if($adminUser && $adminUser->hasPermission('admins.manage'))
+                            <div class="space-y-1">
+                                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Administration</h3>
+                                <a href="{{ route('super_admin.admins') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    Admins
+                                </a>
+                            </div>
+                            @endif
+                        </nav>
+                    </div>
+                    <div class="px-4 py-4 border-t border-slate-700">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user-shield text-white text-xs"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white text-sm font-medium truncate">{{ $adminUser ? $adminUser->name : 'Admin' }}</p>
+                                <p class="text-slate-400 text-xs">{{ $roleDisplay }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Sidebar -->
         <div class="hidden md:flex md:w-72 md:flex-col">
             <div class="flex flex-col flex-grow bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 pt-6 pb-4 overflow-y-auto shadow-2xl">
@@ -57,13 +256,13 @@
                                     Dashboard
                                     </a>
                                 </div>
+                        @if($adminUser && $adminUser->hasPermission('system.manage'))
                         <!-- Location Management -->
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Location Management</h3>
                             <div class="space-y-1">
-                               @if($adminUser && $adminUser->hasPermission('system.manage'))
-                               <a href="{{ route('super_admin.cities') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <a href="{{ route('super_admin.cities') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
+                                    <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
@@ -75,10 +274,11 @@
                                     </svg>
                                     Province
                                 </a>
-                               @endif
                             </div>
                         </div>
+                        @endif
 
+                        @if($adminUser && ($adminUser->hasPermission('system.manage') || $adminUser->hasPermission('packages.manage') || $adminUser->hasPermission('products.manage') || $adminUser->hasPermission('addons.manage')))
                         <!-- Category & Type Management -->
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Items Management</h3>
@@ -117,7 +317,9 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
 
+                        @if($adminUser && ($adminUser->hasPermission('vendors.manage') || $adminUser->hasPermission('customers.manage')))
                         <!-- User Management -->
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">User Management</h3>
@@ -146,12 +348,13 @@
                                 @endif
                             </div>
                         </div>
+                        @endif
 
+                        @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage')))
                         <!-- Transaction Management -->
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Transactions</h3>
                             <div class="space-y-1">
-                                @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage')))
                                 <a href="{{ route('super_admin.bookings') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18" />
@@ -176,15 +379,16 @@
                                     </svg>
                                     Transaction Addons
                                 </a>
-                                @endif
                             </div>
                         </div>
+                        @endif
 
+                        @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage') || $adminUser->hasPermission('system.manage')))
                         <!-- System Management -->
                         <div class="px-2 py-2">
                             <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">System</h3>
                             <div class="space-y-1">
-                                @if($adminUser && $adminUser->hasPermission('rekon.manage'))
+                                @if($adminUser && ($adminUser->hasPermission('transactions.view') || $adminUser->hasPermission('transactions.manage')))
                                 <a href="{{ route('super_admin.rekon') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -192,14 +396,17 @@
                                     Rekon
                                 </a>
                                 @endif
+                                @if($adminUser && $adminUser->hasPermission('system.manage'))
                                 <a href="{{ route('super_admin.email_settings') }}" class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                                     <svg class="text-gray-400 group-hover:text-gray-300 mr-3 flex-shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                     Email Notifications
                                 </a>
+                                @endif
                             </div>
                         </div>
+                        @endif
 
                         <!-- Admin Management -->
                         @if($adminUser && $adminUser->hasPermission('admins.manage'))
@@ -235,7 +442,7 @@
         <div class="flex flex-col w-0 flex-1 overflow-hidden">
             <!-- Top navigation -->
             <div class="relative z-10 flex-shrink-0 flex h-20 bg-white shadow-lg border-b border-slate-200">
-                <button class="px-4 border-r border-slate-200 text-slate-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden">
+                <button class="px-4 border-r border-slate-200 text-slate-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden" @click="mobileOpen = true">
                     <span class="sr-only">Open sidebar</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
@@ -261,9 +468,9 @@
                                 <p class="text-xs text-gray-500">{{ $roleDisplay }}</p>
                             </div>
                             <div class="border-t border-slate-100">
-                                <form method="POST" action="@if(Auth::guard('admin')->check()){{ route('admin.logout') }}@elseif(Auth::guard('super_admin')->check()){{ route('super_admin.logout') }}@endif" class="inline w-full">
+                                <form id="logoutForm" method="POST" action="@if(Auth::guard('admin')->check()){{ route('admin.logout') }}@elseif(Auth::guard('super_admin')->check()){{ route('super_admin.logout') }}@endif" class="inline w-full">
                                     @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
+                                    <button type="button" onclick="confirmLogout(event)" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
                                         <i class="fas fa-sign-out-alt mr-2"></i>Logout
                                     </button>
                                 </form>
@@ -321,6 +528,26 @@
                 }
             });
             return false;
+        };
+
+        // Logout confirmation
+        window.confirmLogout = function(e) {
+            e.preventDefault();
+
+            Swal.fire({
+                title: 'Logout?',
+                text: 'Apakah Anda yakin ingin logout dari sistem?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Logout',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logoutForm').submit();
+                }
+            });
         };
     </script>
 

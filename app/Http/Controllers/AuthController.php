@@ -9,6 +9,8 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Helpers\SweetAlert;
+use App\Helpers\ErrorHandler;
+use App\Helpers\SweetAlertHelper;
 
 class AuthController extends Controller
 {
@@ -211,14 +213,14 @@ public function loginWeb(Request $request)
         'password' => 'required',
     ]);
 
-        if ($validator->fails()) {
-            if (function_exists('alert')) {
-                alert()->error('Validation Failed', 'Mohon periksa email dan password Anda');
-            }
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+    if ($validator->fails()) {
+        if (function_exists('alert')) {
+            alert()->error('Validasi Gagal', ErrorHandler::formatValidationErrors($validator, ', '));
         }
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput();
+    }
 
     try {
         $credentials = $request->only('email', 'password');
@@ -226,36 +228,41 @@ public function loginWeb(Request $request)
 
         if (Auth::guard('super_admin')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return SweetAlert::success('Login berhasil!', '/super-admin/dashboard');
+            if (function_exists('alert')) {
+                alert()->success('Login Berhasil', 'Selamat datang kembali!');
+            }
+            return redirect()->intended(route('super_admin.dashboard'));
         }
 
         if (Auth::guard('admin')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return SweetAlert::success('Login berhasil!', '/admin/dashboard');
+            if (function_exists('alert')) {
+                alert()->success('Login Berhasil', 'Selamat datang kembali!');
+            }
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         if (Auth::guard('vendor')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return SweetAlert::success('Login berhasil!', '/vendor/dashboard');
+            if (function_exists('alert')) {
+                alert()->success('Login Berhasil', 'Selamat datang kembali!');
+            }
+            return redirect()->intended(route('vendor.dashboard'));
         }
 
         if (Auth::guard('web')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return SweetAlert::success('Login berhasil!', route('user.search'));
+            if (function_exists('alert')) {
+                alert()->success('Login Berhasil', 'Selamat datang kembali!');
+            }
+            return redirect()->intended(route('user.search'));
         }
 
-        if (function_exists('alert')) {
-            alert()->error('Error', 'Email atau password salah');
-        }
-        return redirect()->back()
-            ->withInput();
-        } catch (\Exception $e) {
-            if (function_exists('alert')) {
-                alert()->error('Error', 'Terjadi kesalahan. Silakan coba lagi.');
-            }
-            return redirect()->back()
-                ->withInput();
-        }
+        // Jika semua guard gagal, tampilkan error
+        return ErrorHandler::invalidCredentials();
+    } catch (\Exception $e) {
+        return ErrorHandler::genericError('Terjadi kesalahan saat login. Silakan coba lagi.');
+    }
 }
 
     public function updateProfile(Request $request)

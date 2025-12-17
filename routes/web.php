@@ -43,10 +43,10 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // User authentication routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'loginWeb'])->name('login.web');
+Route::post('/login', [AuthController::class, 'loginWeb'])->middleware('throttle:login')->name('login.web');
 Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [AuthController::class, 'registerWeb'])->name('register.web');
-Route::post('/check-email', [AuthController::class, 'checkEmail'])->name('check.email');
+Route::post('/register', [AuthController::class, 'registerWeb'])->middleware('throttle:register')->name('register.web');
+Route::post('/check-email', [AuthController::class, 'checkEmail'])->middleware('throttle:check-email')->name('check.email');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 //notification
@@ -65,55 +65,56 @@ Route::get('/test-user-email', function () {
 
 // Admin authentication routes
 Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
-Route::post('/admin/login', [AdminAuthController::class, 'loginWeb'])->name('admin.login.web');
+Route::post('/admin/login', [AdminAuthController::class, 'loginWeb'])->middleware('throttle:login')->name('admin.login.web');
 Route::get('/admin/register', [AdminAuthController::class, 'showRegistrationForm'])->name('admin.register');
-Route::post('/admin/register', [AdminAuthController::class, 'registerWeb'])->name('admin.register.web');
+Route::post('/admin/register', [AdminAuthController::class, 'registerWeb'])->middleware('throttle:register')->name('admin.register.web');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
 // Vendor authentication routes
 Route::get('/vendor/login', [VendorAuthController::class, 'showLoginForm'])->name('vendor.login');
-Route::post('/vendor/login', [VendorAuthController::class, 'loginWeb'])->name('vendor.login.web');
+Route::post('/vendor/login', [VendorAuthController::class, 'loginWeb'])->middleware('throttle:login')->name('vendor.login.web');
 Route::get('/vendor/register', [VendorAuthController::class, 'showRegistrationForm'])->name('vendor.register');
-Route::post('/vendor/register', [VendorAuthController::class, 'registerWeb'])->name('vendor.register.web');
+Route::post('/vendor/register', [VendorAuthController::class, 'registerWeb'])->middleware('throttle:register')->name('vendor.register.web');
 Route::post('/vendor/logout', [VendorAuthController::class, 'logout'])->name('vendor.logout');
 
 // Super Admin authentication routes
 Route::get('/super-admin/login', [SuperAdminController::class, 'showLoginForm'])->name('super_admin.login');
-Route::post('/super-admin/login', [SuperAdminController::class, 'loginWeb'])->name('super_admin.login.web');
+Route::post('/super-admin/login', [SuperAdminController::class, 'loginWeb'])->middleware('throttle:login')->name('super_admin.login.web');
 Route::get('/super-admin/register', [SuperAdminController::class, 'showRegistrationForm'])->name('super_admin.register');
-Route::post('/super-admin/register', [SuperAdminController::class, 'registerWeb'])->name('super_admin.register.web');
+Route::post('/super-admin/register', [SuperAdminController::class, 'registerWeb'])->middleware('throttle:register')->name('super_admin.register.web');
 Route::post('/super-admin/logout', [SuperAdminController::class, 'logoutWeb'])->name('super_admin.logout');
 
 // Super Admin management routes
+// Allow access to super admin and admins; protect each route with fine-grained permissions
 Route::middleware(['super_admin_access:admin'])->group(function () {
     // Location Management
-    Route::get('/super-admin/provinces', [ProvinceController::class, 'index'])->name('super_admin.provinces');
-    Route::get('/super-admin/provinces/create', [ProvinceController::class, 'create'])->name('super_admin.provinces.create');
-    Route::post('/super-admin/provinces', [ProvinceController::class, 'store'])->name('super_admin.provinces.store');
-    Route::get('/super-admin/provinces/{province}/edit', [ProvinceController::class, 'edit'])->name('super_admin.provinces.edit');
-    Route::put('/super-admin/provinces/{province}', [ProvinceController::class, 'update'])->name('super_admin.provinces.update');
-    Route::delete('/super-admin/provinces/{province}', [ProvinceController::class, 'destroy'])->name('super_admin.provinces.destroy');
+    Route::get('/super-admin/provinces', [ProvinceController::class, 'index'])->name('super_admin.provinces')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/provinces/create', [ProvinceController::class, 'create'])->name('super_admin.provinces.create')->middleware('admin.permission:system.manage');
+    Route::post('/super-admin/provinces', [ProvinceController::class, 'store'])->name('super_admin.provinces.store')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/provinces/{province}/edit', [ProvinceController::class, 'edit'])->name('super_admin.provinces.edit')->middleware('admin.permission:system.manage');
+    Route::put('/super-admin/provinces/{province}', [ProvinceController::class, 'update'])->name('super_admin.provinces.update')->middleware('admin.permission:system.manage');
+    Route::delete('/super-admin/provinces/{province}', [ProvinceController::class, 'destroy'])->name('super_admin.provinces.destroy')->middleware('admin.permission:system.manage');
 
-    Route::get('/super-admin/cities', [CityController::class, 'index'])->name('super_admin.cities');
-    Route::get('/super-admin/cities/create', [CityController::class, 'create'])->name('super_admin.cities.create');
-    Route::post('/super-admin/cities', [CityController::class, 'store'])->name('super_admin.cities.store');
-    Route::get('/super-admin/cities/{city}/edit', [CityController::class, 'edit'])->name('super_admin.cities.edit');
-    Route::put('/super-admin/cities/{city}', [CityController::class, 'update'])->name('super_admin.cities.update');
-    Route::delete('/super-admin/cities/{city}', [CityController::class, 'destroy'])->name('super_admin.cities.destroy');
+    Route::get('/super-admin/cities', [CityController::class, 'index'])->name('super_admin.cities')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/cities/create', [CityController::class, 'create'])->name('super_admin.cities.create')->middleware('admin.permission:system.manage');
+    Route::post('/super-admin/cities', [CityController::class, 'store'])->name('super_admin.cities.store')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/cities/{city}/edit', [CityController::class, 'edit'])->name('super_admin.cities.edit')->middleware('admin.permission:system.manage');
+    Route::put('/super-admin/cities/{city}', [CityController::class, 'update'])->name('super_admin.cities.update')->middleware('admin.permission:system.manage');
+    Route::delete('/super-admin/cities/{city}', [CityController::class, 'destroy'])->name('super_admin.cities.destroy')->middleware('admin.permission:system.manage');
 
     // Category & Type Management   
-    Route::get('/super-admin/types-categories', [TypesController::class, 'index'])->name('super_admin.types_categories');
-    Route::get('/super-admin/types/create', [TypesController::class, 'create'])->name('super_admin.types.create');
-    Route::post('/super-admin/types', [TypesController::class, 'store'])->name('super_admin.types.store');
-    Route::get('/super-admin/types/{type}/edit', [TypesController::class, 'edit'])->name('super_admin.types.edit');
-    Route::put('/super-admin/types/{type}', [TypesController::class, 'update'])->name('super_admin.types.update');
-    Route::delete('/super-admin/types/{type}', [TypesController::class, 'destroy'])->name('super_admin.types.destroy');
+    Route::get('/super-admin/types-categories', [TypesController::class, 'index'])->name('super_admin.types_categories')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/types/create', [TypesController::class, 'create'])->name('super_admin.types.create')->middleware('admin.permission:system.manage');
+    Route::post('/super-admin/types', [TypesController::class, 'store'])->name('super_admin.types.store')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/types/{type}/edit', [TypesController::class, 'edit'])->name('super_admin.types.edit')->middleware('admin.permission:system.manage');
+    Route::put('/super-admin/types/{type}', [TypesController::class, 'update'])->name('super_admin.types.update')->middleware('admin.permission:system.manage');
+    Route::delete('/super-admin/types/{type}', [TypesController::class, 'destroy'])->name('super_admin.types.destroy')->middleware('admin.permission:system.manage');
 
-    Route::get('/super-admin/categories/create', [CategoryController::class, 'create'])->name('super_admin.categories.create');
-    Route::post('/super-admin/categories', [CategoryController::class, 'store'])->name('super_admin.categories.store');
-    Route::get('/super-admin/categories/{category}/edit', [CategoryController::class, 'edit'])->name('super_admin.categories.edit');
-    Route::put('/super-admin/categories/{category}', [CategoryController::class, 'update'])->name('super_admin.categories.update');
-    Route::delete('/super-admin/categories/{category}', [CategoryController::class, 'destroy'])->name('super_admin.categories.destroy');
+    Route::get('/super-admin/categories/create', [CategoryController::class, 'create'])->name('super_admin.categories.create')->middleware('admin.permission:system.manage');
+    Route::post('/super-admin/categories', [CategoryController::class, 'store'])->name('super_admin.categories.store')->middleware('admin.permission:system.manage');
+    Route::get('/super-admin/categories/{category}/edit', [CategoryController::class, 'edit'])->name('super_admin.categories.edit')->middleware('admin.permission:system.manage');
+    Route::put('/super-admin/categories/{category}', [CategoryController::class, 'update'])->name('super_admin.categories.update')->middleware('admin.permission:system.manage');
+    Route::delete('/super-admin/categories/{category}', [CategoryController::class, 'destroy'])->name('super_admin.categories.destroy')->middleware('admin.permission:system.manage');
 
     Route::get('/super-admin/packages', [PackagesController::class, 'index'])->name('super_admin.packages')->middleware('admin.permission:packages.manage');
     Route::get('/super-admin/packages/create', [PackagesController::class, 'create'])->name('super_admin.packages.create')->middleware('admin.permission:packages.manage');
@@ -186,7 +187,8 @@ Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::post('/super-admin/bookings/{booking}/process-refund', [BookingsController::class, 'processRefund'])->name('super_admin.bookings.process_refund')->middleware('admin.permission:transactions.manage');
 
     // System Management
-    Route::get('/super-admin/rekon', [SuperAdminController::class, 'rekon'])->name('super_admin.rekon')->middleware('admin.permission:system.manage');
+    // Reconciliation page is a finance view; gate by transactions.view
+    Route::get('/super-admin/rekon', [SuperAdminController::class, 'rekon'])->name('super_admin.rekon')->middleware('admin.permission:transactions.view');
     Route::get('/super-admin/system-settings', [DashboardController::class, 'systemSettings'])->name('super_admin.system_settings')->middleware('admin.permission:system.manage');
 
     // Admin management (Super Admin)
@@ -196,6 +198,14 @@ Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::get('/super-admin/admins/{admin}/edit', [SuperAdminController::class, 'editAdminForm'])->name('super_admin.admins.edit')->middleware('admin.permission:admins.manage');
     Route::put('/super-admin/admins/{admin}', [SuperAdminController::class, 'updateAdmin'])->name('super_admin.admins.update')->middleware('admin.permission:admins.manage');
     Route::delete('/super-admin/admins/{admin}', [SuperAdminController::class, 'destroyAdmin'])->name('super_admin.admins.destroy')->middleware('admin.permission:admins.manage');
+
+    // Role management (Super Admin)
+    Route::get('/super-admin/roles', [SuperAdminController::class, 'rolesIndex'])->name('super_admin.roles')->middleware('admin.permission:admins.manage');
+    Route::get('/super-admin/roles/create', [SuperAdminController::class, 'createRoleForm'])->name('super_admin.roles.create')->middleware('admin.permission:admins.manage');
+    Route::post('/super-admin/roles', [SuperAdminController::class, 'storeRole'])->name('super_admin.roles.store')->middleware('admin.permission:admins.manage');
+    Route::get('/super-admin/roles/{role}/edit', [SuperAdminController::class, 'editRoleForm'])->name('super_admin.roles.edit')->middleware('admin.permission:admins.manage');
+    Route::put('/super-admin/roles/{role}', [SuperAdminController::class, 'updateRole'])->name('super_admin.roles.update')->middleware('admin.permission:admins.manage');
+    Route::delete('/super-admin/roles/{role}', [SuperAdminController::class, 'destroyRole'])->name('super_admin.roles.destroy')->middleware('admin.permission:admins.manage');
 });
 
 // Protected routes
@@ -417,11 +427,11 @@ Route::middleware(['super_admin_access:admin'])->group(function () {
     Route::get('/super-admin/dashboard', [SuperAdminController::class, 'dashboard'])->name('super_admin.dashboard');
     
     // Email Notification Settings
-    Route::get('/super-admin/email-settings', [App\Http\Controllers\EmailSettingController::class, 'index'])->name('super_admin.email_settings');
-    Route::post('/super-admin/email-settings', [App\Http\Controllers\EmailSettingController::class, 'store'])->name('super_admin.email_settings.store');
-    Route::put('/super-admin/email-settings/{id}', [App\Http\Controllers\EmailSettingController::class, 'update'])->name('super_admin.email_settings.update');
-    Route::patch('/super-admin/email-settings/{id}/toggle', [App\Http\Controllers\EmailSettingController::class, 'toggleStatus'])->name('super_admin.email_settings.toggle');
-    Route::delete('/super-admin/email-settings/{id}', [App\Http\Controllers\EmailSettingController::class, 'destroy'])->name('super_admin.email_settings.destroy');
+    Route::get('/super-admin/email-settings', [App\Http\Controllers\EmailSettingController::class, 'index'])->name('super_admin.email_settings')->middleware('admin.permission:system.manage');
+    Route::post('/super-admin/email-settings', [App\Http\Controllers\EmailSettingController::class, 'store'])->name('super_admin.email_settings.store')->middleware('admin.permission:system.manage');
+    Route::put('/super-admin/email-settings/{id}', [App\Http\Controllers\EmailSettingController::class, 'update'])->name('super_admin.email_settings.update')->middleware('admin.permission:system.manage');
+    Route::patch('/super-admin/email-settings/{id}/toggle', [App\Http\Controllers\EmailSettingController::class, 'toggleStatus'])->name('super_admin.email_settings.toggle')->middleware('admin.permission:system.manage');
+    Route::delete('/super-admin/email-settings/{id}', [App\Http\Controllers\EmailSettingController::class, 'destroy'])->name('super_admin.email_settings.destroy')->middleware('admin.permission:system.manage');
 });
 
 Route::get('/invoice/download/{bookingId}', [InvoiceController::class, 'download'])->name('invoice.download')->middleware('auth');

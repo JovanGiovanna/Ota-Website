@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\ErrorHandler;
 
 class AdminAuthController extends Controller
 {
@@ -36,8 +37,11 @@ public function updateProfile(Request $request)
         'name' => $request->name,
         'email' => $request->email,
     ]);
-    
-    return redirect()->route('admin.profil')->with('success', 'Profil berhasil diperbarui!');
+
+    if (function_exists('alert')) {
+        alert()->success('Berhasil', 'Profil berhasil diperbarui!');
+    }
+    return redirect()->route('admin.profil');
 }
     // --- Tampilan Form ---
 
@@ -74,7 +78,10 @@ public function updateProfile(Request $request)
         ]);
 
         // Redirect to login page after registration
-        return redirect()->route('admin.login')->with('success', 'Admin registered successfully. You can now login.');
+        if (function_exists('alert')) {
+            alert()->success('Berhasil', 'Admin berhasil terdaftar. Silakan login dengan email dan password Anda.');
+        }
+        return redirect()->route('admin.login');
     }
 
     // --- Login Admin (Web/Form) ---
@@ -92,13 +99,29 @@ public function updateProfile(Request $request)
         // Coba otentikasi menggunakan guard 'admin'
         if (Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-
+            
+            if (function_exists('alert')) {
+                alert()->success('Login Berhasil', 'Selamat datang kembali!');
+            }
             return redirect()->intended(route('super_admin.dashboard'));
         }
 
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->withInput();
+        // Tangani kegagalan autentikasi dengan SweetAlert
+        return ErrorHandler::invalidCredentials();
+    }
+
+    // --- Logout Admin (Web/Session) ---
+
+    public function logoutWeb(Request $request)
+    {
+        Auth::guard('admin')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if (function_exists('alert')) {
+            alert()->success('Logout Berhasil', 'Anda telah keluar dari sistem.');
+        }
+        return redirect()->route('login');
     }
 
     // --- API Registrasi Admin ---
@@ -113,48 +136,80 @@ public function updateProfile(Request $request)
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'error' => $validator->errors()->first(),
-            ], 422);
+            return ErrorHandler::validationErrorJson($validator);
         }
 
-        $admin = Admin::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'admin',
-        ]);
+        try {
+            $admin = Admin::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $request->role ?? 'admin',
+            ]);
 
-        $token = $admin->createToken('admin_token')->plainTextToken;
+            $token = $admin->createToken('admin_token')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Admin registered successfully',
-            'admin' => $admin,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 201);
+            return response()->json([
+                'status' => 'success',
+                'title' => 'Registrasi Berhasil',
+                'message' => 'Admin berhasil terdaftar',
+                'icon' => 'success',
+                'admin' => $admin,
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Admin Registration Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Server Error',
+                'message' => 'Terjadi kesalahan saat registrasi. Silakan coba lagi nanti.',
+                'icon' => 'error'
+            ], 500);
+        }
     }
 
     // --- API Login Admin ---
 
     public function login(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        $admin = Admin::where('email', $request->email)->first();
-
-        if (!$admin || !Hash::check($request->password, $admin->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+        if ($validator->fails()) {
+            return ErrorHandler::validationErrorJson($validator);
         }
 
+        $admin = Admin::where('email', $request->email)->first();
+
+        if (!$admin) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Akun Tidak Ditemukan',
+                'message' => 'Tidak ada akun terdaftar dengan email ini.',
+                'icon' => 'error'
+            ], 404);
+        }
+
+        if (!Hash::check($request->password, $admin->password)) {
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Login Gagal',
+                'message' => 'Email atau password salah. Silakan periksa dan coba lagi.',
+                'icon' => 'error'
+            ], 401);
+        }
+
+        $admin->tokens()->delete();
         $token = $admin->createToken('admin_token')->plainTextToken;
 
         return response()->json([
+            'status' => 'success',
+            'title' => 'Login Berhasil',
+            'message' => 'Selamat datang kembali!',
+            'icon' => 'success',
             'access_token' => $token,
             'token_type' => 'Bearer',
             'admin' => [
@@ -169,14 +224,28 @@ public function updateProfile(Request $request)
 
     public function logoutApi(Request $request)
     {
-        // Hapus token yang sedang digunakan
-        /** @var \Laravel\Sanctum\PersonalAccessToken $token */
-        $token = $request->user()->currentAccessToken();
-        $token->delete();
+        try {
+            if ($request->user()) {
+                /** @var \Laravel\Sanctum\PersonalAccessToken $token */
+                $token = $request->user()->currentAccessToken();
+                $token->delete();
+            }
 
-        return response()->json([
-            'message' => 'Logout berhasil.',
-        ]);
+            return response()->json([
+                'status' => 'success',
+                'title' => 'Logout Berhasil',
+                'message' => 'Anda telah keluar dari sistem.',
+                'icon' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin Logout Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'title' => 'Logout Gagal',
+                'message' => 'Terjadi kesalahan saat logout.',
+                'icon' => 'error'
+            ], 500);
+        }
     }
 
     // --- Show Profile Admin (API/JSON) ---
@@ -188,7 +257,10 @@ public function updateProfile(Request $request)
 
         if (!$admin) {
             return response()->json([
-                'message' => 'Tidak Terotentikasi. Akses ditolak.',
+                'status' => 'error',
+                'title' => 'Tidak Terotentikasi',
+                'message' => 'Akses ditolak. Silakan login terlebih dahulu.',
+                'icon' => 'error'
             ], 401);
         }
 

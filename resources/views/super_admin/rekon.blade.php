@@ -12,27 +12,7 @@ Rekon Management
 <div class="px-4 py-6 sm:px-0">
     <div class="space-y-6">
         <!-- Rekon Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Gross Merchandise Value</dt>
-                                <dd class="text-lg font-medium text-gray-900">Rp {{ number_format($gmv, 0, ',', '.') }}</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white overflow-hidden shadow rounded-lg">
                 <div class="p-5">
                     <div class="flex items-center">
@@ -94,7 +74,7 @@ Rekon Management
             <!-- Filters -->
             <div class="px-4 py-4 bg-gray-50 border-b border-gray-200">
                 <form method="GET" action="{{ route('super_admin.rekon') }}" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                         <div>
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
                             <input type="search" name="search" id="search" value="{{ request('search') }}" class="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Transaction ID atau Product...">
@@ -106,6 +86,14 @@ Rekon Management
                                 @foreach($vendors as $id => $name)
                                     <option value="{{ $id }}" {{ request('vendor_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                            <select id="type" name="type" class="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Semua Type</option>
+                                <option value="product" {{ request('type') == 'product' ? 'selected' : '' }}>Product</option>
+                                <option value="addon" {{ request('type') == 'addon' ? 'selected' : '' }}>Addon</option>
                             </select>
                         </div>
                         <div>
@@ -229,7 +217,7 @@ Rekon Management
                     </div>
                 </div>
                 <div class="border-t pt-4">
-                    <h3 class="font-bold text-gray-900 mb-3">Product: ${detail.product_name}</h3>
+                    <h3 class="font-bold text-gray-900 mb-3">Items: ${detail.product_name}</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-gray-50 p-3 rounded">

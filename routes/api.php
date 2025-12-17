@@ -34,8 +34,8 @@ use App\Http\Controllers\BookProductController;
 */
 
 // --- USER API AUTH ---
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logoutApi']);
@@ -69,11 +69,11 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::group(['prefix' => 'super-admin', 'as' => 'api.super_admin.'], function () {
     // POST /api/super-admin/register (maps to SuperAdminController@registerApi)
     // Used to create a new Super Admin account and generate an access token
-    Route::post('register', [SuperAdminController::class, 'registerApi'])->name('register');
+    Route::post('register', [SuperAdminController::class, 'registerApi'])->middleware('throttle:register')->name('register');
 
     // POST /api/super-admin/login (maps to SuperAdminController@loginApi)
     // Used to authenticate an existing Super Admin and generate an access token
-    Route::post('login', [SuperAdminController::class, 'loginApi'])->name('login');
+    Route::post('login', [SuperAdminController::class, 'loginApi'])->middleware('throttle:login')->name('login');
 });
 
 // Super Admin Protected Routes
@@ -103,8 +103,8 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::prefix('/vendor')->group(function () {
 
     // Register dan Login Vendor (Untuk Postman)
-    Route::post('/register', [VendorAuthController::class, 'register']);
-    Route::post('/login', [VendorAuthController::class, 'login']);
+    Route::post('/register', [VendorAuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('/login', [VendorAuthController::class, 'login'])->middleware('throttle:login');
 
     // Route yang dilindungi untuk Vendor
     Route::middleware('auth:sanctum')->group(function () {
@@ -142,8 +142,8 @@ Route::prefix('/vendor')->group(function () {
 
 // --- ADMIN API AUTH ---
 Route::prefix('/admin')->group(function () {
-    Route::post('/register', [\App\Http\Controllers\AdminAuthController::class, 'register']);
-    Route::post('/login', [\App\Http\Controllers\AdminAuthController::class, 'login']);
+    Route::post('/register', [\App\Http\Controllers\AdminAuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('/login', [\App\Http\Controllers\AdminAuthController::class, 'login'])->middleware('throttle:login');
 });
 
 Route::middleware('auth:sanctum')->group(function () {
