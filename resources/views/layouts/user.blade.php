@@ -9,37 +9,71 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Normal navbar for all pages except search page */
+        body:not(.search-page) nav {
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+
+        body:not(.search-page) .nav-text {
+            color: #1f2937;
+            transition: color 0.3s ease;
+        }
+
+        body:not(.search-page) .nav-link {
+            color: #1f2937;
+            transition: all 0.3s ease;
+        }
+
+        body:not(.search-page) .nav-link:hover {
+            color: #2563eb;
+        }
+
+        body:not(.search-page) .logo-text {
+            color: #1f2937;
+            transition: color 0.3s ease;
+        }
+
+        body:not(.search-page) .search-input {
+            background-color: #f3f4f6;
+            border-color: #e5e7eb;
+            color: #1f2937;
+            transition: all 0.3s ease;
+        }
+
+        body:not(.search-page) .search-input::placeholder {
+            color: #9ca3af;
+        }
+    </style>
     @stack('styles')
 </head>
-<body class="h-full bg-gradient-to-br from-blue-50 to-indigo-50" x-data="{ mobileOpen: false }">
+<body class="h-full bg-white" x-data="{ mobileOpen: false }">
     <div id="flash-messages" data-success="{{ session('success') }}" data-error="{{ session('error') }}" data-warning="{{ session('warning') }}" style="display:none;"></div>
     <!-- Navbar -->
-    <nav class="bg-white shadow-lg fixed top-0 w-full z-50">
+    <nav class="fixed top-0 w-full z-50 navbar-scroll">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <i class="fas fa-compass text-white text-lg"></i>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-800">Pointer</span>
-                    </div>
+                    <a href="{{ route('user.search') }}" class="flex items-center">
+                        <img src="{{ asset('logo/pointer-logo.png') }}" alt="Pointer by Telkom Indonesia" class="h-10">
+                    </a>
                 </div>
 
                 <!-- Desktop Navigation -->
                 <div class="hidden lg:flex items-center space-x-1">
-                    <a href="{{ route('user.search') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.home') ? 'bg-blue-50 text-blue-600' : '' }}">
+                    <a href="{{ route('user.search') }}" class="nav-link px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.home') ? 'bg-blue-50 text-blue-600' : '' }}">
                         <i class="fas fa-home mr-2"></i>Home
                     </a>
                     @auth
-                        <a href="{{ route('user.form_booker') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.form_booker') ? 'bg-blue-50 text-blue-600' : '' }}">
+                        <a href="{{ route('user.form_booker') }}" class="nav-link px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.form_booker') ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-calendar-plus mr-2"></i>Book
                         </a>
-                        <a href="{{ route('user.history') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.history') ? 'bg-blue-50 text-blue-600' : '' }}">
+                        <a href="{{ route('user.history') }}" class="nav-link px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.history') ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-history mr-2"></i>History
                         </a>
-                        <a href="{{ route('user.wishlist') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.wishlist') ? 'bg-blue-50 text-blue-600' : '' }}">
+                        <a href="{{ route('user.wishlist') }}" class="nav-link px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ request()->routeIs('user.wishlist') ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-heart mr-2"></i>Wishlist
                         </a>
                     @endauth
@@ -47,7 +81,7 @@
 
                 <!-- Mobile hamburger -->
                 <div class="flex lg:hidden items-center">
-                    <button @click="mobileOpen = true" class="inline-flex items-center justify-center p-2 rounded-md text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-label="Open menu">
+                    <button @click="mobileOpen = true" class="inline-flex items-center justify-center p-2 rounded-md nav-link hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-label="Open menu">
                         <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -60,23 +94,23 @@
                     <div class="hidden md:block">
                         <form action="{{ route('user.search') }}" method="GET" class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="h-5 w-5 search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: inherit;">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <input name="destination" class="block w-64 pl-10 pr-3 py-2 border border-blue-300 rounded-lg text-blue-900 placeholder-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-blue-50 text-sm" placeholder="Search destinations..." type="search">
+                            <input name="destination" class="search-input block w-64 pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" placeholder="Search destinations..." type="search">
                         </form>
                     </div>
 
                     @auth
                         <!-- Profile Dropdown -->
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+                            <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
                                 <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                                     <span class="text-white text-sm font-medium">{{ substr(Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'S'), 0, 1) }}</span>
                                 </div>
-                                <span class="text-blue-700 font-medium hidden xl:block">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</span>
-                                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span class="nav-text font-medium hidden xl:block">{{ Auth::user() ? Auth::user()->name : (Auth::guard('super_admin')->user()->name ?? 'Super Admin') }}</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: inherit;">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
@@ -105,7 +139,7 @@
                     @else
                         <!-- Login/Register Links -->
                         <div class="flex items-center space-x-3">
-                            <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <a href="{{ route('login') }}" class="nav-link px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200">
                                 <i class="fas fa-sign-in-alt mr-2"></i>Login
                             </a>
                             <a href="{{ route('register') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-all duration-200">
@@ -131,12 +165,9 @@
                 </div>
                 <div class="pt-5 pb-6 px-5 overflow-y-auto">
                     <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                                <i class="fas fa-compass text-white text-lg"></i>
-                            </div>
-                            <span class="text-2xl font-bold text-gray-800">Pointer</span>
-                        </div>
+                        <a href="{{ route('user.search') }}" class="flex items-center">
+                            <img src="{{ asset('logo/pointer-logo.png') }}" alt="Pointer by Telkom Indonesia" class="h-10">
+                        </a>
                     </div>
                     <div class="space-y-1">
                         <a href="{{ route('user.search') }}" class="block px-3 py-2 rounded-lg text-base font-medium {{ request()->routeIs('user.home') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600' }}">

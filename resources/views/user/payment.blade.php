@@ -62,10 +62,16 @@
                     @endif
 
                     @if($booking->products->count() > 0)
-                        @foreach($booking->products as $product)
+                        @php
+                            // Filter only standalone products (not from package)
+                            $standaloneProducts = $booking->products->filter(function($p) { 
+                                return strpos($p->notes ?? '', 'Standalone') !== false; 
+                            });
+                        @endphp
+                        @foreach($standaloneProducts as $product)
                             <div class="flex justify-between items-center text-sm">
                                 <span>{{ $product->product->name }} (Qty: {{ $product->amount }})</span>
-                                <span>Rp {{ number_format($product->product->finalPrice * $product->amount, 0, ',', '.') }}</span>
+                                <span>Rp {{ number_format($product->total_price, 0, ',', '.') }}</span>
                             </div>
                         @endforeach
                     @endif
@@ -97,10 +103,16 @@
                     @endif
 
                     @if($booking->addons->count() > 0)
-                        @foreach($booking->addons as $addon)
+                        @php
+                            // Filter only standalone addons (not from package)
+                            $standaloneAddons = $booking->addons->filter(function($a) { 
+                                return strpos($a->notes ?? '', 'Standalone') !== false; 
+                            });
+                        @endphp
+                        @foreach($standaloneAddons as $addon)
                             <div class="flex justify-between items-center text-sm">
                                 <span>{{ $addon->addon->addons }} (Qty: {{ $addon->amount }})</span>
-                                <span>Rp {{ number_format($addon->addon->finalPrice * $addon->amount, 0, ',', '.') }}</span>
+                                <span>Rp {{ number_format($addon->total_price, 0, ',', '.') }}</span>
                             </div>
                         @endforeach
                     @endif

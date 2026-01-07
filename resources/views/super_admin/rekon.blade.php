@@ -94,6 +94,7 @@ Rekon Management
                                 <option value="">Semua Type</option>
                                 <option value="product" {{ request('type') == 'product' ? 'selected' : '' }}>Product</option>
                                 <option value="addon" {{ request('type') == 'addon' ? 'selected' : '' }}>Addon</option>
+                                <option value="package" {{ request('type') == 'package' ? 'selected' : '' }}>Package</option>
                             </select>
                         </div>
                         <div>
@@ -139,8 +140,10 @@ Rekon Management
                             <td class="px-3 py-4 whitespace-nowrap text-sm">
                                 @if($detail->type === 'product')
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Product</span>
-                                @else
+                                @elseif($detail->type === 'addon')
                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">Addon</span>
+                                @else
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Package</span>
                                 @endif
                             </td>
                             <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-900">Rp {{ number_format($detail->pax_paid, 0, ',', '.') }}</td>
@@ -196,6 +199,46 @@ Rekon Management
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     function showDetail(detail) {
+        let typeLabel = detail.type === 'product' ? 'Product' : (detail.type === 'addon' ? 'Addon' : 'Package');
+        
+        let packageContentsHtml = '';
+        if (detail.type === 'package' && (detail.package_products || detail.package_addons)) {
+            packageContentsHtml = `
+                <div class="border-t pt-4 mt-4">
+                    <h3 class="font-bold text-gray-900 mb-3">Package Contents:</h3>
+                    <div class="space-y-2">
+            `;
+            
+            if (detail.package_products && detail.package_products.length > 0) {
+                packageContentsHtml += `<div class="text-sm font-semibold text-gray-700 mb-2">Products:</div>`;
+                detail.package_products.forEach(product => {
+                    packageContentsHtml += `
+                        <div class="bg-blue-50 p-2 rounded flex justify-between items-center">
+                            <span class="text-sm">${product.name} (${product.pax} pax)</span>
+                            <span class="text-sm font-medium">Rp ${product.sub_total.toLocaleString('id-ID')}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (detail.package_addons && detail.package_addons.length > 0) {
+                packageContentsHtml += `<div class="text-sm font-semibold text-gray-700 mb-2 mt-3">Addons:</div>`;
+                detail.package_addons.forEach(addon => {
+                    packageContentsHtml += `
+                        <div class="bg-purple-50 p-2 rounded flex justify-between items-center">
+                            <span class="text-sm">${addon.name} (${addon.pax} pax)</span>
+                            <span class="text-sm font-medium">Rp ${addon.sub_total.toLocaleString('id-ID')}</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            packageContentsHtml += `
+                    </div>
+                </div>
+            `;
+        }
+
         const html = `
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
@@ -213,7 +256,7 @@ Rekon Management
                     </div>
                     <div>
                         <span class="text-gray-600 text-sm">Type</span>
-                        <p class="text-lg font-bold text-gray-900">${detail.type === 'product' ? 'Product' : 'Addon'}</p>
+                        <p class="text-lg font-bold text-gray-900">${typeLabel}</p>
                     </div>
                 </div>
                 <div class="border-t pt-4">
@@ -245,6 +288,7 @@ Rekon Management
                         <p class="text-lg font-bold text-green-900">Rp ${detail.profit.toLocaleString('id-ID')}</p>
                     </div>
                 </div>
+                ${packageContentsHtml}
             </div>
         `;
         document.getElementById('detailContent').innerHTML = html;

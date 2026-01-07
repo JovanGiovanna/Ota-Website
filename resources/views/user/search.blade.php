@@ -8,57 +8,44 @@ Find your perfect packages, products, and add-ons!
 
 @section('content')
 <!-- Search Hero Section -->
-<div class="relative bg-cover bg-center rounded-2xl p-3 mb-4 text-white shadow-xl overflow-hidden" style="background-image: url('{{ asset('resort.jpeg') }}'); min-height: 150px;">
-    <!-- Simple dark overlay -->
-    <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-purple-900/60 to-indigo-900/70"></div>
-
-    <div class="relative max-w-4xl mx-auto text-center z-10">
-        <div class="mb-2">
-            <span class="inline-block px-2 py-1 bg-white/10 backdrop-blur-sm rounded-full text-xs font-medium text-white/90 border border-white/20">
-                <i class="fas fa-search mr-1"></i>Advanced Search
+<div class="relative bg-cover bg-center text-white overflow-hidden" style="background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'); background-size: cover; background-position: center; background-attachment: fixed; height: 100vh; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;">
+    
+    <div class="relative max-w-4xl mx-auto text-center z-50 px-4 w-full">
+        <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+            Your Journey, Our Priority:<br>
+            <span class="text-2xl md:text-3xl lg:text-4xl">
+                Ensuring Every Trip is Hassle-Free
             </span>
-        </div>
-        <h1 class="text-xl md:text-2xl font-bold mb-2 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
-            Find Your Perfect Package
         </h1>
-        <p class="text-blue-100 text-sm md:text-base mb-3 leading-relaxed">
-            Discover amazing packages with products and add-ons for your next adventure
-        </p>
 
-        <!-- Advanced Filters Button -->
-        <div class="mb-4 text-center">
-            <button type="button" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl" onclick="toggleAdvancedFilters()">
-                <i class="fas fa-filter mr-2"></i>
-                Advanced Filters
-                <i class="fas fa-chevron-down ml-2 transition-transform duration-300" id="advanced-filters-icon"></i>
-            </button>
-        </div>
+        <!-- Search Box -->
+        <div class="mt-12 max-w-2xl mx-auto">
+            <form method="GET" action="{{ route('user.search') }}" class="space-y-4">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               name="destination" 
+                               placeholder="Search By City, Package, or Category" 
+                               value="{{ request('destination') }}"
+                               class="w-full px-6 py-4 rounded-full text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-lg">
+                        <i class="fas fa-map-marker-alt absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-semibold transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap flex items-center justify-center gap-2">
+                        <i class="fas fa-search"></i>
+                        Search
+                    </button>
+                </div>
 
-        <!-- Advanced Search Form -->
-        <div class="bg-white rounded-2xl p-4 shadow-xl">
-            <form method="GET" action="{{ route('user.search') }}" class="space-y-6">
-                <!-- Basic Search Row -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Search by City, Package, or Category</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-map-marker-alt text-gray-400"></i>
-                            </div>
-                            <input type="text" name="destination" value="{{ request('destination') }}" placeholder="Search cities, packages, categories..." class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                    </div>
-                    <div class="md:col-span-2 flex items-end">
-                        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg">
-                            <i class="fas fa-search mr-2"></i>
-                            Search
-                        </button>
-                    </div>
+                <!-- Advance Filter Link -->
+                <div class="text-center relative z-50">
+                    <button type="button" id="advanceFilterBtn" class="text-white hover:text-blue-200 font-medium transition-colors duration-200 cursor-pointer px-4 py-2 rounded">
+                        <i class="fas fa-filter mr-2"></i>Advance Filter
+                    </button>
                 </div>
 
                 <!-- Advanced Filters (Collapsible) -->
-                <div class="border-t border-white/20 pt-6">
-                    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 hidden overflow-hidden transition-all duration-300" id="advanced-filters">
+                <div id="advanced-filters" class="hidden border-t border-white/20 pt-6 transition-all duration-300">
+                    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <!-- Price Range -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Min Price</label>
@@ -115,6 +102,198 @@ Find your perfect packages, products, and add-ons!
         </div>
     </div>
 </div>
+
+<!-- Best Deals Section -->
+<section class="bg-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-100 rounded-xl p-3">
+                    <i class="fas fa-ticket-alt text-blue-600 text-2xl"></i>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Best deals for a price-less travel!</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" aria-label="Scroll left" data-target="deals-slider" data-dir="left" class="slider-arrow bg-white text-gray-700 hover:text-blue-600 hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" aria-label="Scroll right" data-target="deals-slider" data-dir="right" class="slider-arrow bg-white text-gray-700 hover:text-blue-600 hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button class="deals-tab active px-6 py-3 rounded-full font-semibold text-white bg-blue-500 hover:bg-blue-600 transition-all flex items-center space-x-2 shadow-md">
+                <i class="fas fa-plane"></i>
+                <span>Flight</span>
+            </button>
+            <button class="deals-tab px-6 py-3 rounded-full font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center space-x-2">
+                <i class="fas fa-hotel"></i>
+                <span>Hotels</span>
+            </button>
+            <button class="deals-tab px-6 py-3 rounded-full font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center space-x-2">
+                <i class="fas fa-bus"></i>
+                <span>Bus & Travel</span>
+            </button>
+            <button class="deals-tab px-6 py-3 rounded-full font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center space-x-2">
+                <i class="fas fa-car"></i>
+                <span>Cars</span>
+            </button>
+            <button class="deals-tab px-6 py-3 rounded-full font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center space-x-2">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>Things to Do</span>
+            </button>
+        </div>
+
+        <!-- Deals Slider -->
+        <div id="deals-slider" class="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
+            <!-- Deal Card 1 -->
+            <div class="group flex-none w-80 md:w-[380px] bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-800 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-72 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800" alt="Flight Deal" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div class="absolute top-4 left-4 flex items-center space-x-3">
+                        <div class="bg-white rounded-lg px-3 py-1.5">
+                            <span class="text-sm font-bold text-indigo-900">Sriwijaya Air</span>
+                        </div>
+                        <div class="bg-white rounded-lg px-3 py-1.5">
+                            <span class="text-sm font-bold text-blue-900">ANA AIR</span>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 class="text-2xl font-bold mb-2">Rencana matang, kompet senang</h3>
+                        <p class="text-sm mb-3">Pesan lebih awal, lebih hemat s.d. 25%</p>
+                        <button class="bg-white text-indigo-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">S&K berlaku</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deal Card 2 -->
+            <div class="group flex-none w-80 md:w-[380px] bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-600 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-72 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1464037866556-6812c9d1c72e?w=800" alt="Melbourne Deal" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div class="absolute top-4 right-4 bg-yellow-400 rounded-lg px-3 py-1.5">
+                        <span class="text-xs font-bold text-gray-900">MELBOURNE AIRPORT</span>
+                    </div>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 class="text-2xl font-bold mb-2">Rasakan irama kota Melbourne</h3>
+                        <p class="text-sm mb-1">Diskon <span class="font-bold">Rp600rb</span></p>
+                        <p class="text-sm font-bold mb-3">+ Gratis Airport Transfer</p>
+                        <button class="bg-white text-blue-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">S&K berlaku</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deal Card 3 -->
+            <div class="group flex-none w-80 md:w-[380px] bg-gradient-to-br from-red-600 via-red-700 to-red-800 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-72 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800" alt="AirAsia Deal" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div class="absolute top-4 left-4 bg-yellow-400 rounded-full px-3 py-1.5">
+                        <span class="text-xs font-bold text-gray-900">PTO Promo Terbang Oke!</span>
+                    </div>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 class="text-2xl font-bold mb-2">Saatnya wujudin bucket-list liburanmu</h3>
+                        <p class="text-sm mb-3">Cashback s.d. <span class="font-bold">10rb</span> naik AirAsia</p>
+                        <button class="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors whitespace-nowrap">S&K berlaku</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deal Card 4 -->
+            <div class="group flex-none w-80 md:w-[380px] bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-72 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800" alt="Promo Deal" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <h3 class="text-2xl font-bold mb-2">Promo Spesial Akhir Tahun</h3>
+                        <p class="text-sm mb-3">Diskon hingga <span class="font-bold">50%</span> untuk semua rute domestik</p>
+                        <button class="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">S&K berlaku</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="#" class="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-semibold text-lg group transition-colors">
+                <span>See All Promos</span>
+                <i class="fas fa-chevron-right group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Indonesia Destinations Section -->
+<section class="bg-gradient-to-b from-gray-50 to-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center space-x-2 mb-4">
+                <i class="fas fa-globe-asia text-3xl text-blue-600"></i>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Rediscover yourself in Indonesia</h2>
+            <p class="text-gray-600 text-lg">Explore the beauty and diversity of the archipelago</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a href="{{ route('user.search', ['destination' => 'Bali']) }}" class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] h-72">
+                <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800" alt="Bali" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 class="text-2xl font-bold mb-2">Bali</h3>
+                    <p class="text-sm text-white/90">Island of Gods</p>
+                </div>
+            </a>
+
+            <a href="{{ route('user.search', ['destination' => 'Jakarta']) }}" class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] h-72">
+                <img src="https://images.unsplash.com/photo-1555899434-94d1eb5c7e38?w=800" alt="Jakarta" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 class="text-2xl font-bold mb-2">Jakarta</h3>
+                    <p class="text-sm text-white/90">Capital City</p>
+                </div>
+            </a>
+
+            <a href="{{ route('user.search', ['destination' => 'Yogyakarta']) }}" class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] h-72">
+                <img src="https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800" alt="Yogyakarta" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 class="text-2xl font-bold mb-2">Yogyakarta</h3>
+                    <p class="text-sm text-white/90">Cultural Heart</p>
+                </div>
+            </a>
+
+            <a href="{{ route('user.search', ['destination' => 'Lombok']) }}" class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] h-72">
+                <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800" alt="Lombok" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 class="text-2xl font-bold mb-2">Lombok</h3>
+                    <p class="text-sm text-white/90">Paradise Island</p>
+                </div>
+            </a>
+
+            <a href="{{ route('user.search', ['destination' => 'Bandung']) }}" class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] h-72">
+                <img src="https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?w=800" alt="Bandung" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 class="text-2xl font-bold mb-2">Bandung</h3>
+                    <p class="text-sm text-white/90">Paris of Java</p>
+                </div>
+            </a>
+
+            <a href="{{ route('user.search', ['destination' => 'Raja Ampat']) }}" class="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] h-72">
+                <img src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800" alt="Raja Ampat" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 class="text-2xl font-bold mb-2">Raja Ampat</h3>
+                    <p class="text-sm text-white/90">Diving Paradise</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
 
 <!-- Enhanced Type Tabs -->
 <div class="flex flex-wrap gap-2 mb-8 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-xl border border-white/50">
@@ -639,34 +818,44 @@ Find your perfect packages, products, and add-ons!
             .animate-fade-in-up {
                 animation: fade-in-up 0.8s ease-out forwards;
             }
+            .hide-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
         `;
         document.head.appendChild(style);
 
         // Advanced filters toggle with smooth animation
-        function toggleAdvancedFilters() {
-            const filters = document.getElementById('advanced-filters');
-            const icon = document.getElementById('advanced-filters-icon');
-
-            if (filters.classList.contains('hidden')) {
-                filters.classList.remove('hidden');
-                filters.style.maxHeight = '0px';
-                setTimeout(() => {
-                    filters.style.maxHeight = filters.scrollHeight + 'px';
-                }, 10);
-                icon.classList.add('rotate-180');
-            } else {
-                filters.style.maxHeight = '0px';
-                setTimeout(() => {
+        console.log('Script loaded, searching for elements...');
+        
+        const advanceBtn = document.getElementById('advanceFilterBtn');
+        const filters = document.getElementById('advanced-filters');
+        
+        console.log('Found button:', advanceBtn);
+        console.log('Found filters:', filters);
+        
+        if (advanceBtn && filters) {
+            console.log('Both elements found, attaching event listener...');
+            advanceBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('Button clicked!');
+                
+                if (filters.classList.contains('hidden')) {
+                    filters.classList.remove('hidden');
+                    console.log('Showing filters');
+                } else {
                     filters.classList.add('hidden');
-                }, 300);
-                icon.classList.remove('rotate-180');
-            }
-        }
-
-        // Attach toggle function to button
-        const advancedFiltersBtn = document.querySelector('button[onclick="toggleAdvancedFilters()"]');
-        if (advancedFiltersBtn) {
-            advancedFiltersBtn.onclick = toggleAdvancedFilters;
+                    console.log('Hiding filters');
+                }
+            });
+            console.log('Event listener attached successfully!');
+        } else {
+            console.error('Elements not found! Button:', advanceBtn, 'Filters:', filters);
         }
 
         // Enhanced tab switching with animations
@@ -752,6 +941,145 @@ Find your perfect packages, products, and add-ons!
         document.querySelectorAll('.grid.grid-cols-1.md\\:grid-cols-3.lg\\:grid-cols-4 > a').forEach(card => {
             observer.observe(card);
         });
+
+        // Setup horizontal sliders for deals and articles
+        function setupHorizontalSlider(id) {
+            const slider = document.getElementById(id);
+            if (!slider) return;
+
+            const leftBtn = document.querySelector(`[data-target="${id}"][data-dir="left"]`);
+            const rightBtn = document.querySelector(`[data-target="${id}"][data-dir="right"]`);
+            const scrollStep = () => Math.max(slider.clientWidth * 0.9, 300);
+            const scrollByDir = (dir) => slider.scrollBy({ left: dir * scrollStep(), behavior: 'smooth' });
+
+            leftBtn?.addEventListener('click', () => scrollByDir(-1));
+            rightBtn?.addEventListener('click', () => scrollByDir(1));
+        }
+
+        ['deals-slider', 'articles-slider'].forEach(setupHorizontalSlider);
+
+        // Deals tabs switching
+        const dealsTabs = document.querySelectorAll('.deals-tab');
+        dealsTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                dealsTabs.forEach(t => {
+                    t.classList.remove('bg-blue-500', 'text-white');
+                    t.classList.add('bg-gray-100', 'text-gray-600');
+                });
+                tab.classList.remove('bg-gray-100', 'text-gray-600');
+                tab.classList.add('bg-blue-500', 'text-white');
+            });
+        });
     });
 </script>
+
+<!-- Articles Section -->
+<section class="bg-gradient-to-b from-blue-50 to-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-100 rounded-xl p-3">
+                    <i class="fas fa-book-open text-blue-600 text-2xl"></i>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Read on and kickstart your adventure</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" aria-label="Scroll left" data-target="articles-slider" data-dir="left" class="slider-arrow bg-white text-gray-700 hover:text-blue-600 hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button type="button" aria-label="Scroll right" data-target="articles-slider" data-dir="right" class="slider-arrow bg-white text-gray-700 hover:text-blue-600 hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Articles Slider -->
+        <div id="articles-slider" class="flex overflow-x-auto gap-6 pb-4 snap-x snap-mandatory hide-scrollbar">
+            <a href="#" class="group flex-none w-80 bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1598808503491-dd78df51c1f1?w=800" alt="Chiang Mai" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">A Guide: The Best Time to Visit Chiang Mai</h3>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center space-x-1"><i class="fas fa-user-circle"></i><span>Traveloka Team</span></span>
+                        <span class="flex items-center space-x-1"><i class="far fa-clock"></i><span>4 min read</span></span>
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="group flex-none w-80 bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=800" alt="Sulawesi" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Rumah Adat Sulawesi Tengah: Mengenal Jenis, Sejarah, dan Keunikannya</h3>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center space-x-1"><i class="fas fa-user-circle"></i><span>Travel Bestie</span></span>
+                        <span class="flex items-center space-x-1"><i class="far fa-clock"></i><span>4 min read</span></span>
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="group flex-none w-80 bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=800" alt="Bengkulu" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Rumah Adat Bengkulu: Mengupas Sejarah, Ciri Khas, dan Makna</h3>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center space-x-1"><i class="fas fa-user-circle"></i><span>Travel Bestie</span></span>
+                        <span class="flex items-center space-x-1"><i class="far fa-clock"></i><span>3 min read</span></span>
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="group flex-none w-80 bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1512389142860-9c449e58a543?w=800" alt="December" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">28 Desember Memperingati Hari Apa? Ketahui Daftar Lengkapnya</h3>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center space-x-1"><i class="fas fa-user-circle"></i><span>Travel Bestie</span></span>
+                        <span class="flex items-center space-x-1"><i class="far fa-clock"></i><span>4 min read</span></span>
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="group flex-none w-80 bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800" alt="Travel Tips" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">10 Tips Traveling Hemat untuk Liburan Impianmu</h3>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center space-x-1"><i class="fas fa-user-circle"></i><span>Travel Bestie</span></span>
+                        <span class="flex items-center space-x-1"><i class="far fa-clock"></i><span>5 min read</span></span>
+                    </div>
+                </div>
+            </a>
+
+            <a href="#" class="group flex-none w-80 bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-[1.02] snap-start">
+                <div class="relative h-48 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800" alt="Hidden Gems" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                </div>
+                <div class="p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Hidden Gems Indonesia: Destinasi Wisata yang Belum Banyak Diketahui</h3>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                        <span class="flex items-center space-x-1"><i class="fas fa-user-circle"></i><span>Travel Bestie</span></span>
+                        <span class="flex items-center space-x-1"><i class="far fa-clock"></i><span>6 min read</span></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="#" class="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-semibold text-lg group transition-colors">
+                <span>Read Inspiring Articles</span>
+                <i class="fas fa-chevron-right group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </div>
+    </div>
+</section>
 @endsection

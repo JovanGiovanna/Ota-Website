@@ -134,7 +134,8 @@ class BookingsController extends Controller
                         'notes' => $validated['requests'] ?? null,
                     ]);
 
-                    // Auto-create BookProduct for each product in package (for transaction reports)
+                    // Auto-create BookProduct for each product in package (for vendor transaction list ONLY)
+                    // NOTE: DO NOT add to $totalPrice - already included in package price
                     $productsData = is_array($package->products_data) ? $package->products_data : [];
                     foreach ($productsData as $productData) {
                         $productId = $productData['id'] ?? null;
@@ -151,13 +152,13 @@ class BookingsController extends Controller
                             'id_product' => $productId,
                             'amount' => $paxInPackage * $packageQty,
                             'total_price' => $productSubTotal * $packageQty,
-                            'booking_code' => $bookingCode,
                             'status' => 'pending',
                             'notes' => 'From package: ' . $package->name_package,
                         ]);
                     }
 
-                    // Auto-create BookAddon for each addon in package (for transaction reports)
+                    // Auto-create BookAddon for each addon in package (for vendor transaction list ONLY)
+                    // NOTE: DO NOT add to $totalPrice - already included in package price
                     $addonsData = is_array($package->addons_data) ? $package->addons_data : [];
                     foreach ($addonsData as $addonData) {
                         $addonId = $addonData['id'] ?? null;
@@ -180,122 +181,66 @@ class BookingsController extends Controller
                             'booker_name' => $validated['booker_name'],
                             'booker_email' => $validated['booker_email'],
                             'booker_telp' => $validated['booker_telp'],
-                            'booking_code' => $bookingCode,
+                            'booking_code' => $bookingCode . '-' . Str::random(4),
                             'status' => 'pending',
                             'notes' => 'From package: ' . $package->name_package,
                         ]);
                     }
 
-                    // Simpan addon untuk package ini
-                    if (!empty($validated['addon_id'])) {
-                        foreach ($validated['addon_id'] as $addonId) {
-                            if (in_array($addonId, $usedAddonIds)) continue;
-
-                            $addon = Addon::find($addonId);
-                            if (!$addon) continue;
-
-                            BookPackageAddon::create([
-                                'id_book' => $booking->id,
-                                'id_package' => $packageId,
-                                'id_addons' => $addonId,
-                                'booking_code' => $bookingCode,
-                            ]);
-
-                            $addonQty = $validated['quantity'][$addonId] ?? 1;
-                            $totalPrice += $addon->finalPrice * $addonQty;
-
-                            $usedAddonIds[] = $addonId;
-                        }
-                    }
-
-
                 }
             }
 
             // 3️⃣ Booking Product
-if (!empty($validated['product_id'])) {
-    foreach ($validated['product_id'] as $productId) {
-        $product = Product::find($productId);
-        if (!$product) continue;
+            if (!empty($validated['product_id'])) {
+                foreach ($validated['product_id'] as $productId) {
+                    $product = Product::find($productId);
+                    if (!$product) continue;
 
-        $quantity = $validated['quantity'][$productId] ?? 1;
-                $productPrice = $product->finalPrice * $quantity;
-                $totalPrice += $productPrice;
+                    $quantity = $validated['quantity'][$productId] ?? 1;
+                    $productPrice = $product->finalPrice * $quantity;
+                    $totalPrice += $productPrice;
 
-        $bookProduct = BookProduct::create([
-            'id_book' => $booking->id,
-            'id_user' => $user->id,
-            'id_product' => $productId,
-            'checkin_appointment_start_datetime' => $validated['checkin_appointment_start'],
-            'checkout_appointment_end_datetime' => $validated['checkout_appointment_end'],
-            'amount' => $quantity,
-            'booker_name' => $validated['booker_name'],
-            'booker_email' => $validated['booker_email'],
-            'booker_telp' => $validated['booker_telp'],
-            'booking_code' => $bookingCode,
-            'total_price' => $productPrice,
-            'notes' => $validated['requests'] ?? null,
-        ]);
-
-                // Tambahkan addon untuk product
-                if (!empty($validated['addon_id'])) {
-                    foreach ($validated['addon_id'] as $addonId) {
-                        if (in_array($addonId, $usedAddonIds)) continue;
-
-                        $addon = Addon::find($addonId);
-                        if (!$addon) continue;
-
-                        $addonQty = $validated['quantity'][$addonId] ?? 1;
-
-                        BookProductAddon::create([
-                            'id_book' => $bookProduct->id,
-                            'id_product' => $productId,
-                            'id_addons' => $addonId,
-                            'quantity' => $addonQty,
-                            'price' => $addon->finalPrice,
-                        ]);
-
-                        $totalPrice += $addon->finalPrice * $addonQty;
-                        $usedAddonIds[] = $addonId;
-                    }
+                    BookProduct::create([
+                        'id_book' => $booking->id,
+                        'id_product' => $productId,
+                        'amount' => $quantity,
+                        'total_price' => $productPrice,
+                        'status' => 'pending',
+                        'notes' => 'Standalone product',
+                    ]);
                 }
+            }
 
-    }
+            // 4️⃣ Addon (standalone)
+            if (!empty($validated['addon_id'])) {
+                foreach ($validated['addon_id'] as $addonId) {
+                    if (in_array($addonId, $usedAddonIds)) continue;
+
+                    $addon = Addon::find($addonId);
+                    if (!$addon) continue;
+
+                    $qty = $validated['quantity'][$addonId] ?? 1;
+                    $addonPrice = $addon->finalPrice * $qty;
+                    $totalPrice += $addonPrice;
+
+                    BookAddon::create([
+                        'id_book' => $booking->id,
+                        'id_addon' => $addonId,
+                        'checkin_appointment_start' => $validated['checkin_appointment_start'],
+                        'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                        'amount' => $qty,
+                        'total_price' => $addonPrice,
+                        'booker_name' => $validated['booker_name'],
+                        'booker_email' => $validated['booker_email'],
+                        'booker_telp' => $validated['booker_telp'],
+                        'booking_code' => $bookingCode . '-' . Str::random(4),
+                        'status' => 'pending',
+                        'notes' => 'Standalone addon',
+                    ]);
+
+                    $usedAddonIds[] = $addonId;
                 }
-
-            // 4️⃣ Addon berdiri sendiri
-if (!empty($validated['addon_id'])) {
-    foreach ($validated['addon_id'] as $addonId) {
-        if (in_array($addonId, $usedAddonIds)) continue;
-
-        $addon = Addon::find($addonId);
-        if (!$addon) continue;
-
-        $qty = $validated['quantity'][$addonId] ?? 1;
-        $addonPrice = $addon->finalPrice * $qty;
-        $totalPrice += $addonPrice;
-
-            BookAddon::create([
-            'id_book' => $booking->id,
-            'id_user' => $user->id,
-            'id_addon' => $addonId,
-            'checkin_appointment_start' => $validated['checkin_appointment_start'],
-            'checkout_appointment_end' => $validated['checkout_appointment_end'],
-            'amount' => $qty,
-            'total_price' => $addonPrice,
-            'booker_name' => $validated['booker_name'],
-            'booker_email' => $validated['booker_email'],
-            'booker_telp' => $validated['booker_telp'],
-            'booking_code' => $bookingCode . '-' . Str::random(4),
-            'status' => 'pending',
-            'notes' => $validated['requests'] ?? null,
-        ]);
-        
-    }
-    
-}
-
-            
+            }
 
             // 5️⃣ Update total_price master booking
             $booking->update(['total_price' => $totalPrice]);
@@ -774,4 +719,144 @@ if (!empty($validated['addon_id'])) {
         }
         return redirect()->route('user.history');
     }
+
+    /** Simpan booking Product/Addon standalone (untuk future endpoint terpisah) */
+    public function storeStandalone(Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'nullable|array',
+            'product_id.*' => 'exists:products,id',
+            'addon_id' => 'nullable|array',
+            'addon_id.*' => 'exists:addons,id',
+            'quantity' => 'nullable|array',
+            'quantity.*' => 'integer|min:1',
+            'booker_name' => 'required|string|max:255',
+            'booker_email' => 'required|email',
+            'booker_telp' => 'required|string|max:20',
+            'checkin_appointment_start' => 'required|date',
+            'checkout_appointment_end' => 'required|date|after:checkin_appointment_start',
+            'duration_days' => 'required|integer|min:1',
+            'amount' => 'required|numeric|min:0',
+            'requests' => 'nullable|string',
+        ]);
+
+        $user = Auth::user();
+        if (!$user) {
+            $existingUser = \App\Models\User::where('email', $validated['booker_email'])->first();
+            if ($existingUser && is_null($existingUser->password)) {
+                $user = $existingUser;
+            } else {
+                $user = \App\Models\User::create([
+                    'name' => $validated['booker_name'],
+                    'email' => $validated['booker_email'],
+                    'phone' => $validated['booker_telp'],
+                    'password' => null,
+                    'activation_token' => Str::random(60),
+                    'status' => 'active',
+                ]);
+            }
+        }
+
+        if ((empty($validated['product_id']) && empty($validated['addon_id']))) {
+            throw ValidationException::withMessages(['product_id' => 'Silakan pilih minimal satu product atau addon.']);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $bookingCode = 'BK-' . now()->format('YmdHis') . '-' . rand(100, 999);
+
+            $booking = Booking::create([
+                'id_user' => $user->id,
+                'booker_name' => $validated['booker_name'],
+                'booker_email' => $validated['booker_email'],
+                'booker_telp' => $validated['booker_telp'],
+                'booking_code' => $bookingCode,
+                'checkin_appointment_start' => $validated['checkin_appointment_start'],
+                'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                'duration_days' => $validated['duration_days'],
+                'amount' => $validated['amount'],
+                'total_price' => 0,
+                'status' => 'pending',
+                'note' => $validated['requests'] ?? null,
+                'payment_expires_at' => now()->addMinutes(30),
+            ]);
+
+            $totalPrice = 0;
+            $usedAddonIds = [];
+
+            // Product standalone
+            if (!empty($validated['product_id'])) {
+                foreach ($validated['product_id'] as $productId) {
+                    $product = Product::find($productId);
+                    if (!$product) continue;
+
+                    $quantity = $validated['quantity'][$productId] ?? 1;
+                    $productPrice = $product->finalPrice * $quantity;
+                    $totalPrice += $productPrice;
+
+                    BookProduct::create([
+                        'id_book' => $booking->id,
+                        'id_product' => $productId,
+                        'amount' => $quantity,
+                        'total_price' => $productPrice,
+                        'status' => 'pending',
+                        'notes' => 'Standalone product',
+                    ]);
+                }
+            }
+
+            // Addon standalone
+            if (!empty($validated['addon_id'])) {
+                foreach ($validated['addon_id'] as $addonId) {
+                    if (in_array($addonId, $usedAddonIds)) continue;
+
+                    $addon = Addon::find($addonId);
+                    if (!$addon) continue;
+
+                    $qty = $validated['quantity'][$addonId] ?? 1;
+                    $addonPrice = $addon->finalPrice * $qty;
+                    $totalPrice += $addonPrice;
+
+                    BookAddon::create([
+                        'id_book' => $booking->id,
+                        'id_addon' => $addonId,
+                        'checkin_appointment_start' => $validated['checkin_appointment_start'],
+                        'checkout_appointment_end' => $validated['checkout_appointment_end'],
+                        'amount' => $qty,
+                        'total_price' => $addonPrice,
+                        'booker_name' => $validated['booker_name'],
+                        'booker_email' => $validated['booker_email'],
+                        'booker_telp' => $validated['booker_telp'],
+                        'booking_code' => $bookingCode . '-' . Str::random(4),
+                        'status' => 'pending',
+                        'notes' => 'Standalone addon',
+                    ]);
+
+                    $usedAddonIds[] = $addonId;
+                }
+            }
+
+            $booking->update(['total_price' => $totalPrice]);
+
+            DB::commit();
+
+            if (function_exists('alert')) {
+                alert()->success('Booking Berhasil', 'Booking berhasil dibuat! Silakan lakukan pembayaran.');
+            }
+
+            return redirect()->route('user.history')->with('booking_code', $bookingCode);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Standalone booking failed: ' . $e->getMessage());
+
+            if (function_exists('alert')) {
+                alert()->error('Booking Gagal', 'Terjadi kesalahan saat membuat booking. Silakan coba lagi.');
+            }
+
+            return redirect()->back()->withInput();
+        }
+    }
 }
+

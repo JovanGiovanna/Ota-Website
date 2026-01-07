@@ -98,60 +98,58 @@
                             </ul>
                         @endif
 
-                        {{-- Products --}}
+                        {{-- Products (Standalone Only) --}}
                         @if($booking->products && $booking->products->count())
-                            <p class="font-medium mt-2">Products:</p>
-                            <ul class="ml-4 list-disc">
-                                @foreach($booking->products as $bookProduct)
-                                    @php
-                                        $amount = $bookProduct->amount ?? 1;
-                                        $unitPrice = $bookProduct->product->finalPrice ?? 0;
-                                        $productAddons = $bookProduct->bookProductAddons ?? collect();
-                                    @endphp
-                                    <li>
-                                        {{ $bookProduct->product->name ?? 'Product' }}
-                                        <span class="text-gray-600 ml-2">
-                                            Rp {{ number_format($unitPrice, 0, ',', '.') }} x {{ $amount }} = Rp {{ number_format($unitPrice * $amount, 0, ',', '.') }}
-                                        </span>
-                                        @if($productAddons->count())
-                                            <ul class="ml-4 list-disc text-gray-500 text-sm">
-                                                @foreach($productAddons as $prAddon)
-                                                    @php
-                                                        $addonPrice = $prAddon->addon?->finalPrice ?? 0;
-                                                        $addonQty = $prAddon->quantity ?? 1;
-                                                    @endphp
-                                                    <li>
-                                                        {{ $prAddon->addon?->name ?? 'Addon' }} (x{{ $addonQty }})
-                                                        <span class="ml-1">
-                                                            - Rp {{ number_format($addonPrice * $addonQty, 0, ',', '.') }}
-                                                        </span>
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
+                            @php
+                                // Filter only standalone products
+                                $standaloneProducts = $booking->products->filter(function($p) { 
+                                    return strpos($p->notes ?? '', 'Standalone') !== false; 
+                                });
+                            @endphp
+                            @if($standaloneProducts->count())
+                                <p class="font-medium mt-2">Products:</p>
+                                <ul class="ml-4 list-disc">
+                                    @foreach($standaloneProducts as $bookProduct)
+                                        @php
+                                            $amount = $bookProduct->amount ?? 1;
+                                            $totalPrice = $bookProduct->total_price ?? 0;
+                                        @endphp
+                                        <li>
+                                            {{ $bookProduct->product->name ?? 'Product' }}
+                                            <span class="text-gray-600 ml-2">
+                                                x {{ $amount }} = Rp {{ number_format($totalPrice, 0, ',', '.') }}
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
                         @endif
 
-                        {{-- Standalone Addons --}}
+                        {{-- Standalone Addons Only --}}
                         @if($booking->addons && $booking->addons->count())
-                            <p class="font-medium mt-2">Standalone Add-ons:</p>
-                            <ul class="ml-4 list-disc">
-                                @foreach($booking->addons as $bookAddon)
-                                    @php
-                                        $amount = $bookAddon->amount ?? 1;
-                                        $unitPriceAddon = $bookAddon->addon->finalPrice ?? 0;
-                                        $totalPrice = $unitPriceAddon * $amount;
-                                    @endphp
-                                    <li>
-                                        {{ $bookAddon->addon?->name ?? 'Addon' }} (x{{ $amount }})
-                                        <span class="ml-1">
-                                            - Rp {{ number_format($unitPriceAddon, 0, ',', '.') }} x {{ $amount }} = Rp {{ number_format($totalPrice, 0, ',', '.') }}
-                                        </span>
-                                    </li>
-                                @endforeach
-                            </ul>
+                            @php
+                                // Filter only standalone addons
+                                $standaloneAddons = $booking->addons->filter(function($a) { 
+                                    return strpos($a->notes ?? '', 'Standalone') !== false; 
+                                });
+                            @endphp
+                            @if($standaloneAddons->count())
+                                <p class="font-medium mt-2">Add-ons:</p>
+                                <ul class="ml-4 list-disc">
+                                    @foreach($standaloneAddons as $bookAddon)
+                                        @php
+                                            $amount = $bookAddon->amount ?? 1;
+                                            $totalPrice = $bookAddon->total_price ?? 0;
+                                        @endphp
+                                        <li>
+                                            {{ $bookAddon->addon?->name ?? 'Addon' }} (x{{ $amount }})
+                                            <span class="ml-1">
+                                                - Rp {{ number_format($totalPrice, 0, ',', '.') }}
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
                         @endif
 
                     </div>
@@ -160,37 +158,8 @@
                 {{-- Right panel --}}
                 <div class="text-right">
                     @php
-                        $durationDays = $booking->duration_days ?? 1;
-                        $totalPrice = 0;
-                        
-                        foreach ($booking->packages as $bookPackage) {
-                            $pricePerNight = $bookPackage->package->final_price ?? 0;
-                            $totalPrice += $pricePerNight * $durationDays;
-                            
-                            foreach ($bookPackage->bookPackageAddons as $pAddon) {
-                                $addonPrice = $pAddon->addon?->finalPrice ?? 0;
-                                $addonQty = $pAddon->quantity ?? 1;
-                                $totalPrice += $addonPrice * $addonQty;
-                            }
-                        }
-                        
-                        foreach ($booking->products as $bookProduct) {
-                            $unitPrice = $bookProduct->product->finalPrice ?? 0;
-                            $amount = $bookProduct->amount ?? 1;
-                            $totalPrice += $unitPrice * $amount;
-                            
-                            foreach ($bookProduct->bookProductAddons as $prAddon) {
-                                $addonPrice = $prAddon->addon?->finalPrice ?? ($prAddon->price ?? 0);
-                                $addonQty = $prAddon->quantity ?? 1;
-                                $totalPrice += $addonPrice * $addonQty;
-                            }
-                        }
-                        
-                        foreach ($booking->addons as $bookAddon) {
-                            $unitPriceAddon = $bookAddon->addon->finalPrice ?? 0;
-                            $amount = $bookAddon->amount ?? 1;
-                            $totalPrice += $unitPriceAddon * $amount;
-                        }
+                        // Use total_price from booking (already calculated correctly, no double charge)
+                        $totalPrice = $booking->total_price ?? 0;
                     @endphp
                     
                     <span class="inline-block px-3 py-1 rounded-full text-sm font-medium

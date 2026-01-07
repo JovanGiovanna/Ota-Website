@@ -111,82 +111,83 @@
                     </div>
                 @endif
 
-                <!-- Products -->
+                <!-- Products (Standalone Only) -->
                 @if($booking->products->count() > 0)
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h2 class="text-2xl font-semibold mb-4">Products</h2>
-                        <div class="space-y-4">
-                            @foreach($booking->products as $bookProduct)
-                                <div class="border border-gray-200 rounded-lg p-4">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="w-20 h-20 flex-shrink-0">
-                                            @if($bookProduct->product->images && count($bookProduct->product->images) > 0)
-                                                <img src="{{ asset('storage/' . $bookProduct->product->images[0]) }}" alt="{{ $bookProduct->product->name }}" class="w-full h-full object-cover rounded-lg">
-                                            @else
-                                                <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
-                                                    <i class="fas fa-shopping-cart text-gray-400 text-2xl"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="flex-1">
-                                            <h3 class="text-lg font-semibold mb-2">{{ $bookProduct->product->name }}</h3>
-                                            <p class="text-gray-600 mb-2">{{ $bookProduct->product->description }}</p>
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-500">Total price for product (Qty: {{ $bookProduct->amount }})</span>
-                                                <span class="font-semibold">Rp {{ number_format($bookProduct->product->finalPrice * $bookProduct->amount, 0, ',', '.') }}</span>
-                                            </div>
-                                            <!-- Product Add-ons -->
-                                            @if($bookProduct->bookProductAddons->count() > 0)
-                                                <div class="mt-4 pt-4 border-t border-gray-200">
-                                                    <h4 class="text-md font-semibold mb-2">Additional Services for this Product:</h4>
-                                                    <div class="space-y-2">
-                                                        @foreach($bookProduct->bookProductAddons as $productAddon)
-                                                            <div class="flex justify-between items-center text-sm">
-                                                                <span>{{ $productAddon->addon->addons ?? 'Unnamed Addon' }} (Qty: {{ $productAddon->quantity ?? 1 }})</span>
-                                                                <span>Rp {{ number_format($productAddon->addon->finalPrice * ($productAddon->quantity ?? 1), 0, ',', '.') }}</span>
-                                                            </div>
-                                                        @endforeach
+                    @php
+                        // Filter only standalone products
+                        $standaloneProducts = $booking->products->filter(function($p) { 
+                            return strpos($p->notes ?? '', 'Standalone') !== false; 
+                        });
+                    @endphp
+                    @if($standaloneProducts->count() > 0)
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <h2 class="text-2xl font-semibold mb-4">Products</h2>
+                            <div class="space-y-4">
+                                @foreach($standaloneProducts as $bookProduct)
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-start space-x-4">
+                                            <div class="w-20 h-20 flex-shrink-0">
+                                                @if($bookProduct->product->images && count($bookProduct->product->images) > 0)
+                                                    <img src="{{ asset('storage/' . $bookProduct->product->images[0]) }}" alt="{{ $bookProduct->product->name }}" class="w-full h-full object-cover rounded-lg">
+                                                @else
+                                                    <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                                                        <i class="fas fa-shopping-cart text-gray-400 text-2xl"></i>
                                                     </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-semibold mb-2">{{ $bookProduct->product->name }}</h3>
+                                                <p class="text-gray-600 mb-2">{{ $bookProduct->product->description }}</p>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-sm text-gray-500">Total price (Qty: {{ $bookProduct->amount }})</span>
+                                                    <span class="font-semibold">Rp {{ number_format($bookProduct->total_price, 0, ',', '.') }}</span>
                                                 </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Add-ons -->
-                @if(optional($booking->addons)->count() > 0)
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h2 class="text-2xl font-semibold mb-4">Additional Services</h2>
-                        <div class="space-y-4">
-                            @foreach($booking->addons as $bookAddon)
-                                <div class="border border-gray-200 rounded-lg p-4">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="w-20 h-20 flex-shrink-0">
-                                            @if($bookAddon->addon->images && count($bookAddon->addon->images) > 0)
-                                                <img src="{{ asset('storage/' . $bookAddon->addon->images[0]) }}" alt="{{ $bookAddon->addon->addons ?? 'Addon image' }}" class="w-full h-full object-cover rounded-lg">
-                                            @else
-                                                <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
-                                                    <i class="fas fa-plus-circle text-gray-400 text-2xl"></i>
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="flex-1">
-                                            <h3 class="text-lg font-semibold mb-2">{{ $bookAddon->addon->addons ?? 'Unnamed Addon' }}</h3>
-                                            <p class="text-gray-600 mb-2">{{ $bookAddon->addon->desc ?? '' }}</p>
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm text-gray-500">Total price for service (Qty: {{ $bookAddon->amount }})</span>
-                                                <span class="font-semibold">Rp {{ number_format($bookAddon->addon->finalPrice * $bookAddon->amount, 0, ',', '.') }}</span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
-                    </div>
+                    @endif
+                @endif
+                <!-- Additional Services (Standalone Only) -->
+                @if(optional($booking->addons)->count() > 0)
+                    @php
+                        // Filter only standalone addons
+                        $standaloneAddons = optional($booking->addons)->filter(function($a) { 
+                            return strpos($a->notes ?? '', 'Standalone') !== false; 
+                        });
+                    @endphp
+                    @if($standaloneAddons->count() > 0)
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <h2 class="text-2xl font-semibold mb-4">Additional Services</h2>
+                            <div class="space-y-4">
+                                @foreach($standaloneAddons as $bookAddon)
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-start space-x-4">
+                                            <div class="w-20 h-20 flex-shrink-0">
+                                                @if($bookAddon->addon->images && count($bookAddon->addon->images) > 0)
+                                                    <img src="{{ asset('storage/' . $bookAddon->addon->images[0]) }}" alt="{{ $bookAddon->addon->addons ?? 'Addon image' }}" class="w-full h-full object-cover rounded-lg">
+                                                @else
+                                                    <div class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+                                                        <i class="fas fa-plus-circle text-gray-400 text-2xl"></i>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-semibold mb-2">{{ $bookAddon->addon->addons ?? 'Unnamed Addon' }}</h3>
+                                                <p class="text-gray-600 mb-2">{{ $bookAddon->addon->desc ?? '' }}</p>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-sm text-gray-500">Total price (Qty: {{ $bookAddon->amount }})</span>
+                                                    <span class="font-semibold">Rp {{ number_format($bookAddon->total_price, 0, ',', '.') }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @endif
 
                 <!-- Guest Information -->
@@ -241,43 +242,33 @@
                         @endif
                         @if(optional($booking->products)->count() > 0)
                             @php
-                                $totalProducts = $booking->products->sum(function($bookProduct) {
-                                    return $bookProduct->product->finalPrice * $bookProduct->amount;
+                                // Filter only standalone products (not from package)
+                                $standaloneProducts = optional($booking->products)->filter(function($p) { 
+                                    return strpos($p->notes ?? '', 'Standalone') !== false; 
+                                }) ?? collect();
+                                
+                                $totalProducts = $standaloneProducts->sum(function($bookProduct) {
+                                    return $bookProduct->total_price;
                                 });
                                 $grandTotal += $totalProducts;
                             @endphp
-                            <div class="flex justify-between">
-                                <span>Products ({{ optional($booking->products)->sum('amount') }} item{{ optional($booking->products)->sum('amount') > 1 ? 's' : '' }})</span>
-                                <span>Rp {{ number_format($totalProducts, 0, ',', '.') }}</span>
-                            </div>
+                            @if($totalProducts > 0)
+                                <div class="flex justify-between">
+                                    <span>Products ({{ $standaloneProducts->sum('amount') }} item{{ $standaloneProducts->sum('amount') > 1 ? 's' : '' }})</span>
+                                    <span>Rp {{ number_format($totalProducts, 0, ',', '.') }}</span>
+                                </div>
+                            @endif
                         @endif
                         @php
                             $totalAddons = 0;
-                            // Standalone addons
+                            // Standalone addons ONLY (not from package or product)
                             if (optional($booking->addons)->count() > 0) {
-                                $totalAddons += $booking->addons->sum(function($bookAddon) {
-                                    return $bookAddon->addon->finalPrice * $bookAddon->amount;
+                                $standaloneAddonsOnly = optional($booking->addons)->filter(function($a) {
+                                    return strpos($a->notes ?? '', 'Standalone') !== false;
                                 });
-                            }
-                            // Package addons
-                            if (optional($booking->packages)->count() > 0) {
-                                foreach ($booking->packages as $bookPackage) {
-                                    if ($bookPackage->bookPackageAddons->count() > 0) {
-                                        $totalAddons += $bookPackage->bookPackageAddons->sum(function($packageAddon) {
-                                            return $packageAddon->addon->finalPrice * ($packageAddon->quantity ?? 1);
-                                        });
-                                    }
-                                }
-                            }
-                            // Product addons
-                            if (optional($booking->products)->count() > 0) {
-                                foreach ($booking->products as $bookProduct) {
-                                    if ($bookProduct->bookProductAddons->count() > 0) {
-                                        $totalAddons += $bookProduct->bookProductAddons->sum(function($productAddon) {
-                                            return $productAddon->addon->finalPrice * ($productAddon->quantity ?? 1);
-                                        });
-                                    }
-                                }
+                                $totalAddons += $standaloneAddonsOnly->sum(function($bookAddon) {
+                                    return $bookAddon->total_price;
+                                });
                             }
                             $grandTotal += $totalAddons;
                         @endphp

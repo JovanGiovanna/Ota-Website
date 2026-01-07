@@ -588,6 +588,39 @@ public function transactionProducts()
             // Profit = Total Price - NTA
             $profit = $totalPrice - $totalNta;
 
+            // Get package contents for detail modal
+            $packageProducts = [];
+            $productsData = is_array($package->products_data) ? $package->products_data : [];
+            foreach ($productsData as $productData) {
+                $productId = $productData['id'] ?? null;
+                if ($productId) {
+                    $product = \App\Models\Product::find($productId);
+                    if ($product) {
+                        $packageProducts[] = [
+                            'name' => $product->name,
+                            'pax' => $productData['pax'] ?? 1,
+                            'sub_total' => $productData['sub_total'] ?? 0
+                        ];
+                    }
+                }
+            }
+
+            $packageAddons = [];
+            $addonsData = is_array($package->addons_data) ? $package->addons_data : [];
+            foreach ($addonsData as $addonData) {
+                $addonId = $addonData['id'] ?? null;
+                if ($addonId) {
+                    $addon = \App\Models\Addon::find($addonId);
+                    if ($addon) {
+                        $packageAddons[] = [
+                            'name' => $addon->addons,
+                            'pax' => $addonData['pax'] ?? 1,
+                            'sub_total' => $addonData['sub_total'] ?? 0
+                        ];
+                    }
+                }
+            }
+
             $rekonDetails[] = (object) [
                 'transaction_id' => $booking->booking_code ?? '#' . strtoupper(substr($booking->id, 0, 8)),
                 'date' => $booking->created_at,
@@ -601,7 +634,9 @@ public function transactionProducts()
                 'pax_paid' => $totalPrice,
                 'profit' => $profit,
                 'status' => $booking->status,
-                'type' => 'package' // Tipe 'package'
+                'type' => 'package', // Tipe 'package'
+                'package_products' => $packageProducts,
+                'package_addons' => $packageAddons
             ];
         }
 
